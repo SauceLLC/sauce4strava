@@ -64,7 +64,7 @@ function getPeaksKeyFormatter(streamType) {
 function getPeaksValueFormatter(streamType) {
     return {
         power: H.number,
-        power_wkg: x => H.number(x, {fixed: true, precision: 1}),
+        power_wkg: (x, options) => H.number(x, {fixed: true, precision: 1, ...options}),
         np: H.number,
         xp: H.number,
         hr: H.number,
@@ -85,23 +85,23 @@ export async function editActivityDialogXXX(activity, pageView) {
         body: `
             <b>${activity.name}</b><hr/>
             <label>TSS® Override:
-                <input name="tss_override" type="number"
+                <input name="tss-override" type="number"
                        value="${activity.tssOverride != null ? activity.tssOverride : ''}"
                        placeholder="${tss != null ? Math.round(tss) : ''}"/>
             </label>
             <hr/>
             <label>Exclude this activity from peak performances:
-                <input name="peaks_exclude" type="checkbox"
+                <input name="peaks-exclude" type="checkbox"
                        ${activity.peaksExclude ? 'checked' : ''}/>
             </label>
         `,
         extraButtons: [{
             text: 'Save', // XXX localize
             click: async ev => {
-                const tss = Number($modal.find('input[name="tss_override"]').val() || NaN);
+                const tss = Number($modal.find('input[name="tss-override"]').val() || NaN);
                 const updates = {
                     tssOverride: isNaN(tss) ? null : tss,
-                    peaksExclude: $modal.find('input[name="peaks_exclude"]').is(':checked'),
+                    peaksExclude: $modal.find('input[name="peaks-exclude"]').is(':checked'),
                 };
                 ev.currentTarget.disabled = true;
                 ev.currentTarget.classList.add('sauce-loading');
@@ -222,6 +222,18 @@ export class ResizablePerfView extends PerfView {
 }
 
 
+export class PanelSettingsView extends PerfView {
+    constructor(panelView, options) {
+        super(options);
+        this.panelView = panelView;
+    }
+
+    renderAttrs() {
+        return this.panelView.getPrefs();
+    }
+}
+
+
 export class ActivityStreamGraphsView extends PerfView {
     static tpl = 'performance/activity-stream-graphs.html';
 
@@ -288,6 +300,7 @@ export class ActivityStreamGraphsView extends PerfView {
 
 export class ActivityTableView extends PerfView {
     static tpl = 'performance/activity-table.html';
+    static localeKeys = [];
 
     get events() {
         return {
@@ -302,20 +315,185 @@ export class ActivityTableView extends PerfView {
     }
 
     async init({pageView, mode, sortBy, sortDesc, ...options}) {
+        await super.init({pageView, ...options});
         this.mode = mode;
         this.activities = Array.from(options.activities || []);
+        this.peaks = new Map();
         this.streamsView = new ActivityStreamGraphsView({pageView});
         this.rowPageSize = 50;
-        this.sortBy = sortBy || 'date';
+        this.defaultSortBy = 'date';
+        this.sortBy = sortBy || this.defaultSortBy;
         this.sortDesc = sortDesc != null ? sortDesc : true;
         this.rowLimit = this.rowPageSize;
         this.expandedRow;
-        await super.init({pageView, ...options});
+        this.columns = [];
+        this.peakColTypes = {
+            time: 'power',
+            distance: 'pace',
+        };
+        const peakRanges = {
+            periods: await getPeakRanges('periods'),
+            distances: await getPeakRanges('distances'),
+        };
+        this.availableColumns = [{
+            id: 'name',
+            labelKey: '/name',
+            sortKey: x => x.name.toLowerCase(),
+            tooltip: x => x ? x.name + (x.description ? "\n\n" + x.description : '') : '',
+            sortReverse: true,
+            format: x => `<a target="_blank" href="/activities/${x.id}">${x.name}</a>`,
+        }, {
+            id: 'date',
+            labelKey: '/date',
+            sortKey: x => x.ts,
+            format: x => H.date(x.ts),
+        }, {
+            id: 'type',
+            labelKey: '/type',
+            sortKey: x => x.type || x.basetype,
+            sortReverse: true,
+            format: x => x.type || x.basetype,
+        }, {
+            id: 'time',
+            labelKey: '/time',
+            shortLabel: await sauce.ui.getImage('fa/clock-duotone.svg'),
+            sortKey: x => x.stats?.activeTime || 0,
+            align: 'right',
+            format: x => H.timer(x.stats?.activeTime) || '-',
+        }, {
+            id: 'distance',
+            labelKey: '/distance',
+            shortLabel: await sauce.ui.getImage('fa/road-duotone.svg'),
+            sortKey: x => x.stats?.distance || 0,
+            align: 'right',
+            format: x => H.distance(x.stats?.distance || null,
+                {precision: 0, suffix: true, html: true}) || '-',
+        }, {
+            id: 'pace',
+            labelKey: '/speed',
+            sortKey: x => (x.stats?.distance / x.stats?.activeTime) || 0,
+            align: 'right',
+            format: x => H.pace(
+                (x.stats?.activeTime && x.stats.distance) ?
+                    1 / (x.stats.distance / x.stats.activeTime) : undefined,
+                {precision: 0, activityType: x.basetype, suffix: true, html: true}) || '-',
+        }, {
+            id: 'elevation',
+            labelKey: '/elevation',
+            shortLabel: await sauce.ui.getImage('fa/mountains-duotone.svg'),
+            sortKey: x => x.stats?.altitudeGain,
+            align: 'right',
+            format: x => x.stats?.altitudeGain ?
+                '+' + H.elevation(x.stats.altitudeGain, {suffix: true, html: true}) :
+                '-',
+        }, {
+            labelKey: '/np',
+            id: 'np',
+            sortKey: x => x.stats?.np || 0,
+            align: 'right',
+            format: x => H.number(x.stats.np, {suffix: 'w', html: true}) || '-',
+        }, {
+            labelKey: '/tss',
+            id: 'tss',
+            sortKey: x => sauce.model.getActivityTSS(x) || 0,
+            align: 'right',
+            format: x => H.number(sauce.model.getActivityTSS(x)) || '-',
+        },
+            ...peakRanges.periods.map(x => {
+                const period = x.value;
+                const id = `time-${period}`;
+                return {
+                    id,
+                    period,
+                    type: 'peak',
+                    align: 'right',
+                    metric: 'time',
+                    label: H.peakPeriod(period, {short: false, html: true}),
+                    shortLabel: H.peakPeriod(period, {short: true, html: true}),
+                    sortKey: x => this.peaks.get(x.id)?.[id]?.value,
+                    format: (a, peaks) => this._formatPeak(peaks[id], a),
+                };
+            }),
+            ...peakRanges.distances.map(x => {
+                const period = x.value;
+                const id = `distance-${period}`;
+                return {
+                    id,
+                    period,
+                    type: 'peak',
+                    align: 'right',
+                    metric: 'distance',
+                    label: H.raceDistance(period, {html: true, short: false}),
+                    shortLabel: H.raceDistance(period, {html: true, short: true}),
+                    sortKey: x => this.peaks.get(x.id)?.[id]?.value,
+                    sortReverse: true,
+                    format: (a, peaks) => this._formatPeak(peaks[id], a),
+                };
+            })
+        ];
+    }
+
+    _formatPeak(peak, activity) {
+        if (!peak) {
+            return '-';
+        }
+        const valueFormatter = getPeaksValueFormatter(peak.type);
+        return valueFormatter(peak.value, {
+            suffix: getPeaksUnit(peak.type),
+            html: true,
+            activityType: activity.basetype
+        });
+    }
+
+    async setColumns(columns) {
+        this.columns.splice(0, this.columns.length, ...columns);
+        const sortCol = this.columns.find(x => x.id === this.sortBy);
+        if (!sortCol) {
+            if (this.columns.find(x => x.id === this.defaultSortBy)) {
+                this.sortBy = this.defaultSortBy;
+            } else {
+                this.sortBy = this.columns.find(x => x.sortKey)?.id;
+            }
+            console.warn("Sort column resetting to:", this.sortBy);
+            this.sort();
+            this.trigger('sort', {sortBy: this.sortyBy, sortDesc: this.sortDesc});
+        }
+        // NOTE: We could optimize this to just render if peak cols are unchanged
+        await this.setActivities(this.activities);
+    }
+
+    setPeakColType(metric, type) {
+        this.peakColTypes[metric] = type;
+    }
+
+    _getColPeakType(col) {
+        return col.type === 'peak' ? this.peakColTypes[col.metric] : undefined;
     }
 
     async setActivities(activities) {
         this.rowLimit = this.rowPageSize;
         this.activities = Array.from(activities || []);
+        const activityIds = activities.map(x => x.id);
+        const newPeaks = new Map(activityIds.map(x => [x, {}]));
+        // Benchmark optimized...
+        const peakMetrics = new Set(this.columns.map(x => x.metric).filter(x => x));
+        await Promise.all([...peakMetrics].map(async metric => {
+            const periods = this.columns
+                .filter(x => x.type === 'peak' && x.metric === metric)
+                .map(x => x.period);
+            periods.sort((a, b) => a - b);
+            const ps = await sauce.hist.getPeaksForActivityIds(activityIds,
+                {type: this.peakColTypes[metric], period: [periods.at(0), periods.at(-1)]});
+            for (const peaks of ps) {
+                for (const peak of peaks) {
+                    const col = this.columns.find(x => x.metric === metric && x.period === peak.period);
+                    if (col) {
+                        newPeaks.get(peak.activity)[col.id] = peak;
+                    }
+                }
+            }
+        }));
+        this.peaks = newPeaks;
         this.sort();
         await this.render();
     }
@@ -326,13 +504,18 @@ export class ActivityTableView extends PerfView {
     }
 
     renderAttrs() {
+        const acts = this.activities;
+        const mostlyRuns = acts.filter(x => x.basetype === 'run').length / acts.length > 0.5;
         return {
             entryTpl: 'performance/activity-table-entry.html',
             activities: this.activities,
+            peaks: this.peaks,
             mode: this.mode,
             rowLimit: this.rowLimit,
             sortBy: this.sortBy,
             sortDesc: this.sortDesc,
+            paceLocaleKey: mostlyRuns ? '/pace' : '/speed',
+            columns: this.columns,
         };
     }
 
@@ -342,24 +525,25 @@ export class ActivityTableView extends PerfView {
     }
 
     sort() {
-        const sortKeys = {
-            name: x => x.name.toLowerCase(),
-            date: x => x.ts,
-            type: x => x.type || x.basetype,
-            duration: x => x.stats && x.stats.activeTime || 0,
-            distance: x => x.stats && x.stats.distance || 0,
-            pace: x => ((x.stats.activeTime && x.stats.distance) ? x.stats.distance / x.stats.activeTime : 0),
-            elevation: x => x.stats && x.stats.altitudeGain || 0,
-            tss: x => sauce.model.getActivityTSS(x) || 0,
-            exclude_peaks: x => !!x.peaksExclude,
-        };
-        const sortRev = {
-            name: true,
-            type: true,
-        };
-        const keyFn = sortKeys[this.sortBy];
-        const sortDir = (this.sortDesc ? 1 : -1) * (sortRev[this.sortBy] ? -1 : 1);
-        this.activities.sort((a, b) => keyFn(a) < keyFn(b) ? sortDir : -sortDir);
+        const col = this.columns.find(x => x.id === this.sortBy);
+        if (col && col.sortKey) {
+            const sortDir = (this.sortDesc ? 1 : -1) * (col.sortReverse ? -1 : 1);
+            this.activities.sort((a, b) => {
+                const aVal = col.sortKey(a);
+                const bVal = col.sortKey(b);
+                if (aVal === bVal || (aVal == null && bVal == null)) {
+                    return 0;
+                } else if (aVal == null) {
+                    return 1; // Always push null values to bottom
+                } else if (bVal == null) {
+                    return -1; // Always push null values to bottom
+                } else {
+                    return aVal < bVal ? sortDir : -sortDir;
+                }
+            });
+        } else {
+            console.warn("Unsortable activity table");
+        }
     }
 
     async onSortClick(ev) {
@@ -436,17 +620,36 @@ export class ActivityTableView extends PerfView {
 
 
 export class BulkActivityEditDialog extends PerfView {
-    static localeKeys = ['/save', 'edit_activities'];
+    static localeKeys = ['/save', 'edit_activities', 'exclude_peaks_tooltip'];
 
     async init({activities, pageView, ...options}) {
+        await super.init({pageView, ...options});
         this.athletes = new Set(activities.map(x => x.athlete));
         this.icon = await sauce.ui.getImage('fa/list-duotone.svg');
-        this.activityTable = new ActivityTableView({activities, pageView, mode: 'readwrite', ...options});
-        await super.init({pageView, ...options});
+        this.activityTable = new ActivityTableView({pageView, ...options});
+        await this.activityTable.initializing;
+        const columns =  this.activityTable.availableColumns.filter(x =>
+            ['name', 'date', 'type', 'time', 'distance', 'pace', 'elevation'].includes(x.id));
+        columns.push({
+            id: 'tss-override',
+            labelKey: '/tss',
+            format: x => {
+                const tss = sauce.model.getActivityTSS(x);
+                return `<input type="number" style="width: 6ch" name="tss-override" value="${x.tssOverride}"
+                               placeholder="${tss != null ? Math.round(tss) : ''}"/>`;
+            },
+        }, {
+            id: 'peaks-exclude',
+            label: await sauce.ui.getImage('fa/eye-slash-regular.svg'),
+            align: 'center',
+            tooltip: this.LM('exclude_peaks_tooltip'),
+            format: x => `<input type="checkbox" name="peaks-exclude" ${x.peaksExclude ? 'checked' : ''}/>`,
+        });
+        await this.activityTable.setColumns(columns);
+        await this.activityTable.setActivities(activities);
     }
 
     async render() {
-        this.$el.addClass('activity-table');
         await super.render();
         await this.activityTable.setElement(this.$el).render();
     }
@@ -465,8 +668,8 @@ export class BulkActivityEditDialog extends PerfView {
                     const updates = {};
                     for (const tr of this.$('table tbody tr[data-id]')) {
                         updates[Number(tr.dataset.id)] = {
-                            tssOverride: Number(tr.querySelector('input[name="tss"]').value) || null,
-                            peaksExclude: tr.querySelector('input[name="peaks_exclude"]').checked,
+                            tssOverride: Number(tr.querySelector('input[name="tss-override"]').value) || null,
+                            peaksExclude: tr.querySelector('input[name="peaks-exclude"]').checked,
                         };
                     }
                     ev.currentTarget.disabled = true;
@@ -544,7 +747,7 @@ export class SummaryView extends PerfView {
             ranges.map(x => x.value), {limit: 1, start, end});
         return peaks.map(x => ({
             key: keyFormatter(x.period),
-            prettyValue: valueFormatter(x.value),
+            prettyValue: valueFormatter(x.value, {activityType: x.activityType}),
             unit: getPeaksUnit(type),
             activity: x.activity,
         }));
@@ -942,7 +1145,11 @@ export class DetailsView extends PerfView {
                 const key = document.createElement('key');
                 const value = document.createElement('value');
                 key.textContent = keyFormatter(x.period);
-                value.textContent = `${valueFormatter(x.value)}${getPeaksUnit(type)}`;
+                sauce.adjacentNodeContents(value, 'beforeend', valueFormatter(x.value, {
+                    activityType: x.activityType,
+                    suffix: getPeaksUnit(type),
+                    html: true
+                }));
                 row.appendChild(key);
                 row.appendChild(value);
                 details.appendChild(row);
@@ -957,18 +1164,84 @@ export class DetailsView extends PerfView {
 }
 
 
+class ActivityTablePanelSettingsView extends PanelSettingsView {
+    static tpl = 'performance/activity-table-settings.html';
+
+    get events() {
+        return {
+            'input input.column[type="checkbox"]': 'onColumnInput',
+            'input select[name="peak-time-type"]': 'onPeakTimeTypeInput',
+            'input select[name="peak-distance-type"]': 'onPeakDistanceTypeInput',
+        };
+    }
+
+    async onColumnInput(ev) {
+        const enabled = ev.currentTarget.checked;
+        const name = ev.currentTarget.name;
+        this.panelView.getPrefs('columns', {})[name] = !!enabled;
+        await this.panelView.savePrefs();
+        await this.panelView.render();
+    }
+
+    async onPeakTimeTypeInput(ev) {
+        const peakTimeType = ev.currentTarget.value;
+        const table = this.panelView.activityTable;
+        table.setPeakColType('time', peakTimeType);
+        await table.setActivities(table.activities);
+        await this.panelView.savePrefs({peakTimeType});
+    }
+
+    async onPeakDistanceTypeInput(ev) {
+        const peakDistanceType = ev.currentTarget.value;
+        const table = this.panelView.activityTable;
+        table.setPeakColType('distance', peakDistanceType);
+        await table.setActivities(table.activities);
+        await this.panelView.savePrefs({peakDistanceType});
+    }
+
+    renderAttrs(attrs) {
+        return {
+            ...super.renderAttrs(),
+            availableColumns: this.panelView.activityTable.availableColumns,
+            ...attrs,
+        };
+    }
+}
+
+
 export class ActivityTablePanelView extends ResizablePerfView {
     static uuid = 'c9222e6a-80ee-4ccc-a45c-dfe996c3ec16';
     static tpl = 'performance/activity-table-panel.html';
+    static SettingsView = ActivityTablePanelSettingsView;
     static typeLocaleKey = 'performance_activity_table_type';
     static nameLocaleKey = 'performance_activity_table_name';
     static descLocaleKey = 'performance_activity_table_desc';
+    static localeKeys = ['/type'];
+
+    get defaultPrefs() {
+        return {
+            splitView: true,
+            peakTimeType: 'power',
+            peakDistanceType: 'pace',
+            columns: {
+                'name': true,
+                'date': true,
+                'type': true,
+                'time': true,
+                'distance': true,
+                'speed': true,
+                'elevation': true,
+                'np': true,
+                'tss': true,
+            },
+        };
+    }
 
     async init({pageView, ...options}) {
         await super.init({pageView, ...options});
         const {sortBy, sortDesc} = this.getPrefs();
-        this.activityTable = new ActivityTableView({pageView, mode: 'readonly', sortBy, sortDesc,
-            ...options});
+        this.activityTable = new ActivityTableView({pageView, sortBy, sortDesc, ...options});
+        await this.activityTable.initializing;
         this.listenTo(this.activityTable, 'sort', this.onTableSort);
         this.listenTo(pageView, 'before-update-activities', () =>
             this.$('.loading-mask').addClass('loading'));
@@ -985,7 +1258,12 @@ export class ActivityTablePanelView extends ResizablePerfView {
         this.$('.loading-mask').addClass('loading');
         try {
             await super.render();
-            await this.activityTable.setElement(this.$('.table-wrap')).render();
+            const enabled = this.getPrefs('columns');
+            const columns = this.activityTable.availableColumns.filter(x => enabled[x.id]);
+            this.activityTable.setElement(this.$('.table-wrap'));
+            this.activityTable.setPeakColType('time', this.getPrefs('peakTimeType'));
+            this.activityTable.setPeakColType('distance', this.getPrefs('peakDistanceType'));
+            await this.activityTable.setColumns(columns);
         } finally {
             this.$('.loading-mask').removeClass('loading');
         }
@@ -1221,19 +1499,20 @@ export class MainView extends PerfView {
             v.render();  // bg okay
             $dialog.on('dialogclose', () => v.remove());
         }
-        $dialog.on('input', 'input[name="name"]', async ev => {
+        $dialog.on('input', 'input[name="panel-name"]', async ev => {
             const el = ev.currentTarget;
             const name = el.value || undefined;
             const nameEl = panelEl.querySelector('.panel-name');
             if (nameEl) {
                 nameEl.textContent = name || await L.getMessage(panel.view.constructor.nameLocaleKey);
             }
-            settings.name = name;
+            settings.name = name;  // For reloads
+            panel.view.name = name;  // For rerenders
             await this.savePrefs();
         });
-        $dialog.on('input', 'input[name="position"]', async ev => {
+        $dialog.on('input', 'input[name="panel-position"]', async ev => {
             const el = ev.currentTarget;
-            // XXX streamline splicing to just one entitity
+            // XXX streamline splicing to just one entity
             const tp = allPrefs[order];
             allPrefs.splice(order, 1);
             this.panels.splice(order, 1);
@@ -1249,12 +1528,12 @@ export class MainView extends PerfView {
         });
         $dialog.on('input', 'input.size-factor[type="range"]', async ev => {
             const el = ev.currentTarget;
-            const key = el.name;
+            const dimension = el.dataset.dim;
             const value = Number(el.value);
-            settings[key + 'Factor'] = value;
+            settings[dimension + 'Factor'] = value;
             throttleAnimation(() => {
-                el.nextElementSibling.textContent = sizeHint(key);
-                panel.view.el.style.setProperty(`--${key}-factor`, value || 1);
+                el.nextElementSibling.textContent = sizeHint(dimension);
+                panel.view.el.style.setProperty(`--${dimension}-factor`, value || 1);
             });
             await this.savePrefs();
         });
@@ -1328,7 +1607,7 @@ export class PageView extends PerfView {
     get events() {
         return {
             ...super.events,
-            'change nav select[name=athlete]': 'onAthleteChange',
+            'change nav select[name="athlete"]': 'onAthleteChange',
             'click .onboarding-stack .btn.enable': 'onOnboardingEnableClick',
         };
     }
@@ -1648,17 +1927,5 @@ export class OnboardingView extends PerfView {
         }
         await sauce.hist.enableAthlete(athlete.id);
         location.reload();
-    }
-}
-
-
-export class PanelSettingsView extends PerfView {
-    constructor(panelView, options) {
-        super(options);
-        this.panelView = panelView;
-    }
-
-    renderAttrs() {
-        return this.panelView.getPrefs();
     }
 }

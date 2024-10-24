@@ -76,12 +76,17 @@ html.sauce-performance {
 }
 
 .sauce-dialog.sauce-performance-panel-settings {
-    .panel-settings {
-        max-height: 12em;
-        overflow: auto;
+    .panel-settings:not(:empty) {
+        max-height: 14em;
+        padding-top: 0.2em;
+        border-top: 1px solid color.shade(bg, 15%);
 
         form.sauce-key-value {
             padding-bottom: 0;
+        }
+
+        abbr.unit {
+            margin-left: 0.1em;
         }
     }
 }
@@ -213,38 +218,45 @@ table.sauce-perf {
             }
         }
 
-        td.activity-name {
-            .name-container {
-                display: flex;
-                max-width: min(30ch, 25vw);
-                align-items: center;
+        // XXX can we do this without the extra container?
+        .name-container {
+            display: flex;
+            max-width: min(30ch, 25vw);
+            align-items: center;
 
-                a {
-                    text-overflow: ellipsis;
-                    word-break: break-word;
-                    white-space: nowrap;
-                    overflow: hidden;
-                }
+            a {
+                text-overflow: ellipsis;
+                word-break: break-word;
+                white-space: nowrap;
+                overflow: hidden;
             }
         }
     }
 }
 
 table.activity-table {
-    font-size: 0.9em;
-
-    .name-container {
-        max-width: min(20ch, 25vw) !important;
+    svg[data-icon] {
+        height: 0.9em;
     }
 
-    svg[data-icon] {
-        width: 1em;
+    th, td {
+        &[data-align="center"] {
+            text-align: center;
+        }
+
+        &[data-align="right"] {
+            text-align: right;
+        }
     }
 
     th {
         .sort-by {
             margin-left: 0.4em;
             font-weight: normal;
+        }
+
+        svg[data-icon] {
+            color: color.shade(fg, 30%);
         }
     }
 
@@ -260,19 +272,25 @@ table.activity-table {
         background: color.shade(bg, 10%);
     }
 
-    td.type {
-        max-width: 8ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        text-transform: capitalize;
+    td {
+
+        &[data-column-id="name"] {
+            max-width: min(20ch, 25vw);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-transform: capitalize;
+        }
+
+        &[data-column-id="type"] {
+            max-width: 10ch;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-transform: capitalize;
+        }
     }
 
     td .btn-icon-only svg[data-icon] {
         font-size: 0.8em;
-    }
-
-    tr td.tss input[name="tss"] {
-        width: 6ch;
     }
 
     tr.expanded td .btn.expand-activity {

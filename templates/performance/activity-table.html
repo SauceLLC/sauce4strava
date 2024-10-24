@@ -1,19 +1,31 @@
+<% let colCount = 1; %>
 <table class="sauce-perf activity-table">
     <thead>
         <tr>
             <% const up = '<span class="sort-by up">↑</span>'; %>
             <% const down = '<span class="sort-by down">↓</span>'; %>
-            <th data-sort-id="name">{{{/name}}}{-sortBy === 'name' ? (sortDesc ? down : up) : ''-}</th>
-            <th data-sort-id="date">{{{/analysis_date}}}{-sortBy === 'date' ? (sortDesc ? down : up) : ''-}</th>
-            <th data-sort-id="type">{{{/type}}}{-sortBy === 'type' ? (sortDesc ? down : up) : ''-}</th>
-            <th data-sort-id="duration">{{{/analysis_time}}}{-sortBy === 'duration' ? (sortDesc ? down : up) : ''-}</th>
-            <th data-sort-id="distance">{{{/analysis_distance}}}{-sortBy === 'distance' ? (sortDesc ? down : up) : ''-}</th>
-            <th data-sort-id="pace">{{{/analysis_pace}}}{-sortBy === 'pace' ? (sortDesc ? down : up) : ''-}</th>
-            <th data-sort-id="elevation">{{{/analysis_elevation}}}{-sortBy === 'elevation' ? (sortDesc ? down : up) : ''-}</th>
-            <th data-sort-id="tss">TSS®{-sortBy === 'tss' ? (sortDesc ? down : up) : ''-}</th>
-            <th data-sort-id="exclude_peaks" title="{{{exclude_peaks_tooltip}}}"
-                >{{=icon eye-slash-regular=}}{-sortBy === 'exclude_peaks' ? (sortDesc ? down : up) : ''-}</th>
-            <th></th>
+            <% for (const x of columns) { %>
+                <% colCount++; %>
+                <% const sortIndicator = x.sortKey && sortBy === x.id ? (sortDesc ? down : up) : ''; %>
+                <th data-align="{{x.align}}" title="{{typeof x.tooltip === 'function' ? x.tooltip() : (x.tooltip || '')}}"
+                    <% if (x.sortKey) { %> 
+                        data-sort-id="{{x.id}}"
+                    <% } %> 
+                    >
+                    <% if (x.shortLabelKey) { %> 
+                        {{{[x.shortLabelKey]}}}{-sortIndicator-}
+                    <% } else if (x.shortLabel) { %> 
+                        {-x.shortLabel-}{-sortIndicator-}
+                    <% } else if (x.labelKey) { %> 
+                        {{{[x.labelKey]}}}{-sortIndicator-}
+                    <% } else if (x.label) { %> 
+                        {-x.label-}{-sortIndicator-}
+                    <% } else { %> 
+                        <% console.error('malformed col def', x); %>
+                    <% } %> 
+                </th>
+            <% } %>
+            <th><!--expand/collapse--></th>
         </tr>
     </thead>
     <tbody>
@@ -21,8 +33,8 @@
             {-await embed(entryTpl, {a, ...obj})-}
         <% } %>
         <tr class="load-more {{activities.length <= rowLimit ? 'hidden' : ''}}">
-            <td colspan="10" class="centered">{{{/load_more}}}</td>
+            <td colspan="{{colCount}}" class="centered">{{{/load_more}}}</td>
         </tr>
-        <tr class="activity-streams"><td colspan="10"></td></tr>
+        <tr class="activity-streams"><td colspan="{{colCount}}"></td></tr>
     </tbody>
-</table>
+</table>"

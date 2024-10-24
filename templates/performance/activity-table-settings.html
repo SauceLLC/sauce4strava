@@ -1,0 +1,80 @@
+<form class="sauce-key-value">
+    <div class="entry">
+        <key>{{{split_view}}}</key>
+        <value><input type="checkbox" name="splitView" {{splitView ? '' : 'checked'}}/></value>
+    </div>
+</form>
+
+<form class="sauce-key-value">
+    <div class="heading">{{{/columns}}}</div>
+    <% for (const x of availableColumns.filter(x => x.type !== 'peak')) { %>
+        <div class="entry">
+            <% if (x.labelKey) { %>
+                <key>{{{[x.labelKey]}}}</key>
+            <% } else if (x.label) { %>
+                <key>{-x.label-}</key>
+            <% } else { %>
+                <% console.log('invalid column', x); %>
+            <% } %>
+            <value><input type="checkbox" class="column" name="{{x.id}}"
+                          {{columns[x.id] ? 'checked' : ''}}/></value>
+        </div>
+    <% } %>
+</form>
+
+<form class="sauce-key-value">
+    <div class="heading">{{{/peak_efforts}}}</div>
+
+    <div class="entry">
+        <div class="sub-heading">{{{/mutable_data_peaks_periods_title}}}:</div>
+        <select name="peak-time-type">
+            <option value="power" {{peakTimeType === 'power' ? 'selected' : ''}}>{{{/power}}}</option>
+            <option value="power_wkg" {{peakTimeType === 'power_wkg' ? 'selected' : ''}}>{{{/power}}} (w/kg)</option>
+            <% if (!sauce.options['analysis-disable-np']) { %>
+                <option value="np" {{peakTimeType === 'np' ? 'selected' : ''}}>NP®</option>
+            <% } %>
+            <% if (!sauce.options['analysis-disable-xp']) { %>
+                <option value="xp" {{peakTimeType === 'xp' ? 'selected' : ''}}>xPower</option>
+            <% } %>
+            <option value="hr" {{peakTimeType === 'hr' ? 'selected' : ''}}>{{{/heartrate}}}</option>
+        </select>
+    </div>
+
+    <% for (const x of availableColumns.filter(x => x.type === 'peak' && x.metric === 'time')) { %>
+        <div class="entry">
+            <% if (x.labelKey) { %>
+                <key>{{{[x.labelKey]}}}</key>
+            <% } else if (x.label) { %>
+                <key>{-x.label-}</key>
+            <% } else { %>
+                <% console.log('invalid column', x); %>
+            <% } %>
+            <value><input type="checkbox" class="column peak" name="{{x.id}}"
+                          {{columns[x.id] ? 'checked' : ''}}/></value>
+        </div>
+    <% } %>
+
+    <hr/>
+
+    <div class="entry">
+        <div class="sub-heading">{{{/mutable_data_peaks_dists_title}}}:</div>
+        <select name="peak-distance-type">
+            <option value="pace" {{peakDistanceType === 'pace' ? 'selected' : ''}}>{{{/pace}}}</option>
+            <option value="gap" {{peakDistanceType === 'gap' ? 'selected' : ''}}>{{{/gap}}}</option>
+        </select>
+    </div>
+
+    <% for (const x of availableColumns.filter(x => x.type === 'peak' && x.metric === 'distance')) { %>
+        <div class="entry">
+            <% if (x.labelKey) { %>
+                <key>{{{[x.labelKey]}}}</key>
+            <% } else if (x.label) { %>
+                <key>{-x.label-}</key>
+            <% } else { %>
+                <% console.log('invalid column', x); %>
+            <% } %>
+            <value><input type="checkbox" class="column peak" name="{{x.id}}"
+                          {{columns[x.id] ? 'checked' : ''}}/></value>
+        </div>
+    <% } %>
+</form>
