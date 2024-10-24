@@ -2,7 +2,7 @@
     <tr data-id="{{x.activity.id}}" title="{{{peaks_row_tooltip}}}">
         <td class="centered">{{humanNumber(x.rank)}}</td>
         <td class="righted">
-            {{x.estimate ? '~' : ''}}{{valueFormatter(x.value)}}<abbr class="unit short">{{unit}}</abbr>
+            {{x.estimate ? '~' : ''}}{-valueFormatter(x.value, {suffix: unit, activityType: x.activityType, html: true})-}
         </td>
         <td class="centered">
             <% if (x.rankBadge && x.rankBadge.cat) { %>

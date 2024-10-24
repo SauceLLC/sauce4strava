@@ -9,8 +9,8 @@
         <table class="sauce-perf">
             <thead>
                 <tr>
-                    <th class="centered">{{{/analysis_rank}}}</th>
-                    <th class="righted">{{{/analysis_value}}}</th>
+                    <th class="centered">{{{/rank}}}</th>
+                    <th class="righted">{{{/value}}}</th>
                     <th></th>
                     <% if (prefs.includeAllAthletes) { %>
                         <th>
@@ -24,7 +24,7 @@
                         </th>
                     <% } %>
                     <th>
-                        <span>{{{/analysis_activity}}}
+                        <span>{{{/activity}}}
                         <div class="btn btn-icon-only btn-unstyled filter"
                              title="{{{filter_tooltip}}}">{{=icon search-duotone=}}</div>
                         <input class="filter {{filters.name ? 'visible' : ''}}" type="text"
@@ -32,7 +32,7 @@
                                value="{{filters.name ? filters.name.val : ''}}"/>
                     </th>
                     <th>{{{/type}}}</th>
-                    <th>{{{/analysis_date}}}</th>
+                    <th>{{{/date}}}</th>
                     <th></th>
                 </tr>
             </thead>

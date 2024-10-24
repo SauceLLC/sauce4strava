@@ -1,15 +1,15 @@
 <select name="type" class="pref">
-    <option value="power" {{panelPrefs.type === 'power' ? 'selected' : ''}}>{{{/analysis_power}}}</option>
-    <option value="power_wkg" {{panelPrefs.type === 'power_wkg' ? 'selected' : ''}}>{{{/analysis_power}}} (w/kg)</option>
+    <option value="power" {{panelPrefs.type === 'power' ? 'selected' : ''}}>{{{/power}}}</option>
+    <option value="power_wkg" {{panelPrefs.type === 'power_wkg' ? 'selected' : ''}}>{{{/power}}} (w/kg)</option>
     <% if (!sauce.options['analysis-disable-np']) { %>
         <option value="np" {{panelPrefs.type === 'np' ? 'selected' : ''}}>NP®</option>
     <% } %>
     <% if (!sauce.options['analysis-disable-xp']) { %>
         <option value="xp" {{panelPrefs.type === 'xp' ? 'selected' : ''}}>xPower</option>
     <% } %>
-    <option value="pace" {{panelPrefs.type === 'pace' ? 'selected' : ''}}>{{{/analysis_pace}}}</option>
-    <option value="gap" {{panelPrefs.type === 'gap' ? 'selected' : ''}}>{{{/analysis_gap}}}</option>
-    <option value="hr" {{panelPrefs.type === 'hr' ? 'selected' : ''}}>{{{/analysis_heartrate}}}</option>
+    <option value="pace" {{panelPrefs.type === 'pace' ? 'selected' : ''}}>{{{/pace}}}</option>
+    <option value="gap" {{panelPrefs.type === 'gap' ? 'selected' : ''}}>{{{/gap}}}</option>
+    <option value="hr" {{panelPrefs.type === 'hr' ? 'selected' : ''}}>{{{/heartrate}}}</option>
 </select>
 
 <% if (!obj.disablePeriod) { %>
