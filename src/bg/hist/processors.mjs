@@ -470,7 +470,15 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
             }
             stats.activeTime = sauce.data.activeTime(streams.time, streams.active);
             if (streams.altitude && stats.altitudeGain == null) {
-                stats.altitudeGain = sauce.geo.altitudeChanges(streams.altitude).gain;
+                // Be consistent with analysis stats...
+                const smoothing = 15;
+                let altStream;
+                if (streams.altitude.length > smoothing * 2) {
+                    altStream = sauce.data.smooth(smoothing, streams.altitude);
+                } else {
+                    altStream = streams.altitude;
+                }
+                stats.altitudeGain = sauce.geo.altitudeChanges(altStream).gain;
             }
             let estimate = false;
             let watts = activity.data.basetype !== 'run' && !disableRunWatts ? streams.watts : undefined;
