@@ -4,7 +4,7 @@ sauce.ns('ui', ns => {
     'use strict';
 
     const L = sauce.locale;
-    const LM = x => L.getMessage('analysis_' + x);
+    const LM = x => L.getMessage(x);
     const H = L.human;
 
 
@@ -191,8 +191,7 @@ sauce.ns('ui', ns => {
                     run: [0.5, 2, 5, 10],
                     swim: [0.5, 0.85, 1.1, 1.75],
                 }[activityType] || [0.5, 10, 15, 30];
-                const labelKey = paceType === 'speed' ? 'speed' : 'pace';
-                const label = await LM(labelKey);
+                const label = await LM(paceType === 'speed' ? 'speed' : 'pace');
                 specs.push({
                     data: streams.velocity_smooth || smoothVelocity('distance', streams),
                     formatter: x =>

@@ -25,7 +25,7 @@
         icon: 'balance-scale-right-duotone',
     }*/];
     const localesPromise = sauce.locale.getMessagesObject(
-        ['/performance', '/analysis_options', ...perfMenu.map(x => x.localeKey)],
+        ['/performance', '/options', ...perfMenu.map(x => x.localeKey)],
         'menu_performance');
 
 
@@ -49,7 +49,7 @@
         const span = document.createElement('span');
         span.textContent = `Sauce Options`;
         a.appendChild(span);
-        localesPromise.then(locales => span.textContent = `Sauce ${locales.analysis_options}`);
+        localesPromise.then(locales => span.textContent = `Sauce ${locales.options}`);
         const logo = document.createElement('img');
         logo.src = sauce.getURL('images/logo_horiz_128x48.png');
         a.appendChild(logo);
