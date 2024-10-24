@@ -65,19 +65,33 @@
     "menu_performance_compare": {
         "message": "Comparar atividades"
     },
-    "analysis_options": {
+    "flags": {
+        "message": "Bandeiras"
+    },
+    "tss": {
+        "message": "TSS®",
+        "description": "IMMUTABLE"
+    },
+    "np": {
+        "message": "NP®",
+        "description": "IMMUTABLE"
+    },
+    "columns": {
+        "message": "Colunas"
+    },
+    "options": {
         "message": "Opções"
     },
-    "analysis_tools": {
+    "tools": {
         "message": "Ferramentas"
     },
-    "analysis_time": {
+    "time": {
         "message": "Tempo"
     },
     "analysis_timing": {
         "message": "Tempo"
     },
-    "analysis_gap": {
+    "gap": {
         "message": "RAI",
         "description": "IMMUTABLE"
     },
@@ -87,24 +101,22 @@
     "analysis_descended": {
         "message": "descendente"
     },
-    "analysis_avg": {
+    "avg": {
         "message": "médio"
     },
-    "analysis_min": {
+    "min": {
         "message": "mín."
     },
-    "analysis_max": {
+    "max": {
         "message": "máx."
     },
-    "analysis_lowest": {
-        "message": "Mais baixo",
-        "description": "IMMUTABLE"
+    "lowest": {
+        "message": "Mais baixo"
     },
-    "analysis_highest": {
-        "message": "Mais alta",
-        "description": "IMMUTABLE"
+    "highest": {
+        "message": "Mais alto"
     },
-    "analysis_elapsed": {
+    "elapsed": {
         "message": "decorrido"
     },
     "analysis_elapsed_time_tooltip": {
@@ -184,17 +196,17 @@
         "message": "Velocidade ascencional média em metros por hora",
         "description": "IMMUTABLE"
     },
-    "analysis_power_tss_tooltip": {
+    "power_tss_help": {
         "message": "Training Stress Score®: Um indicador de carga de estresse baseado em potência"
     },
-    "analysis_trimp_tss_tooltip": {
+    "trimp_tss_help": {
         "message": "TRIMP (TRaining IMPulse) baseado no Training Stress Score®: Um indicador de carga de treinamento em frequência cardíaca de reserva",
         "description": "IMMUTABLE"
     },
-    "analysis_estimate_tss_tooltip": {
+    "estimate_tss_help": {
         "message": "Estimated Training Stress Score®: Indicador de carga de estresse com base na potência estimada"
     },
-    "analysis_override_tss_tooltip": {
+    "override_tss_help": {
         "message": "Substituição manual para Training Stress Score®"
     },
     "analysis_start_of_effort_tooltip": {
@@ -225,10 +237,10 @@
     "analysis_high_pace_tooltip": {
         "message": "Ritmo mais alto"
     },
-    "analysis_expand_tooltip": {
+    "expand_tooltip": {
         "message": "Clique para expandir"
     },
-    "analysis_compress_tooltip": {
+    "compress_tooltip": {
         "message": "Clique para recolher"
     },
     "analysis_tss_link_tooltip": {
@@ -296,13 +308,13 @@
         "message": "Em imobilidade",
         "description": "IMMUTABLE"
     },
-    "analysis_active": {
+    "active": {
         "message": "Ativo"
     },
     "analysis_stats": {
         "message": "Estatísticas"
     },
-    "analysis_energy": {
+    "energy": {
         "message": "Energia"
     },
     "analysis_expended": {
@@ -312,24 +324,24 @@
         "message": "Dispêndio",
         "description": "IMMUTABLE"
     },
-    "analysis_elevation": {
+    "elevation": {
         "message": "Altitude",
         "description": "IMMUTABLE"
     },
     "analysis_environment": {
         "message": "Ambiente"
     },
-    "analysis_grade": {
+    "grade": {
         "message": "Inclinação",
         "description": "IMMUTABLE"
     },
-    "analysis_estimated": {
+    "estimated": {
         "message": "estimado"
     },
-    "analysis_data": {
+    "data": {
         "message": "Dados"
     },
-    "analysis_rank": {
+    "rank": {
         "message": "Classificação"
     },
     "analysis_raw": {
@@ -348,43 +360,42 @@
     "analysis_perf_predictor_tooltip": {
         "message": "Preveja o desempenho dos esforços de ciclismo."
     },
-    "analysis_pace": {
+    "pace": {
         "message": "Ritmo"
     },
-    "analysis_speed": {
+    "speed": {
         "message": "Velocidade"
     },
-    "analysis_distance": {
+    "distance": {
         "message": "Distância"
     },
-    "analysis_samples": {
+    "samples": {
         "message": "Amostras"
     },
-    "analysis_beta": {
+    "beta": {
         "message": "BETA"
     },
     "analysis_start_of_effort": {
         "message": "Início do esforço",
         "description": "IMMUTABLE"
     },
-    "analysis_elapsed_time": {
+    "elapsed_time": {
         "message": "Tempo decorrido"
     },
-    "analysis_heartrate": {
+    "heartrate": {
         "message": "Frequência cardíaca"
     },
-    "analysis_hr": {
+    "hr": {
         "message": "FC",
         "description": "IMMUTABLE"
     },
-    "analysis_temp": {
-        "message": "Temperatura",
-        "description": "IMMUTABLE"
+    "temp": {
+        "message": "Temperatura"
     },
-    "analysis_cadence": {
+    "cadence": {
         "message": "Cadência"
     },
-    "analysis_stride": {
+    "stride": {
         "message": "Passada",
         "description": "IMMUTABLE"
     },
@@ -428,27 +439,27 @@
         "message": "Melhor RAI",
         "description": "IMMUTABLE"
     },
-    "analysis_watts": {
+    "watts": {
         "message": "Watts"
     },
-    "analysis_power": {
+    "power": {
         "message": "Potência",
         "description": "IMMUTABLE"
     },
-    "analysis_sea_power": {
+    "sea_power": {
         "message": "Sea Power",
         "description": "IMMUTABLE"
     },
-    "analysis_weight": {
+    "weight": {
         "message": "Peso"
     },
-    "analysis_segments": {
+    "segments": {
         "message": "Segmentos"
     },
     "analysis_empty_info_aside": {
         "message": "Nenhum segmento ou outros dados para este intervalo."
     },
-    "analysis_best_performances": {
+    "best_performances": {
         "message": "Melhores Performances"
     },
     "analysis_best_all": {
@@ -469,13 +480,13 @@
     "analysis_change": {
         "message": "Mudar"
     },
-    "analysis_gain": {
+    "gain": {
         "message": "Ganho"
     },
-    "analysis_loss": {
+    "loss": {
         "message": "Perda"
     },
-    "analysis_view": {
+    "view": {
         "message": "Visualizar"
     },
     "analysis_power_profile_about1": {
@@ -535,15 +546,17 @@
     "analysis_rank_cat_recent": {
         "message": "90 dias"
     },
-    "analysis_value": {
+    "value": {
         "message": "Valor"
     },
-    "analysis_activity": {
+    "activity": {
         "message": "Atividade"
     },
-    "analysis_date": {
-        "message": "Data",
-        "description": "IMMUTABLE"
+    "date": {
+        "message": "Data"
+    },
+    "peak_efforts": {
+        "message": "Esforços de pico"
     },
     "analysis_peaks_settings_dialog_title": {
         "message": "Configurações de melhores marcas de esforço",
@@ -570,7 +583,7 @@
     "analysis_click_to_change": {
         "message": "Clique para alterar"
     },
-    "analysis_download": {
+    "download": {
         "message": "Download"
     },
     "analysis_keyboard_tooltip": {
@@ -747,10 +760,6 @@
     "perf_predictor_cda_tooltip": {
         "message": "Coeficiente de arrasto aerodinâmico vezes a área da superfície frontal"
     },
-    "perf_predictor_power": {
-        "message": "Potência",
-        "description": "IMMUTABLE"
-    },
     "perf_predictor_power_tooltip": {
         "message": "Watts médios no esforço",
         "description": "IMMUTABLE"
@@ -794,9 +803,6 @@
     "perf_predictor_wind_tooltip": {
         "message": "A velocidade relativa do vento contra o ciclista ou valores negativos para ventos a favor",
         "description": "IMMUTABLE"
-    },
-    "perf_predictor_time": {
-        "message": "Tempo"
     },
     "perf_predictor_original_performance": {
         "message": "Desempenho original"
@@ -1180,9 +1186,6 @@
         "message": "Ajuste a velocidade geral em porcentagem",
         "description": "IMMUTABLE"
     },
-    "live_segment_time": {
-        "message": "Tempo"
-    },
     "live_segment_beg1": {
         "message": "Olá, meu nome é Justin e sou o autor do Sauce,",
         "description": "IMMUTABLE"
@@ -1493,6 +1496,9 @@
     },
     "performance_filter": {
         "message": "Filtro"
+    },
+    "performance_split_view": {
+        "message": "Visualização dividida"
     },
     "season_start": {
         "message": "início da temporada"
