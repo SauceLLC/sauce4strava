@@ -42,14 +42,14 @@
                             <% } %>
                             <% if (day.powerZonesTime.length || day.hrZonesTime.length) { %>
                                 <div class="btn btn-icon-only btn-unstyled expand"
-                                     title="{{{/analysis_expand_tooltip}}}">{{=icon plus-square-duotone=}}</div>
+                                     title="{{{/expand_tooltip}}}">{{=icon plus-square-duotone=}}</div>
                                 <div class="btn btn-icon-only btn-unstyled compress"
-                                     title="{{{/analysis_compress_tooltip}}}">{{=icon minus-square-duotone=}}</div>
+                                     title="{{{/compress_tooltip}}}">{{=icon minus-square-duotone=}}</div>
                                 <div class="expanded-details">
                                     <% let totTime = sauce.data.sum(day.powerZonesTime); %>
                                     <% for (const [i, x] of day.powerZonesTime.entries()) { %>
                                         <row>
-                                            <key>{{{/analysis_power}}} Z{{i + 1}}:</key>
+                                            <key>{{{/power}}} Z{{i + 1}}:</key>
                                             <value>{{humanTimer(x)}}</value>
                                             <small>({{humanNumber(x / totTime * 100)}}%)</small>
                                         </row>
@@ -57,7 +57,7 @@
                                     <% totTime = sauce.data.sum(day.hrZonesTime); %>
                                     <% for (const [i, x] of day.hrZonesTime.entries()) { %>
                                         <row>
-                                            <key>{{{/analysis_heartrate}}} Z{{i + 1}}:</key>
+                                            <key>{{{/hr}}} Z{{i + 1}}:</key>
                                             <value>{{humanTimer(x)}}</value>
                                             <small>({{humanNumber(x / totTime * 100)}}%)</small>
                                         </row>
@@ -68,13 +68,13 @@
                     <% } %>
                     <% if (day.duration) { %>
                         <row>
-                            <key>{{{/analysis_time}}}:</key>
+                            <key>{{{/time}}}:</key>
                             <value>{{humanTimer(day.duration)}}</value>
                         </row>
                     <% } %>
                     <% if (day.distance) { %>
                         <row>
-                            <key>{{{/analysis_distance}}}:</key>
+                            <key>{{{/distance}}}:</key>
                             <value>
                                 {{humanDistance(day.distance)}}<abbr
                                     class="unit short">{{sauce.locale.distanceFormatter.shortUnitKey()}}</abbr>
@@ -83,7 +83,7 @@
                     <% } %>
                     <% if (day.kj) { %>
                         <row>
-                            <key>{{{/analysis_energy}}}:</key>
+                            <key>{{{/energy}}}:</key>
                             <value>{{humanNumber(day.kj)}}<abbr class="unit short">kJ</abbr></value>
                         </row>
                     <% } %>
@@ -135,7 +135,7 @@
                     <% } %>
                     <% const tssObj = sauce.model.getActivityTSSMeta(a); %>
                     <% if (tssObj.tss != null) { %>
-                        <% const tooltipKey = `/analysis_${tssObj.type}_tss_tooltip`; %>
+                        <% const tooltipKey = `/${tssObj.type}_tss_help`; %>
                         <row>
                             <key>
                                 <attr for="tp" title="{{{[tooltipKey]}}}">{{({trimp: 't', override: 'm', estimate: 'e'}[tssObj.type]) || ''}}TSS®</attr>:
@@ -143,29 +143,29 @@
                             <value>{{humanNumber(tssObj.tss)}}</value>
                             <% if ([a.tssOverride, a.stats?.tss, a.stats?.tTss].filter(x => x != null).length > 1) { %>
                                 <div class="btn btn-icon-only btn-unstyled expand"
-                                     title="{{{/analysis_expand_tooltip}}}">{{=icon plus-square-duotone=}}</div>
+                                     title="{{{/expand_tooltip}}}">{{=icon plus-square-duotone=}}</div>
                                 <div class="btn btn-icon-only btn-unstyled compress"
-                                     title="{{{/analysis_compress_tooltip}}}">{{=icon minus-square-duotone=}}</div>
+                                     title="{{{/compress_tooltip}}}">{{=icon minus-square-duotone=}}</div>
                                 <div class="expanded-details">
                                     <% if (a.tssOverride != null) { %>
                                         <row>
-                                            <key><attr for="tp" title="{{{/analysis_override_tss_tooltip}}}">mTSS®</attr>:</key>
+                                            <key><attr for="tp" title="{{{/override_tss_help}}}">mTSS®</attr>:</key>
                                             <value>{{humanNumber(a.tssOverride)}}</value>
                                         </row>
                                     <% } %>
                                     <% if (a.stats && a.stats.tss != null) { %>
                                         <row>
                                             <% if (a.stats.estimate) { %>
-                                                <key><attr for="tp" title="{{{/analysis_estimate_tss_tooltip}}}">eTSS®</attr>:</key>
+                                                <key><attr for="tp" title="{{{/estimate_tss_help}}}">eTSS®</attr>:</key>
                                             <% } else { %>
-                                                <key><attr for="tp" title="{{{/analysis_power_tss_tooltip}}}">TSS®</attr>:</key>
+                                                <key><attr for="tp" title="{{{/power_tss_help}}}">TSS®</attr>:</key>
                                             <% } %>
                                             <value>{{humanNumber(a.stats.tss)}}</value>
                                         </row>
                                     <% } %>
                                     <% if (a.stats && a.stats.tTss != null) { %>
                                         <row>
-                                            <key><attr for="tp" title="{{{/analysis_trimp_tss_tooltip}}}">tTSS®</attr>:</key>
+                                            <key><attr for="tp" title="{{{/trimp_tss_help}}}">tTSS®</attr>:</key>
                                             <value>{{humanNumber(a.stats.tTss)}}</value>
                                         </row>
                                     <% } %>
@@ -193,15 +193,15 @@
                                 <% } %>
                                 <% if ((a.stats.powerZonesTime && a.stats.powerZonesTime.length) || (a.stats.hrZonesTime && a.stats.hrZonesTime.length)) { %>
                                     <div class="btn btn-icon-only btn-unstyled expand"
-                                         title="{{{/analysis_expand_tooltip}}}">{{=icon plus-square-duotone=}}</div>
+                                         title="{{{/expand_tooltip}}}">{{=icon plus-square-duotone=}}</div>
                                     <div class="btn btn-icon-only btn-unstyled compress"
-                                         title="{{{/analysis_compress_tooltip}}}">{{=icon minus-square-duotone=}}</div>
+                                         title="{{{/compress_tooltip}}}">{{=icon minus-square-duotone=}}</div>
                                     <div class="expanded-details">
                                         <% const powerZonesTime = a.stats.powerZonesTime || []; %>
                                         <% let totTime = sauce.data.sum(powerZonesTime); %>
                                         <% for (const [i, x] of powerZonesTime.entries()) { %>
                                             <row>
-                                                <key>{{{/analysis_power}}} Z{{i + 1}}:</key>
+                                                <key>{{{/power}}} Z{{i + 1}}:</key>
                                                 <value>{{humanTimer(x)}}</value>
                                                 <small>({{humanNumber(x / totTime * 100)}}%)</small>
                                             </row>
@@ -210,7 +210,7 @@
                                         <% totTime = sauce.data.sum(hrZonesTime); %>
                                         <% for (const [i, x] of hrZonesTime.entries()) { %>
                                             <row>
-                                                <key>{{{/analysis_heartrate}}} Z{{i + 1}}:</key>
+                                                <key>{{{/hr}}} Z{{i + 1}}:</key>
                                                 <value>{{humanTimer(x)}}</value>
                                                 <small>({{humanNumber(x / totTime * 100)}}%)</small>
                                             </row>
@@ -221,7 +221,7 @@
                         <% } %>
                         <% if (a.stats.activeTime) { %>
                             <row>
-                                <key>{{{/analysis_time}}}:</key>
+                                <key>{{{/time}}}:</key>
                                 <value>{{humanTimer(a.stats.activeTime)}}</value>
                             </row>
                         <% } %>
@@ -234,35 +234,35 @@
                                     <key>xPower:</key>
                                     <value>{{humanNumber(a.stats.xp)}}<abbr class="unit short">w</abbr></value>
                                 <% } else { %>
-                                    <key>{{{/analysis_power}}}:</key>
+                                    <key>{{{/power}}}:</key>
                                     <value>{{humanNumber(a.stats.power)}}<abbr class="unit short">w</abbr></value>
                                 <% } %>
                                 <div class="btn btn-icon-only btn-unstyled expand"
-                                     title="{{{/analysis_expand_tooltip}}}">{{=icon plus-square-duotone=}}</div>
+                                     title="{{{/expand_tooltip}}}">{{=icon plus-square-duotone=}}</div>
                                 <div class="btn btn-icon-only btn-unstyled compress"
-                                     title="{{{/analysis_compress_tooltip}}}">{{=icon minus-square-duotone=}}</div>
+                                     title="{{{/compress_tooltip}}}">{{=icon minus-square-duotone=}}</div>
                             </row>
                         <% } %>
                         <% if (a.basetype === 'run' && a.stats.activeTime && a.stats.distance) { %>
                             <row class="pace" data-expand-mode="peaks" data-peak-type="pace">
-                                <key>{{{/analysis_pace}}}:</key>
-                                <value>{{humanPace(a.stats.activeTime / a.stats.distance, {suffix: true})}}</value>
+                                <key>{{{/pace}}}:</key>
+                                <value>{{humanPace(a.stats.activeTime / a.stats.distance, {suffix: true, activityType: a.basetype})}}</value>
                                 <div class="btn btn-icon-only btn-unstyled expand"
-                                     title="{{{/analysis_expand_tooltip}}}">{{=icon plus-square-duotone=}}</div>
+                                     title="{{{/expand_tooltip}}}">{{=icon plus-square-duotone=}}</div>
                                 <div class="btn btn-icon-only btn-unstyled compress"
-                                     title="{{{/analysis_compress_tooltip}}}">{{=icon minus-square-duotone=}}</div>
+                                     title="{{{/compress_tooltip}}}">{{=icon minus-square-duotone=}}</div>
                             </row>
                         <% } %>
                         <% if (a.stats.distance) { %>
                             <row>
-                                <key>{{{/analysis_distance}}}:</key>
+                                <key>{{{/distance}}}:</key>
                                 <value>{{humanDistance(a.stats.distance)}}<abbr
                                     class="unit short">{{sauce.locale.distanceFormatter.shortUnitKey()}}</abbr></value>
                             </row>
                         <% } %>
                         <% if (a.stats.kj) { %>
                             <row>
-                                <key>{{{/analysis_energy}}}:</key>
+                                <key>{{{/energy}}}:</key>
                                 <value>{{humanNumber(a.stats.kj)}}<abbr class="unit short">kJ</abbr></value>
                             </row>
                         <% } %>

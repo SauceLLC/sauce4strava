@@ -128,7 +128,7 @@
     </div>
 
     <div class="entry" title="{{{power_tooltip}}}">
-        <key>{{{power}}}:</key>
+        <key>{{{/power}}}:</key>
         <input name="power" type="number" placeholder="{{power}}" value="{{power}}"/>
         <abbr class="unit">w</abbr>
     </div>
@@ -152,14 +152,14 @@
     </div>
 
     <div class="entry" title="{{{distance_tooltip}}}">
-        <key>{{{/analysis_distance}}}:</key>
+        <key>{{{/distance}}}:</key>
         <input name="distance" type="number" placeholder="{{distance}}" value="{{distance}}" step="0.001" min="0"/>
         <abbr class="unit">{{distanceUnit}}</abbr>
     </div>
 
 
     <div class="entry" title="{{{elevation_tooltip}}}">
-        <key>{{{elevation}}}:</key>
+        <key>{{{/elevation}}}:</key>
         <input name="elevation" type="number" placeholder="{{elevation}}" value="{{elevation}}"/>
         <abbr class="unit">{{elevationUnit}}</abbr>
     </div>
@@ -176,16 +176,16 @@
         <div class="heading">{{{original_performance}}}:</div>
 
         <div class="entry">
-            <key>{{{time}}}:</key> {{time}}
+            <key>{{{/time}}}:</key> {{time}}
         </div>
 
         <div class="entry">
-            <key>{{{/analysis_speed}}}:</key> {{speed}}<abbr class="unit">{{speedUnit}}</abbr>
+            <key>{{{/speed}}}:</key> {{speed}}<abbr class="unit">{{speedUnit}}</abbr>
         </div>
 
         <% if (wkg) { %>
             <div class="entry">
-                <key>Watts/kg:</key> {{wkg}}<abbr class="unit">w/kg</abbr>
+                <key>{{{/watts}}}/kg:</key> {{wkg}}<abbr class="unit">w/kg</abbr>
             </div>
         <% } %>
     </section>
@@ -194,13 +194,13 @@
         <div class="heading">{{{predicted_performance}}}:</div>
 
         <div class="entry">
-            <key>{{{time}}}:</key>
+            <key>{{{/time}}}:</key>
             <span class="time"></span>
             <small class="ahead-behind"></small>
         </div>
 
         <div class="entry">
-            <key>{{{/analysis_speed}}}:</key>
+            <key>{{{/speed}}}:</key>
             <span class="speed"></span><abbr class="unit">{{speedUnit}}</abbr>
         </div>
 

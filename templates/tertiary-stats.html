@@ -7,7 +7,7 @@
     <% } else if (obj.power) { %>
         <li>
             <strong>{{humanNumber(power)}}<abbr class="unit">w</abbr></strong>
-            <div class="label">{{{power}}}</div>
+            <div class="label">{{{/power}}}</div>
         </li>
     <% } %>
 
@@ -20,7 +20,7 @@
     <% } %>
 
     <% if (tss || isSyncAthlete) { %>
-        <% const tooltipKey = `${tssType || 'power'}_tss_tooltip`; %>
+        <% const tooltipKey = `/${tssType || 'power'}_tss_help`; %>
         <li title="{{{[tooltipKey]}}}">
             <% if (isSyncAthlete) { %>
                 <strong class="sauce-editable-field tss">
@@ -66,14 +66,14 @@
                       title="{{{weight_input_tooltip}}}"/><!--
             --><abbr class="unit" title="Weight">{{weightUnit}}</abbr>
         </strong>
-        <div class="label">{{{weight}}}</div>
+        <div class="label">{{{/weight}}}</div>
     </li>
 
     <% if (obj.foodReward) { %>
         <div class="divider"></div>
 
         <li title="{{{[foodReward.descLocaleKey]}}} - {{humanNumber(foodReward.kcals)}} Calories
-  {{{activity}}}: {{humanNumber(kj)}}kJ / {{humanNumber(foodReward.kcals * foodReward.count)}} Calories
+  {{{/activity}}}: {{humanNumber(kj)}}kJ / {{humanNumber(foodReward.kcals * foodReward.count)}} Calories
 
 {{{click_for_more_nutritional_info}}}" class="sauce-food"
             <% if (foodReward.url) { %>

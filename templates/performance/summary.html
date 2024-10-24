@@ -10,7 +10,7 @@
 
         <% if (totalTime && weeklyTime) { %>
             <row class="full">
-                <header>{{{/analysis_time}}}:</header>
+                <header>{{{/time}}}:</header>
                 <div class="backdrop-icon">{{=icon watch-duotone=}}</div>
                 <h2>{-humanDuration(totalTime, {maxPeriod: 3600, round: 3600, html: true})-}</h2>
                 <h3>
@@ -22,7 +22,7 @@
 
         <% if (totalDistance && weeklyDistance) { %>
             <row class="full">
-                <header>{{{/analysis_distance}}}:</header>
+                <header>{{{/distance}}}:</header>
                 <div class="backdrop-icon">{{=icon road-duotone=}}</div>
                 <h2>{-humanDistance(totalDistance, {precision: 0, html: true})-}</h2>
                 <h3>
@@ -34,7 +34,7 @@
 
         <% if (totalAltGain && weeklyAltGain) { %>
             <row class="full">
-                <header>{{{/analysis_elevation}}}:</header>
+                <header>{{{/elevation}}}:</header>
                 <div class="backdrop-icon">{{=icon mountains-duotone=}}</div>
                 <h2>{-humanElevation(totalAltGain, {html: true})-}</h2>
                 <h3>
@@ -91,7 +91,7 @@
 
         <% if (tssAvg) { %>
             <row>
-                <key>{{{/analysis_avg}}} <attr for="tp">TSS®</attr>:</key>
+                <key>{{{/avg}}} <attr for="tp">TSS®</attr>:</key>
                 <value>{{humanNumber(tssAvg)}}</value>
             </row>
         <% } %>
@@ -117,23 +117,23 @@
              data-id="highlights">
         <header>
             <i class="icon">{{=icon medal-duotone=}}</i>
-            <div class="title">{{{/analysis_best_performances}}}</div>
+            <div class="title">{{{/best_performances}}}</div>
             <a class="view-control collapser">{{=icon minus-square-duotone=}}</a>
             <a class="view-control expander">{{=icon plus-square-duotone=}}</a>
         </header>
 
         <select name="type">
-            <option value="power" {{prefs.type === 'power' ? 'selected' : ''}}>{{{/analysis_power}}}</option>
-            <option value="power_wkg" {{prefs.type === 'power_wkg' ? 'selected' : ''}}>{{{/analysis_power}}} (w/kg)</option>
+            <option value="power" {{prefs.type === 'power' ? 'selected' : ''}}>{{{/power}}}</option>
+            <option value="power_wkg" {{prefs.type === 'power_wkg' ? 'selected' : ''}}>{{{/power}}} (w/kg)</option>
             <% if (!sauce.options['analysis-disable-np']) { %>
                 <option value="np" {{prefs.type === 'np' ? 'selected' : ''}}>NP®</option>
             <% } %>
             <% if (!sauce.options['analysis-disable-xp']) { %>
                 <option value="xp" {{prefs.type === 'xp' ? 'selected' : ''}}>xPower</option>
             <% } %>
-            <option value="pace" {{prefs.type === 'pace' ? 'selected' : ''}}>{{{/analysis_pace}}}</option>
-            <option value="gap" {{prefs.type === 'gap' ? 'selected' : ''}}>{{{/analysis_gap}}}</option>
-            <option value="hr" {{prefs.type === 'hr' ? 'selected' : ''}}>{{{/analysis_heartrate}}}</option>
+            <option value="pace" {{prefs.type === 'pace' ? 'selected' : ''}}>{{{/pace}}}</option>
+            <option value="gap" {{prefs.type === 'gap' ? 'selected' : ''}}>{{{/gap}}}</option>
+            <option value="hr" {{prefs.type === 'hr' ? 'selected' : ''}}>{{{/heartrate}}}</option>
         </select>
 
         <% for (const x of peaks) { %>

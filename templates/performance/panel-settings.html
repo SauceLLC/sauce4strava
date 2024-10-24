@@ -2,7 +2,7 @@
     <div class="entry">
         <key>{{{/name}}}:</key>
         <value>
-            <input type="text" name="name" value="{{settings.name}}"
+            <input type="text" name="panel-name" value="{{settings.name}}"
                    placeholder="{{{['/' + panelView.constructor.nameLocaleKey]}}}"/>
         </value>
     </div>
@@ -10,7 +10,7 @@
     <div class="entry">
         <key>{{{panel_position}}}:</key>
         <value>
-            <input type="range" name="position" value="{{order}}"
+            <input type="range" name="panel-position" value="{{order}}"
                    min="0" max="{{panelCount - 1}}" step="1"/>
             <span>{{order + 1}}<span>
         </value>
@@ -19,7 +19,7 @@
     <div class="entry">
         <key>{{{panel_width}}}:</key>
         <value>
-            <input type="range" class="size-factor" name="width" value="{{settings.widthFactor || 0}}"
+            <input type="range" class="size-factor" data-dim="width" value="{{settings.widthFactor || 0}}"
                    min="0" max="1" step="0.25"/>
             <span>{{sizeHint('width')}}</span>
         </value>
@@ -28,7 +28,7 @@
     <div class="entry">
         <key>{{{panel_height}}}:</key>
         <value>
-            <input type="range" class="size-factor" name="height" value="{{settings.heightFactor || 0}}"
+            <input type="range" class="size-factor" data-dim="height" value="{{settings.heightFactor || 0}}"
                    min="0" max="4" step="0.01"/>
             <span>{{sizeHint('height')}}</span>
         </value>

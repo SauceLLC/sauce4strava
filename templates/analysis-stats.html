@@ -5,30 +5,30 @@
 </div>
 
 <div class="expander">
-    <div class="icon expand" title="{{{expand_tooltip}}}">{{=icon angle-double-down-solid=}}</div>
-    <div class="icon compress" title="{{{compress_tooltip}}}">{{=icon angle-double-up-solid=}}</div>
+    <div class="icon expand" title="{{{/expand_tooltip}}}">{{=icon angle-double-down-solid=}}</div>
+    <div class="icon compress" title="{{{/compress_tooltip}}}">{{=icon angle-double-up-solid=}}</div>
 </div>
 
 <div class="sauce-data-tuple">
     <line class="heading" title="{{{active_time_tooltip}}}">
-        <key>{{{active}}}</key>
+        <key>{{{/active}}}</key>
         <value>{{humanTimer(active)}}</value>
     </line>
 
     <% if (obj.pace) { %>
         <% if (isSpeed) { %>
             <line title="{{{active_speed_tooltip}}}">
-                <key>{{{speed}}}</key>
+                <key>{{{/speed}}}</key>
         <% } else { %>
             <line title="{{{active_pace_tooltip}}}">
-                <key>{{{pace}}}</key>
+                <key>{{{/pace}}}</key>
         <% } %>
             <value>{-humanPace(pace.active, {html: true, suffix: true})-}</value>
         </line>
     
         <% if (pace.gap) { %>
             <line title="{{{gap_tooltip}}}">
-                <key>{{{gap}}}</key>
+                <key>{{{/gap}}}</key>
                 <value>{-humanPace(pace.gap, {html: true, suffix: true})-}</value>
             </line>
         <% } %>
@@ -36,7 +36,7 @@
 
     <% if (elapsed !== active) { %>
         <line title="{{{elapsed_time_tooltip}}}">
-            <key>{{{elapsed}}}</key>
+            <key>{{{/elapsed}}}</key>
             <value>{{humanTimer(elapsed)}}</value>
         </line>
     <% } %>
@@ -50,17 +50,17 @@
 </div>
 
 <% if (obj.power) { %>
-    <% const est = power.estimate ? `<span title="${sauce.locale.fastGetMessage('analysis_estimated')}">~</span>`: ''; %>
+    <% const est = power.estimate ? `<span title="${sauce.locale.fastGetMessage('estimated')}">~</span>`: ''; %>
     <div class="sauce-data-divider"></div>
     <div class="sauce-data-tuple">
         <line class="heading" title="{{{active_power_tooltip}}}">
-            <key>{{{power}}}</key>
+            <key>{{{/power}}}</key>
             <value>{-est-}{-hNum(power.activeAvg, 'w')-}</value>
         </line>
 
         <% if (power.activeWKg) { %>
             <line title="{{{wkg_tooltip}}}">
-                <key>{{{watts}}}/kg</key>
+                <key>{{{/watts}}}/kg</key>
                 <value>{-est-}{{humanNumber(power.activeWKg, {fixed: true, precision: 1})}}</value>
             </line>
         <% } %>
@@ -81,7 +81,7 @@
 
         <% if (power.elapsedAvg && Math.round(power.elapsedAvg) !== Math.round(power.activeAvg)) { %>
             <line title="{{{elapsed_power_tooltip}}}">
-                <key>{{{elapsed}}}</key>
+                <key>{{{/elapsed}}}</key>
                 <value>{-est-}{-hNum(power.elapsedAvg, 'w')-}</value>
             </line>
         <% } %>
@@ -99,20 +99,20 @@
     <div class="sauce-data-divider"></div>
     <div class="sauce-data-tuple">
         <line class="heading" title="{{{energy_tooltip}}}">
-            <key>{{{energy}}}</key>
+            <key>{{{/energy}}}</key>
             <value>{-hNum(energy.kj, 'kJ')-}</value>
         </line>
 
         <% if (energy.tss) { %>
             <% const tssType = obj.power?.estimate ? 'estimate' : 'power'; %>
-            <line title="{{{[`${tssType}_tss_tooltip`]}}}">
+            <line title="{{{[`/${tssType}_tss_help`]}}}">
                 <key><attr for="tp">{{obj.power?.estimate ? 'e' : ''}}TSS®</attr></key>
                 <value>{{humanNumber(energy.tss)}}</value>
             </line>
         <% } %>
 
         <% if (energy.tTss) { %>
-            <line title="{{{trimp_tss_tooltip}}}">
+            <line title="{{{/trimp_tss_help}}}">
                 <key><attr for="tp">tTSS®</attr></key>
                 <value>{{humanNumber(energy.tTss)}}</value>
             </line>
@@ -150,7 +150,7 @@
     <div class="sauce-data-divider"></div>
     <div class="sauce-data-tuple">
         <line class="heading">
-            <key>{{{elevation}}}</key>
+            <key>{{{/elevation}}}</key>
             <value title="{{{elevation_avg_tooltip}}}">~{-humanElevation(elevation.avg, {html: true, suffix: true})-}</value>
         </line>
 
@@ -163,23 +163,23 @@
 
         <% if (elevation.gain && elevation.loss && elevation.grade < -0.01) { %>
             <line title="{{{elevation_loss_tooltip}}}">
-                <key>{{{loss}}}</key>
+                <key>{{{/loss}}}</key>
                 <value class="sauce-negative">-{-humanElevation(elevation.loss, {html: true, suffix: true})-}</value>
             </line>
             <line title="{{{elevation_gain_tooltip}}}">
-                <key>{{{gain}}}</key>
+                <key>{{{/gain}}}</key>
                 <value class="sauce-positive">+{-humanElevation(elevation.gain, {html: true, suffix: true})-}</value>
             </line>
         <% } else { %>
             <% if (elevation.gain) { %>
                 <line title="{{{elevation_gain_tooltip}}}">
-                    <key>{{{gain}}}</key>
+                    <key>{{{/gain}}}</key>
                     <value class="sauce-positive">+{-humanElevation(elevation.gain, {html: true, suffix: true})-}</value>
                 </line>
             <% } %>
             <% if (elevation.loss) { %>
                 <line title="{{{elevation_loss_tooltip}}}">
-                    <key>{{{loss}}}</key>
+                    <key>{{{/loss}}}</key>
                     <value class="sauce-negative">-{-humanElevation(elevation.loss, {html: true, suffix: true})-}</value>
                 </line>
             <% } %>
@@ -190,12 +190,12 @@
 <div class="sauce-data-divider"></div>
 <div class="sauce-data-tuple">
     <line class="heading">
-        <key>{{{data}}}</key>
-        <value>{{samples.toLocaleString()}} {{{samples}}}</value>
+        <key>{{{/data}}}</key>
+        <value>{{samples.toLocaleString()}} {{{/samples}}}</value>
     </line>
 
     <line>
-        <key>{{{view}}}</key>
+        <key>{{{/view}}}</key>
         <value><a class="sauce-raw-data">{{{raw}}}</a>&thinsp;•&thinsp;<a class="sauce-graph-data">{{{graphs}}}</a></value>
     </line>
 
@@ -220,7 +220,7 @@
 <div class="sauce-data-tuple sauce-rank-badge">
     <% if (supportsRankBadge && obj.power && !power.estimate && power.rank && power.rank.level > 1) { %>
         <line class="heading">
-            <key>{{{rank}}}</key>
+            <key>{{{/rank}}}</key>
             <value>{-hNum(power.rank.level * 100, '%')-}</value>
         </line>
         <% if (power.rank.badge) { %>

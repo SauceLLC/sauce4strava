@@ -6,7 +6,7 @@
 
     <section>
         <% if (obj.power && power.elapsedWKg && power.rank && power.rank.badge && !power.estimate) { %>
-            <heading><div class="title">{{{timing}}} / {{{rank}}}</div></heading>
+            <heading><div class="title">{{{timing}}} / {{{/rank}}}</div></heading>
 
             <column class="highlight" title="{{power.rank.tooltip}}"/>
                 <img src="{{power.rank.badge}}" class="sauce-rank"
@@ -23,7 +23,7 @@
             </row>
             <% if (isDistanceRange) { %>
                 <row title="{{{elapsed_time_tooltip}}}">
-                    <key>{{{elapsed_time}}}</key>
+                    <key>{{{/elapsed_time}}}</key>
                     <value>{{humanTimer(elapsed)}}</value>
                 </row>
             <% } %>
@@ -34,25 +34,25 @@
         <section>
             <heading class="selectable" data-graph="power">
                 <div class="graph-select"></div>
-                <div class="title"><% if (power.estimate) {%>{{{estimated}}} <% } %>{{{power}}}</div>
+                <div class="title"><% if (power.estimate) {%>{{{/estimated}}} <% } %>{{{/power}}}</div>
             </heading>
 
             <column class="highlight" title="{{{elapsed_power_tooltip}}}">
                 <div class="icon-background power">{{=icon bolt-duotone=}}</div>
                 <value>{-power.estimate ? '<prefix>~</prefix>' : ''-}{{hNum(power.elapsedAvg)}}</value>
-                <key>{{{watts}}}</key>
+                <key>{{{/watts}}}</key>
             </column>
 
             <column>
                 <% if (!power.estimate) { %>
                     <row title="{{{max_power_tooltip}}}">
-                        <key>{{{max}}}</key>
+                        <key>{{{/max}}}</key>
                         <value>{-hNum(power.max, 'w')-}</value>
                     </row>
                 <% } %>
                 <% if (power.elapsedWKg) { %>
                     <row "title="{{{wkg_tooltip}}}">
-                        <key>{{{Watts}}}/kg</key>
+                        <key>{{{/watts}}}/kg</key>
                         <value>{{power.estimate ? '~' : ''}}{-hNum(power.elapsedWKg, 'w/kg', {fixed: true, precision: 1})-}</value>
                     </row>
                 <% } %>
@@ -71,7 +71,7 @@
                 <% if (power.elapsedSP) { %>
                     <row class="selectable" data-graph="sp" title="{{{sp_tooltip}}}">
                         <div class="graph-select"></div>
-                        <key>{{{sea_power}}}</key>
+                        <key>{{{/sea_power}}}</key>
                         <value>{{power.estimate ? '~' : ''}}{-hNum(power.elapsedSP, 'w')-}</value>
                     </row>
                 <% } %>
@@ -83,7 +83,7 @@
         <section>
             <heading class="selectable" data-graph="hr">
                 <div class="graph-select"></div>
-                <div class="title">{{{heartrate}}}</div>
+                <div class="title">{{{/heartrate}}}</div>
             </heading>
 
             <column class="highlight">
@@ -93,11 +93,11 @@
             </column>
             <column>
                 <row title="{{{low_hr_tooltip}}}">
-                    <key>{{{lowest}}}</key>
+                    <key>{{{/lowest}}}</key>
                     <value>{-hNum(hr.min, hrUnit)-}</value>
                 </row>
                 <row title="{{{high_hr_tooltip}}}">
-                    <key>{{{highest}}}</key>
+                    <key>{{{/highest}}}</key>
                     <value>{-hNum(hr.max, hrUnit)-}</value>
                 </row>
             </column>
@@ -109,9 +109,9 @@
             <heading class="selectable" data-graph="pace">
                 <div class="graph-select"></div>
                 <%if (isSpeed) { %>
-                    <div class="title">{{{speed}}}</div>
+                    <div class="title">{{{/speed}}}</div>
                 <% } else { %>
-                    <div class="title">{{{pace}}}</div>
+                    <div class="title">{{{/pace}}}</div>
                 <% } %>
             </heading>
             <column class="highlight">
@@ -122,37 +122,37 @@
             <column>
                 <%if (isSpeed) { %>
                     <row title="{{{high_speed_tooltip}}}">
-                        <key>{{{max}}}</key>
+                        <key>{{{/max}}}</key>
                         <value>{-humanPace(pace.max, {html: true, suffix: true})-}</value>
                     </row>
                 <% } else { %>
                     <row title="{{{high_pace_tooltip}}}">
-                        <key>{{{max}}}</key>
+                        <key>{{{/max}}}</key>
                         <value>{-humanPace(pace.max, {html: true, suffix: true})-}</value>
                     </row>
                     <% if (pace.gap) { %>
                         <row class="selectable" data-graph="gap" title="{{{gap_tooltip}}}">
                             <div class="graph-select"></div>
-                            <key>{{{gap}}}</key>
+                            <key>{{{/gap}}}</key>
                             <value>{-humanPace(pace.gap, {html: true, suffix: true})-}</value>
                         </row>
                     <% } %>
                 <% } %>
 
                 <row>
-                    <key>{{{distance}}}</key>
+                    <key>{{{/distance}}}</key>
                     <value>{-humanDistance(distance, {html: true, suffix: true})-}</value>
                 </row>
 
                 <% if (obj.cadence) { %>
                     <row class="selectable" data-graph="cadence">
                         <div class="graph-select"></div>
-                        <key>{{{cadence}}}</key>
+                        <key>{{{/cadence}}}</key>
                         <value>{-humanCadence(cadence, {html: true, suffix: true})-}</value>
                     </row>
                     <% if (obj.stride) { %>
                         <row title="{{{stride_tooltip}}}">
-                            <key>{{{stride}}}</key>
+                            <key>{{{/stride}}}</key>
                             <value>{-humanStride(stride, {html: true, suffix: true})-}</value>
                         </row>
                     <% } %>
@@ -165,7 +165,7 @@
         <section>
             <heading class="selectable" data-graph="elevation">
                 <div class="graph-select"></div>
-                <div class="title">{{{elevation}}}</div>
+                <div class="title">{{{/elevation}}}</div>
             </heading>
             <% if (elevation.gain) { %>
                 <column class="highlight" title="{{{elevation_gain_tooltip}}}">
@@ -183,20 +183,20 @@
             <column>
                 <% if (elevation.avg) { %>
                     <row title="{{{elevation_avg_tooltip}}}">
-                        <key>{{{avg}}}</key>
+                        <key>{{{/avg}}}</key>
                         <value>{-humanElevation(elevation.avg, {html: true, suffix: true})-}</value>
                     </row>
                 <% } %>
                 <% if (elevation.loss && elevation.gain) { %>
                     <row title="{{{elevation_loss_tooltip}}}">
-                        <key>{{{loss}}}</key>
+                        <key>{{{/loss}}}</key>
                         <value>{-humanElevation(elevation.loss, {html: true, suffix: true})-}</value>
                     </row>
                 <% } %>
 
                 <% if (Math.abs(elevation.grade) > 0.01) { %>
                     <row>
-                        <key>{{{grade}}}</key>
+                        <key>{{{/grade}}}</key>
                         <value title="{{{grade_tooltip}}}">{-hNum(elevation.grade * 100, '%', {precision: 1})-}</value>
                     </row>
                 <% } %>
@@ -211,7 +211,7 @@
 
                 <% if (obj.temp) { %>
                     <row>
-                        <key>{{{temp}}}</key>
+                        <key>{{{/temp}}}</key>
                         <value>{-humanTemp(temp, {html: true, suffix: true})-}</value>
                     </row>
                 <% } %>
@@ -224,7 +224,7 @@
     <div class="right-aside">
         <% if (supportsRanks) { %>
             <section class="ranks hidden">
-                <heading><div class="title">{{{best_performances}}}</div></heading>
+                <heading><div class="title">{{{/best_performances}}}</div></heading>
                 <div class="btn-group btn-group-sm btn-group-justified rank-filter">
                     <div class="btn btn-secondary" data-filter="all">{{{best_all}}}</div>
                     <div class="btn" data-filter="year">{{{best_year}}}</div>
@@ -233,10 +233,10 @@
                 <table class="unstyled">
                     <thead>
                         <tr>
-                            <th>{{{rank}}}</th>
-                            <th>{{{value}}}</th>
-                            <th>{{{activity}}}</th>
-                            <th>{{{date}}}</th>
+                            <th>{{{/rank}}}</th>
+                            <th>{{{/value}}}</th>
+                            <th>{{{/activity}}}</th>
+                            <th>{{{/date}}}</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -246,12 +246,12 @@
 
         <% if (hasSegments) { %>
             <section class="segments">
-                <heading><div class="title">{{{segments}}}</div></heading>
+                <heading><div class="title">{{{/segments}}}</div></heading>
                 <table class="unstyled">
                     <thead>
                         <tr>
                             <th>{{{/name}}}</th>
-                            <th>{{{time}}}</th>
+                            <th>{{{/time}}}</th>
                             <th title="{{{overlap_tooltip}}}">{{{overlap}}}</th>
                             <th></th>
                         </tr>
@@ -279,7 +279,7 @@
     </div>
 
     <div class="expander">
-        <div class="icon expand" title="{{{expand_tooltip}}}">{{=icon angle-double-right-solid=}}</div>
-        <div class="icon compress" title="{{{compress_tooltip}}}">{{=icon angle-double-left-solid=}}</div>
+        <div class="icon expand" title="{{{/expand_tooltip}}}">{{=icon angle-double-right-solid=}}</div>
+        <div class="icon compress" title="{{{/compress_tooltip}}}">{{=icon angle-double-left-solid=}}</div>
     </div>
 <% } %>
