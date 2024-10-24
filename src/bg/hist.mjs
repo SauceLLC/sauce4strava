@@ -116,7 +116,7 @@ ActivityModel.addSyncManifest({
     version: 14, // Updated np and xp (again)
     depends: ['extra-streams'],
     storageOptionTriggers: ['analysis-disable-np', 'analysis-disable-xp'],
-    //data: {processor: processors.PtimatedeaksProcessorNoWorkerSupport}
+    //data: {processor: processors.PeaksProcessorNoWorkerSupport}
     data: {processor: processors.PeaksProcessor}
 });
 
@@ -520,6 +520,12 @@ export async function getPeaksForActivityId(activityId, options={}) {
     return await peaksStore.getForActivity(activityId, options);
 }
 sauce.proxy.export(getPeaksForActivityId, {namespace});
+
+
+export async function getPeaksForActivityIds(activityIds, options={}) {
+    return await peaksStore.getForActivities(activityIds, options);
+}
+sauce.proxy.export(getPeaksForActivityIds, {namespace});
 
 
 export async function deletePeaksForActivity(activityId) {
