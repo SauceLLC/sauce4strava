@@ -79,6 +79,20 @@
         "message": "活动比较",
         "description": "IMMUTABLE"
     },
+    "flags": {
+        "message": "标志"
+    },
+    "tss": {
+        "message": "TSS®",
+        "description": "IMMUTABLE"
+    },
+    "np": {
+        "message": "NP®",
+        "description": "IMMUTABLE"
+    },
+    "columns": {
+        "message": "列"
+    },
     "options": {
         "message": "选项",
         "description": "IMMUTABLE"
@@ -211,17 +225,17 @@
         "message": "每小时海拔爬升",
         "description": "IMMUTABLE"
     },
-    "power_tss_tooltip": {
+    "power_tss_help": {
         "message": "训练压力指数®：基于功率的压力负荷指示器",
         "description": "IMMUTABLE"
     },
-    "trimp_tss_tooltip": {
+    "trimp_tss_help": {
         "message": "基于 TRIMP（TRAining IMPulse）的 Training Stress Score®：基于心率储备的压力负荷指标"
     },
-    "estimate_tss_tooltip": {
+    "estimate_tss_help": {
         "message": "预估训练压力分数®：基于预估功率的压力负荷指标"
     },
-    "override_tss_tooltip": {
+    "override_tss_help": {
         "message": "训练压力评分® 的手动控制"
     },
     "analysis_start_of_effort_tooltip": {
@@ -626,7 +640,7 @@
         "message": "90天",
         "description": "IMMUTABLE"
     },
-    "analysis_value": {
+    "value": {
         "message": "值",
         "description": "IMMUTABLE"
     },
@@ -637,6 +651,9 @@
     "date": {
         "message": "日期",
         "description": "IMMUTABLE"
+    },
+    "peak_efforts": {
+        "message": "巅峰努力"
     },
     "analysis_peaks_settings_dialog_title": {
         "message": "最佳表现设置",
@@ -873,10 +890,6 @@
     "perf_predictor_cda_tooltip": {
         "message": "气动阻力系数乘以正面表面积"
     },
-    "perf_predictor_power": {
-        "message": "功率",
-        "description": "IMMUTABLE"
-    },
     "perf_predictor_power_tooltip": {
         "message": "平均瓦数",
         "description": "IMMUTABLE"
@@ -922,10 +935,6 @@
     },
     "perf_predictor_wind_tooltip": {
         "message": "相对于骑手的逆风或负值的顺风风速",
-        "description": "IMMUTABLE"
-    },
-    "perf_predictor_time": {
-        "message": "时间",
         "description": "IMMUTABLE"
     },
     "perf_predictor_original_performance": {
@@ -1375,10 +1384,6 @@
         "message": "按百分比调整一下整体速度",
         "description": "IMMUTABLE"
     },
-    "live_segment_time": {
-        "message": "时间",
-        "description": "IMMUTABLE"
-    },
     "live_segment_beg1": {
         "message": "嗨，我叫 Justin，我是《Sauce》的作者，",
         "description": "IMMUTABLE"
@@ -1770,6 +1775,9 @@
     "performance_filter": {
         "message": "过滤",
         "description": "IMMUTABLE"
+    },
+    "performance_split_view": {
+        "message": "拆分视图"
     },
     "season_start": {
         "message": "赛季开始",
