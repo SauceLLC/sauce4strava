@@ -279,10 +279,17 @@ sauce.ns('locale', ns => {
         const maxPeriod = time < 120 && (time % 60) ? 1 : undefined;
         const precision = minPeriod ? 1 : undefined;
         const localOpts = {minPeriod, maxPeriod, precision};
-        const long = humanDuration(time, {...localOpts, ...options});
-        return (!long || long.length < 12) ?
-            long :
-            humanDuration(time, {...localOpts, short: true, ...options});
+        if (options.short === undefined) {
+            const test = humanDuration(time, {...localOpts, ...options, html: false});
+            const short = !!(test && test.length >= 12);
+            if (!short && !options.html) {
+                return test;
+            } else {
+                return humanDuration(time, {...localOpts, ...options, short});
+            }
+        } else {
+            return humanDuration(time, {...localOpts, ...options});
+        }
     }
 
 
