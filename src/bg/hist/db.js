@@ -615,7 +615,16 @@ sauce.ns('hist.db', ns => {
         async getForActivities(activityIds, options={}) {
             const {type, period} = options;
             if (type && period) {
-                return await this.getMany(activityIds.map(id => [id, type, period]), options);
+                if (Array.isArray(period)) {
+                    if (period.length !== 2 || period[0] > period[1]) {
+                        throw new TypeError('period array argument should be: [low, high]');
+                    }
+                    return await this.getAllMany(activityIds.map(id =>
+                        IDBKeyRange.bound([id, type, period[0]], [id, type, period[1]])), options);
+                } else {
+                    const peaks = await this.getMany(activityIds.map(id => [id, type, period]), options);
+                    return peaks.map(x => x ? [x] : []);
+                }
             } else if (type) {
                 return await this.getAllMany(activityIds.map(id =>
                     IDBKeyRange.bound([id, type, 0], [id, type, Infinity])), options);
