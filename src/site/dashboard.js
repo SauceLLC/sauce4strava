@@ -103,6 +103,8 @@ sauce.ns('dashboard', function(ns) {
             return props.rowData.club_entries.some(x => x.athlete_id === selfId);
         } else if (props.entity === 'Post') {
             return props.post.athlete_id === selfId;
+        } else if (props.entity === 'SuggestedRoutes') {
+            return false;
         } else {
             console.warn("Unexpected entity type:", props.entity, props); // No known cases of this
         }
@@ -365,6 +367,7 @@ sauce.ns('dashboard', function(ns) {
             'cat-club': x => x.entity === 'Club',
             'cat-club-post': x => x.entity === 'Post' && !!x.post.club_id,
             'cat-post': x => x.entity === 'Post',
+            'cat-suggested-routes': x => x.entity === 'SuggestedRoutes',
             'cat-commute': isCommute,
             'virtual': isVirtual,
             'base': isBaseType,
@@ -384,6 +387,10 @@ sauce.ns('dashboard', function(ns) {
             for (const {type, criteria, action} of filters) {
                 const [typePrefix, typeArg] = type.split('-', 2);
                 const handler = handlers[type] || handlers[typePrefix];
+                if (!handler) {
+                    console.error("No filter handler found for:", type);
+                    continue;
+                }
                 try {
                     let matches = handler(props, typeArg);
                     if (matches === undefined) {
@@ -507,7 +514,7 @@ sauce.ns('dashboard', function(ns) {
         $kudoAll.on('click', 'button.sauce-invoke', async ev => {
             const cards = document.querySelectorAll(cardSelector + ':not(.hidden-by-sauce)');
             const kudoButtons = [];
-            const ignore = new Set(['FancyPromo', 'SimplePromo', 'Challenge', 'Club']);
+            const ignore = new Set(['FancyPromo', 'SimplePromo', 'Challenge', 'Club', 'SuggestedRoutes']);
             for (const card of cards) {
                 const props = getCardProps(card);
                 if ((filters.has('commutes') && isCommute(props)) ||
