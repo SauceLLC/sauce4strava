@@ -103,7 +103,7 @@ sauce.ns('dashboard', function(ns) {
             return props.rowData.club_entries.some(x => x.athlete_id === selfId);
         } else if (props.entity === 'Post') {
             return props.post.athlete_id === selfId;
-        } else if (props.entity === 'SuggestedRoutes') {
+        } else if (['SuggestedRoutes', 'FancyPromo', 'SimplePromo'].includes(props.entity)) {
             return false;
         } else {
             console.warn("Unexpected entity type:", props.entity, props); // No known cases of this
