@@ -113,7 +113,7 @@ ActivityModel.addSyncManifest({
 ActivityModel.addSyncManifest({
     processor: 'local',
     name: 'peaks',
-    version: 14, // Updated np and xp (again)
+    version: 15, // Repair run pace regression from 14
     depends: ['extra-streams'],
     storageOptionTriggers: ['analysis-disable-np', 'analysis-disable-xp'],
     //data: {processor: processors.PeaksProcessorNoWorkerSupport}
