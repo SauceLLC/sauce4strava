@@ -352,6 +352,7 @@ export class ActivityTableView extends PerfView {
             labelKey: '/type',
             sortKey: x => x.type || x.basetype,
             sortReverse: true,
+            align: 'right',
             format: x => x.type || x.basetype,
         }, {
             id: 'time',
@@ -1220,7 +1221,7 @@ export class ActivityTablePanelView extends ResizablePerfView {
 
     get defaultPrefs() {
         return {
-            splitView: true,
+            splitView: false,
             peakTimeType: 'power',
             peakDistanceType: 'pace',
             columns: {

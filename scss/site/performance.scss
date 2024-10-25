@@ -273,12 +273,10 @@ table.activity-table {
     }
 
     td {
-
         &[data-column-id="name"] {
             max-width: min(20ch, 25vw);
             overflow: hidden;
             text-overflow: ellipsis;
-            text-transform: capitalize;
         }
 
         &[data-column-id="type"] {
@@ -286,6 +284,7 @@ table.activity-table {
             overflow: hidden;
             text-overflow: ellipsis;
             text-transform: capitalize;
+            direction: rtl;
         }
     }
 
