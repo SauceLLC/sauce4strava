@@ -52,6 +52,10 @@ sauce.ns('analysis', ns => {
         if (pageView.isOwner()) {
             const activity = new Strava.Labs.Activities.TrainingActivity({id: pageView.activity().id});
             await new Promise((success, error) => activity.fetch({success, error}));
+            if (activity) {
+                // Handle 10-30-2024 change..
+                activity.set('type', activity.get('sport_type'));
+            }
             _fullActivity = activity;
         } else {
             _fullActivity = null;
@@ -2288,9 +2292,17 @@ sauce.ns('analysis', ns => {
 
 
     let _loadingAthletePowerData = null;
-    function loadAthletePowerData(athleteId, ts) {
+    function loadAthletePowerData(athleteId) {
         if (_loadingAthletePowerData !== null) {
             return _loadingAthletePowerData;
+        }
+        let ts = pageView.activity().get('startDateLocal');
+        if (!ts) {
+            const activityData = getActivityValuesViaSimilar(pageView.activityId());
+            ts = activityData?.start_date;
+        }
+        if (!ts) {
+            ts = Date.now() / 1000 | 0;
         }
         _loadingAthletePowerData = sauce.perf.fetchAthletePowerData(athleteId, ts).then(powerData =>
             powerData && sauce.perf.inferPowerDataAthleteInfo(powerData));
@@ -2323,6 +2335,12 @@ sauce.ns('analysis', ns => {
             if (stravaFtp == null) {
                 stravaFtp = pageView.activity().get('ftp');
             }
+            if (stravaFtp == null && ns.athlete.id === pageView.currentAthlete().id) {
+                const powerData = await loadAthletePowerData(ns.athlete.id);
+                if (powerData && powerData.athlete_ftp) {
+                    stravaFtp = powerData.athlete_ftp;
+                }
+            }
             if (stravaFtp) {
                 info.ftp = stravaFtp;
                 info.ftpOrigin = 'strava';
@@ -2348,7 +2366,16 @@ sauce.ns('analysis', ns => {
         }
         const efforts = pageView.similarActivitiesData().efforts || [];
         const match = efforts.find(x => x.activity_id === id);
-        return match && match.activity_values;
+        // This object is all sorts of weird, and it might be changing (10-30-2024).. :(
+        if (match && match.activity_values) {
+            return {
+                ...match,
+                ...match.activity_values,
+                ...match.activity_values.values,
+            };
+        } else if (match) {
+            console.warn("Unhandled 'similarActivityData' format:", match);
+        }
     }
 
 
@@ -2370,10 +2397,17 @@ sauce.ns('analysis', ns => {
             info.weight = override;
             info.weightOrigin = 'sauce';
         } else {
-            let stravaWeight;
-            const activityData = getActivityValuesViaSimilar(activityId);
-            if (activityData && activityData.values) {
-                stravaWeight = activityData.values.athlete_weight;
+            // Start with techniqueu for self cycling activity...
+            let stravaWeight = sauce.stravaAthleteWeight;
+            if (stravaWeight == null) {
+                const activityData = getActivityValuesViaSimilar(activityId);
+                if (activityData) {
+                    // XXX Looks to be gone now, not seeing in any context...
+                    stravaWeight = activityData.athlete_weight;
+                    if (stravaWeight) {
+                        console.warn("I'm not dead yet...");
+                    }
+                }
             }
             if (stravaWeight == null) {
                 const powerCtrl = await loadPowerController();
@@ -2381,24 +2415,8 @@ sauce.ns('analysis', ns => {
                     stravaWeight = powerCtrl.get('athlete_weight');
                 }
             }
-            if (stravaWeight == null) {
-                stravaWeight = sauce.stravaAthleteWeight;
-            }
-            if (stravaWeight == null) {
-                const data = getActivityValuesViaSimilar(activityId);
-                if (data && data.values && data.values.athlete_weight) {
-                    stravaWeight = data.values.athlete_weight;
-                }
-            }
             if (stravaWeight == null && ns.athlete.id === pageView.currentAthlete().id) {
-                let ts = pageView.activity().get('startDateLocal');
-                if (!ts) {
-                    // XXX maybe this makes no sense since I'd expect a match from above? verify..
-                    debugger;
-                    const data = getActivityValuesViaSimilar(activityId);
-                    ts = data && data.start_date;
-                }
-                const powerData = await loadAthletePowerData(ns.athlete.id, ts || (Date.now() / 1000 | 0));
+                const powerData = await loadAthletePowerData(ns.athlete.id);
                 if (powerData && powerData.athlete_weight) {
                     stravaWeight = powerData.athlete_weight;
                 }
