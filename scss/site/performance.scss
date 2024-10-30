@@ -45,6 +45,11 @@ input[type="range"] {
     display: revert; // Reset Strava CSS for 404 page
 }
 
+input[type="date"] {
+    border-radius: 0.28em;
+    padding: 0.15em 0.3em;
+}
+
 // The CSS for the 404 page (orion) is missing a few things.
 :not(.btn-unstyled) {
     &.btn-sm,
@@ -1170,6 +1175,7 @@ table.activity-table {
                     margin: 0 0.2em;
                     display: flex;
                     justify-content: space-around;
+                    align-items: center;
                     min-width: 16em;
 
                     .range {
@@ -1181,6 +1187,14 @@ table.activity-table {
                         display: flex;
                         justify-content: center;
                         align-items: flex-end;  // better letter alignment
+                        cursor: pointer;
+                        transition: color 100ms;
+
+                        &:hover {
+                            color: color.get(accent4);
+                            text-decoration: underline 1px wavy;
+                            text-decoration-skip-ink: none;
+                        }
                     }
                 }
             }

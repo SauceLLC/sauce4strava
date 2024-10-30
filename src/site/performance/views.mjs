@@ -1301,6 +1301,7 @@ export class MainView extends PerfView {
             ...super.events,
             'change header.filters select[name="range"]': 'onRangeChange',
             'click header.filters .btn.range': 'onRangeShiftClick',
+            'click header.filters .dates .range': 'onRangeDateClick',
             'click header.filters .btn.expand': 'onExpandClick',
             'click header.filters .btn.compress': 'onCompressClick',
             'click header.filters .btn.add-panel': 'onPanelAddClick',
@@ -1565,6 +1566,50 @@ export class MainView extends PerfView {
         this.updateRangeButtons();
     }
 
+    onRangeDateClick(ev) {
+        const el = ev.currentTarget;
+        if (el.classList.contains('editing')) {
+            return;
+        }
+        const isStart = el.classList.contains('start');
+        // XXX  Once we are happy with _range verbs, promote to public method on pageView who owns it
+        const range = this.pageView._range;
+        const cal = document.createElement('input');
+        cal.type = 'date';
+        if (isStart) {
+            cal.valueAsNumber = +range.start;
+            cal.max = D.dayBefore(range.end).toISOString().split('T')[0];
+        } else {
+            cal.valueAsNumber = +D.dayBefore(range.end);
+            cal.min = range.start.toISOString().split('T')[0];
+            //cal.max = D.today().toISOString().split('T')[0];
+        }
+        cal.addEventListener('input', async ev => {
+            if (!cal.value) {
+                console.warn("invalid date, ignore...");
+                return;
+            }
+            const date = new Date(D.addTZ(cal.valueAsNumber));
+            if (isStart) {
+                range.start = date;
+            } else {
+                range.end = D.dayAfter(date);
+            }
+            range.setPeriodAggregateDays((range.end - range.start) / DAY);
+            //range._update();
+            this.pageView.router.setFilters(this.pageView.athlete, this.pageView._range);
+            await this.pageView.schedUpdateActivities();
+        });
+        cal.addEventListener('blur', ev => {
+            el.classList.remove('editing');
+            this.updateRangeButtons();
+        });
+        el.classList.add('editing');
+        el.replaceChildren(cal);
+        cal.focus();
+        cal.showPicker();
+    }
+
     onAvailableChanged({oldest}) {
         this.updateRangeButtons(null, oldest);
     }
@@ -1587,16 +1632,20 @@ export class MainView extends PerfView {
             this.$(`select[name="range"]`).append($option);
         }
         $option[0].selected = true;
-        $start.text(H.date(range.start));
+        if (!$start.hasClass('editing')) {
+            $start.text(H.date(range.start));
+        }
         const isStart = range.start <= oldest;
         this.$('.btn.range.prev').toggleClass('disabled', isStart);
         this.$('.btn.range.oldest').toggleClass('disabled', isStart);
         const isEnd = range.end >= Date.now();
         this.$('.btn.range.next').toggleClass('disabled', isEnd);
         this.$('.btn.range.newest').toggleClass('disabled', isEnd);
-        $end.text(isEnd ?
-            new Intl.RelativeTimeFormat([], {numeric: 'auto'}).format(0, 'day') :
-            H.date(D.roundToLocaleDayDate(range.end - DAY)));
+        if (!$end.hasClass('editing')) {
+            $end.text(isEnd ?
+                new Intl.RelativeTimeFormat([], {numeric: 'auto'}).format(0, 'day') :
+                H.date(D.roundToLocaleDayDate(range.end - DAY)));
+        }
     }
 }
 
@@ -1822,8 +1871,12 @@ export class PageView extends PerfView {
         // This keeps the range from floating past the present when we go
         // from a big range to a smaller one.
         this.allRange = !!options.all;
-        const endSeed = this._range.end > Date.now() ? D.tomorrow() : undefined;
-        this._range.setRangePeriod(period, metric, endSeed);
+        this._range.setPeriod(period);
+        this._range.setMetric(metric);
+        const tomorrow = D.tomorrow();
+        const endSeed = this._range.end > tomorrow ? tomorrow : this._range.end;
+        console.warn('setrangeperiod', endSeed);
+        this._range.setEndSeed(endSeed);
         this.savePrefs({defaultRange: {period, metric, all: options.all}});  // bg okay
     }
 

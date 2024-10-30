@@ -2462,16 +2462,32 @@ sauce.ns('date', function() {
             this.setEndSeed(endDateSeed || tomorrow());
         }
 
-        setRangePeriod(period, metric, endSeed) {
+        setPeriod(period) {
             if (typeof period !== 'number') {
                 throw new TypeError("Invalid period");
             }
+            this.period = period;
+            this._update();
+        }
+
+        setMetric(metric) {
             if (!this.constructor.isValidMetric(metric)) {
                 throw new TypeError("Invalid metric");
             }
-            this.period = period;
             this.metric = metric;
-            this.setEndSeed(endSeed || this.end);
+            this._update();
+        }
+
+        setPeriodAggregateDays(days, precision=1) {
+            let period;
+            if (this.metric === 'weeks') {
+                period = days / 7;
+            } else if (this.metric === 'months') {
+                period = days / (365 / 12);
+            } else if (this.metric === 'years') {
+                period = days / 365;
+            }
+            this.setPeriod(Number(period.toFixed(precision)));
         }
 
         shift(amount) {
@@ -2495,6 +2511,9 @@ sauce.ns('date', function() {
 
         setEndSeed(endSeed) {
             const end = toLocaleDayDate(endSeed);
+            if (isNaN(end)) {
+                throw new TypeError('invalid end-seed date value');
+            }
             let start;
             if (this.metric === 'weeks') {
                 const MON = 1;
