@@ -1280,6 +1280,12 @@ class SyncJob extends EventTarget {
                             athlete: this.athlete.pk,
                             ts: (new Date(x.start_time)).getTime()
                         }, x);
+                        // 10-30-2024 Strava change: `type` is now `sport_type`.
+                        if (record.sport_type && !record.type) {
+                            record.type = record.sport_type;
+                        } else {
+                            console.warn("Strava rolled back breaking change from 10-30-2024?", record);
+                        }
                         record.basetype = sauce.model.getActivityBaseType(record.type);
                         for (const x of filteredKeys) {
                             delete record[x];
