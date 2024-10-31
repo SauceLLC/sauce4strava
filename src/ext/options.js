@@ -32,7 +32,7 @@
                     input.style.display = 'none';
                 }
             }
-            input.addEventListener('change', async ev => {
+            input.addEventListener('input', async ev => {
                 options[input.name] = input.checked;
                 resetSuboptions(input);
                 await sauce.storage.set('options', options);
@@ -51,7 +51,7 @@
                     input.style.display = 'none';
                 }
             }
-            input.addEventListener('change', async ev => {
+            input.addEventListener('input', async ev => {
                 options[input.name] = input.value;
                 await sauce.storage.set('options', options);
                 if (isPopup && !input.classList.contains('no-reload')) {
@@ -89,12 +89,23 @@
         }
         const ranges = document.querySelectorAll('.option:not(.custom) input[type="range"]');
         for (const input of ranges) {
-            input.value = options[input.name];
+            if (Object.prototype.hasOwnProperty.call(options, input.name)) {
+                input.value = options[input.name];
+            }
             if (input.dataset.restriction) {
                 input.disabled = patronLevel < Number(input.dataset.restriction);
                 if (input.disabled && isSafari) {
                     input.style.display = 'none';
                 }
+            }
+            let displayEl;
+            if (input.nextElementSibling && input.nextElementSibling.classList.contains('input-display')) {
+                displayEl = input.nextElementSibling;
+                const onInput = () => displayEl.textContent = +input.value ?
+                    `${input.value}${displayEl.dataset.suffix || ''}` :
+                    displayEl.dataset.placeholder;
+                input.addEventListener('input', onInput);
+                onInput();
             }
             input.addEventListener('change', async ev => {
                 options[input.name] = input.value;
@@ -270,22 +281,6 @@
         config.options = config.options || {};
         manageOptions(config.options, config.patronLevel);
         manageCustomOptions(config.options);
-        handleCustomActions();
-    }
-
-
-    async function optionsChange(key, value) {
-        for (const t of await browser.tabs.query({active: true})) {
-            browser.tabs.sendMessage(t.id, {op: "options-change", key, value});
-        }
-    }
-
-
-    function handleCustomActions() {
-        const family = document.querySelector('[name="font-custom-family"]');
-        const size = document.querySelector('[name="font-custom-size"]');
-        family.addEventListener('input', ev => optionsChange('font-custom-family', family.value));
-        size.addEventListener('input', ev => optionsChange('font-custom-size', size.value));
     }
 
     document.addEventListener('DOMContentLoaded', main);

@@ -36,6 +36,27 @@ function handleAttributionDialog() {
 }
 
 
+function setCustomFont(options) {
+    const root = document.documentElement;
+    let customSize;
+    if (options['font-custom-family']) {
+        if (+options['font-custom-size']) {
+            customSize = `${options['font-custom-size']}px`;
+        }
+        root.style.setProperty('--sauce-font-custom-family', `'${options['font-custom-family']}'`);
+        root.classList.add('sauce-font-custom-family');
+    } else {
+        root.classList.remove('sauce-font-custom-family');
+    }
+    root.classList.toggle('sauce-font-custom-size', !!customSize);
+    if (customSize) {
+        root.style.setProperty('--sauce-font-custom-size', customSize);
+    } else {
+        root.style.removeProperty('--sauce-font-custom-size');
+    }
+}
+
+
 (function() {
     'use strict';
 
@@ -70,45 +91,24 @@ function handleAttributionDialog() {
                         'sauce-theme-enabled',
                         `sauce-theme-${theme}`);
                 }
-                const root = document.documentElement;
                 browser.runtime.onMessage.addListener(async msg => {
                     if (!msg) {
                         return;
-                    }
-                    if (msg.op === 'background-sw-revived') {
+                    } else if (msg.op === 'background-sw-revived') {
                         console.info("Background worker revive");
                         await sauce.proxy.ensureConnected();
-                    } else if (msg.op === 'options-change') {
-                        if (msg.key === 'font-custom-family') {
-                            root.classList.toggle('sauce-font-custom-family', !!msg.value);
-                            if (msg.value) {
-                                root.style.setProperty('--sauce-font-custom-family', `'${msg.value}'`);
-                                if (config.options['font-custom-size']) {
-                                    root.classList.add('sauce-font-custom-size');
-                                }
-                            } else {
-                                root.classList.remove('sauce-font-custom-size');
-                            }
-                        } else if (msg.key === 'font-custom-size') {
-                            root.classList.toggle('sauce-font-custom-size', !!msg.value);
-                            if (msg.value) {
-                                root.style.setProperty('--sauce-font-custom-size', `${msg.value}px`);
-                            }
-                        }
                     }
                 });
-                if (config.options['font-custom-family']) {
-                    if (config.options['font-custom-size']) {
-                        root.style.setProperty('--sauce-font-custom-size',
-                            `${config.options['font-custom-size']}px`);
-                        root.classList.add('sauce-font-custom-size');
+                sauce.storage.addListener((key, value, oldValue) => {
+                    if (key === 'options' && (
+                        value['font-custom-family'] !== oldValue['font-custom-family'] ||
+                        value['font-custom-size'] !== oldValue['font-custom-size'])) {
+                        setCustomFont(value);
                     }
-                    root.style.setProperty('--sauce-font-custom-family',
-                        `'${config.options['font-custom-family']}'`);
-                    root.classList.add('sauce-font-custom-family');
-                }
+                });
+                setCustomFont(config.options);
                 if (config.options['analysis-max-page-width']) {
-                    root.style.setProperty('--analysis-max-page-width',
+                    document.documentElement.style.setProperty('--analysis-max-page-width',
                         `${config.options['analysis-max-page-width']}px`);
                 }
             }

@@ -6,21 +6,7 @@
         <title>Sauce Options</title>
         <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap" rel="stylesheet"/>
         <link rel="stylesheet" href="/css/ext/options.css"/>
-        <script defer src="/src/ext/webext.js"></script>
-        <script defer src="/src/common/base.js"></script>
-        <script defer src="/src/common/base_init.js"></script>
-        <script defer src="/src/common/proxy.js"></script>
-        <script defer src="/src/ext/proxy.js"></script>
-        <script defer src="/src/common/storage.js"></script>
-        <script defer src="/src/ext/options.js"></script>
         <style>
-            html[data-patron-level] .not-patron {
-                display: none;
-            }
-            html:not([data-patron-level]) .patron {
-                display: none;
-            }
-
             table#details {
                 font-size: 0.95em;
                 margin: 0 1em 1em;
@@ -39,38 +25,6 @@
                 content: ':';
             }
 
-            footer .links {
-                margin-top: 1em;
-                display: flex;
-                justify-content: center;
-            }
-
-            footer .links > a {
-                padding: 0 0.5em;
-            }
-
-            .option {
-                padding-bottom: 0.2em;
-            }
-
-            .suboption {
-                display: block;
-                margin-top: 0.35em;
-                padding-left: 2em;
-                font-size: 0.9em;
-            }
-            .suboption.disabled {
-                opacity: 0.6;
-            }
-
-            .sauce-beta {
-                font-family: monospace;
-                background-color: #064bbb;
-                color: white;
-                padding: 0.2em;
-                border-radius: 0.22em;
-            }
-
             button.patreon {
                 background: #f96854;
                 padding-top: 0;
@@ -82,6 +36,13 @@
                 max-height: 2em;
             }
         </style>
+        <script defer src="/src/ext/webext.js"></script>
+        <script defer src="/src/common/base.js"></script>
+        <script defer src="/src/common/base_init.js"></script>
+        <script defer src="/src/common/proxy.js"></script>
+        <script defer src="/src/ext/proxy.js"></script>
+        <script defer src="/src/common/storage.js"></script>
+        <script defer src="/src/ext/options.js"></script>
     </head>
     <body>
         <header>
@@ -118,6 +79,9 @@
                     <select name="font-custom-family" class="no-reload">
                         <option value="">Default</option>
                         <optgroup label="Sans Serif">
+                            <option value="Roboto Flex">Roboto Flex</option>
+                            <option value="Noto Sans">Noto Sans</option>
+                            <option value="Lato">Lato</option>
                             <option value="Jost">Jost</option>
                             <option value="Montserrat">Montserrat</option>
                             <option value="Smooch Sans">Smooch Sans</option>
@@ -137,15 +101,18 @@
                     </select>
                     <div class="suboption">
                         <label>
-                            Font Size:
-                            <input class="no-reload" type="range" min="10" step="1" max="28" name="font-custom-size"/>
+                            Font Size:&nbsp;
+                            <input class="no-reload" type="range" min="0" value="0" step="1" max="36"
+                                   name="font-custom-size"/>
+                            <span style="margin-left: 0.2em" class="input-display" data-suffix="px"
+                                  data-placeholder="auto"/>
                         </label>
                     </div>
                     <br/>
                 </div>
 
                 <div class="option" title="Make most pages work with any screen size">
-                    <label><input type="checkbox" name="responsive"/>Responsive/Mobile Layout <i>(recommended)</i></label>
+                    <label><input type="checkbox" name="responsive"/>Responsive Layout <i>&nbsp;(recommended)</i></label>
                 </div>
 
                 <div class="option" title="Hide all content related to subscription upselling.">
@@ -297,7 +264,7 @@
             <div class="actions">
                 <h4>Analysis Options:</h4>
                 <div class="option" title="Show estimated world ranking for individual segments.  This is the same ranking shown in the Peak Power chart.">
-                    <label><input type="checkbox" name="analysis-segment-badges"/>Show segment badges <small>(<i>e.g. Cat 2, Pro</i>)</small></label>
+                    <label><input type="checkbox" name="analysis-segment-badges"/>Show segment badges <small>&nbsp;(<i>e.g. Cat 2, Pro</i>)</small></label>
                 </div>
 
                 <div class="option" title="Show peak efforts chart in the left column of activities.">
