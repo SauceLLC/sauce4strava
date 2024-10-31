@@ -50,22 +50,22 @@ class RangeRouter extends Backbone.Router {
         }
         const hrefParts = [location.origin, this.urn];
         if (options.all && f.athleteId != null) {
-            this.navigate(`${this.urn}/${f.athleteId}/all`, options);
+            this.setPath(`${f.athleteId}/all`, options);
         } else if (f.suggestedEnd != null &&
             f.period != null &&
             f.metric != null &&
             f.athleteId != null) {
             const endDay = D.subtractTZ(f.suggestedEnd) / DAY;
-            this.navigate(`${this.urn}/${f.athleteId}/${f.period}/${f.metric}/${endDay}`, options);
+            this.setPath(`${f.athleteId}/${f.period}/${f.metric}/${endDay}`, options);
             hrefParts.push('***', f.period, f.metric, endDay);
         } else if (f.period != null && f.metric != null && f.athleteId != null) {
-            this.navigate(`${this.urn}/${f.athleteId}/${f.period}/${f.metric}`, options);
+            this.setPath(`${f.athleteId}/${f.period}/${f.metric}`, options);
             hrefParts.push('***', f.period, f.metric);
         } else if (f.athleteId != null) {
-            this.navigate(`${this.urn}/${f.athleteId}`, options);
+            this.setPath(`${f.athleteId}`, options);
             hrefParts.push('***');
         } else {
-            this.navigate(`${this.urn}`, options);
+            this.setPath(null, options);
         }
         if (athlete) {
             const start = H.date(range.start);
@@ -74,6 +74,11 @@ class RangeRouter extends Backbone.Router {
         } else {
             document.title = this.pageTitle;
         }
+    }
+
+    setPath(path, options) {
+        const url = path ? `${this.urn}/${path}${location.search}` : this.urn;
+        return this.navigate(url, options);
     }
 }
 export default RangeRouter;
