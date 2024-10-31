@@ -341,7 +341,7 @@ export class ActivityTableView extends PerfView {
             sortKey: x => x.name.toLowerCase(),
             tooltip: x => x ? x.name + (x.description ? "\n\n" + x.description : '') : '',
             sortReverse: true,
-            format: x => `<a target="_blank" href="/activities/${x.id}">${x.name}</a>`,
+            format: x => `<a target="_blank" href="/activities/${x.id}">${sauce.template.escape(x.name)}</a>`,
         }, {
             id: 'date',
             labelKey: '/date',
@@ -578,6 +578,9 @@ export class ActivityTableView extends PerfView {
     }
 
     async onDataRowClick(ev) {
+        if (ev.target.closest('a,.btn,button,input,select')) {
+            return;
+        }
         const id = Number(ev.currentTarget.dataset.id);
         const activity = await sauce.hist.getActivity(id);
         await this.pageView.detailsView.setActivities([activity]);
@@ -636,7 +639,8 @@ export class BulkActivityEditDialog extends PerfView {
             labelKey: '/tss',
             format: x => {
                 const tss = sauce.model.getActivityTSS(x);
-                return `<input type="number" style="width: 6ch" name="tss-override" value="${x.tssOverride}"
+                return `<input type="number" style="width: 6ch" name="tss-override"
+                               value="${x.tssOverride || ''}"
                                placeholder="${tss != null ? Math.round(tss) : ''}"/>`;
             },
         }, {
