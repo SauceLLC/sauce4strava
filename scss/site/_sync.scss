@@ -141,8 +141,7 @@
 
                     .time,
                     .level {
-                        font-weight: 600;
-                        font-size: 0.86em;
+                        font-size: 0.88em;
                         padding-right: 0.5em;
                         white-space: nowrap;
                     }
@@ -150,19 +149,18 @@
                     &[data-level="debug"] {
                         .level,
                         .message {
-                            font-weight: 100;
+                            font-weight: 300;
                         }
                     }
                     &[data-level="info"] {
                     }
                     &[data-level="warn"] {
                         .level {
-                            font-weight: 600;
-                            color: #e1d018;
+                            color: #e3d217;
                         }
                         .level,
                         .message {
-                            font-weight: 600;
+                            font-weight: 500;
                         }
                     }
                     &[data-level="error"] {
@@ -171,7 +169,7 @@
                         }
                         .level,
                         .message {
-                            font-weight: 800;
+                            font-weight: 600;
                         }
                     }
                 }
