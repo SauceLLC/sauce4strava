@@ -375,7 +375,7 @@ export class ActivityTableView extends PerfView {
             sortKey: x => (x.stats?.distance / x.stats?.activeTime) || 0,
             align: 'right',
             format: x => H.pace(
-                (x.stats?.activeTime && x.stats.distance) ?
+                (x.stats?.activeTime && x.stats?.distance) ?
                     1 / (x.stats.distance / x.stats.activeTime) : undefined,
                 {precision: 0, activityType: x.basetype, suffix: true, html: true}) || '-',
         }, {
@@ -392,7 +392,7 @@ export class ActivityTableView extends PerfView {
             id: 'np',
             sortKey: x => x.stats?.np || 0,
             align: 'right',
-            format: x => H.number(x.stats.np, {suffix: 'w', html: true}) || '-',
+            format: x => H.number(x.stats?.np, {suffix: 'w', html: true}) || '-',
         }, {
             labelKey: '/tss',
             id: 'tss',
@@ -1599,7 +1599,9 @@ export class MainView extends PerfView {
             } else {
                 range.end = D.dayAfter(date);
             }
+            // Rough-in the period so shifts and reloads work (but with some slop)...
             range.setPeriodAggregateDays((range.end - range.start) / DAY);
+            console.log(range, range.end, range.start);
             //range._update();
             this.pageView.router.setFilters(this.pageView.athlete, this.pageView._range);
             await this.pageView.schedUpdateActivities();
@@ -1878,9 +1880,7 @@ export class PageView extends PerfView {
         this._range.setPeriod(period);
         this._range.setMetric(metric);
         const tomorrow = D.tomorrow();
-        const endSeed = this._range.end > tomorrow ? tomorrow : this._range.end;
-        console.warn('setrangeperiod', endSeed);
-        this._range.setEndSeed(endSeed);
+        this._range.setEndSeed(this._range.end > tomorrow ? tomorrow : this._range.end);
         this.savePrefs({defaultRange: {period, metric, all: options.all}});  // bg okay
     }
 
@@ -1945,7 +1945,6 @@ export class PageView extends PerfView {
             metricData,
         });
     }
-
 }
 
 

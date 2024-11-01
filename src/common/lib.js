@@ -2478,7 +2478,7 @@ sauce.ns('date', function() {
             this._update();
         }
 
-        setPeriodAggregateDays(days, precision=1) {
+        setPeriodAggregateDays(days, precision=2) {
             let period;
             if (this.metric === 'weeks') {
                 period = days / 7;
@@ -2491,17 +2491,23 @@ sauce.ns('date', function() {
         }
 
         shift(amount) {
-            const endSeed = new Date(this.end);
+            // Date.set*() funcs will floor float arguments, so round them first...
             if (this.metric === 'weeks') {
-                endSeed.setDate(endSeed.getDate() + (amount * this.period * 7));
+                const shift = Math.round(amount * this.period * 7);
+                this.start.setDate(this.start.getDate() + shift);
+                this.end.setDate(this.end.getDate() + shift);
             } else if (this.metric === 'months') {
-                endSeed.setMonth(endSeed.getMonth() + (amount * this.period));
+                const shift = Math.round(amount * this.period);
+                this.start.setMonth(this.start.getMonth() + shift);
+                this.end.setMonth(this.end.getMonth() + shift);
             } else if (this.metric === 'years') {
-                endSeed.setFullYear(endSeed.getFullYear() + (amount * this.period));
+                const shift = Math.round(amount * this.period);
+                this.start.setFullYear(this.start.getFullYear() + shift);
+                this.end.setFullYear(this.end.getFullYear() + shift);
             } else {
                 throw new TypeError('Invalid metric');
             }
-            this.setEndSeed(endSeed);
+            this._update();
         }
 
         getDays(options={}) {
@@ -2570,7 +2576,9 @@ sauce.ns('date', function() {
         _update() {
             const start = new Date(this.start);
             const end = new Date(this.end);
-            this.clippedEnd = end > Date.now() ? tomorrow() : end;
+            // XXX test usign tomorrow for compareison vs Date.now(), I think for some TZ or offbyone days tomorrow is better, but verify
+            const maxEnd = tomorrow();
+            this.clippedEnd = end > maxEnd ? maxEnd : end;
             this.days = this.getDays();
             this.clippedDays = this.getDays({clipped: true});
             this.snapshot = {
