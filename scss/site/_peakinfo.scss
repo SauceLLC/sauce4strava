@@ -133,15 +133,21 @@
 
             &:first-child {
                 padding-left: 1em;
+
+                abbr.unit {
+                    margin-left: 0.2em;
+                    font-size: 0.9em;
+                }
             }
 
             &:last-child {
                 color: color.get(accent4);
 
                 abbr.unit {
-                    font-size: 0.8em;
+                    filter: saturate(0.5);
                 }
             }
+
 
             .sauce-peak-rank {
                 display: inline-flex;

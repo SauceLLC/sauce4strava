@@ -528,6 +528,7 @@ sauce.ns('analysis', ns => {
         return {
             rangeValue: range.value,
             rangeLabel: range.label,
+            rangeLabelHTML: range.labelHTML,
             value,
             unit,
             startTime: roll.firstTime({noPad: true}),
@@ -1031,7 +1032,7 @@ sauce.ns('analysis', ns => {
             });
         }
         const $dialog = sauce.ui.dialog({
-            title: `${options.heading}: ${options.textLabel}`,
+            title: `${options.heading}: ${options.label}`,
             icon: await sauce.ui.getImage(ns.peakIcons[options.source]),
             dialogClass: 'sauce-info-dialog',
             body: options.body,
@@ -1209,7 +1210,6 @@ sauce.ns('analysis', ns => {
                 await fetchGradeDistStream({startTime, endTime});
         }
         const heading = await LM(source);
-        const textLabel = jQuery(`<div>${label}</div>`).text();
         const template = await getTemplate('info-dialog.html');
         const cadence = cadenceRoll && cadenceRoll.avg();
         const activeTime = getActiveTime(startIdx, endIdx);
@@ -1259,7 +1259,7 @@ sauce.ns('analysis', ns => {
             overlappingSegments,
             hasSegments,
         });
-        const $dialog = await createInfoDialog({heading, textLabel, source, body, originEl,
+        const $dialog = await createInfoDialog({heading, label, source, body, originEl,
             start: startTime, end: endTime});
         const $sparkline = $dialog.find('.sauce-sparkline');
         async function renderGraphs() {
@@ -3495,9 +3495,11 @@ sauce.ns('analysis', ns => {
         ns.allDistRanges = await sauce.peaks.getForActivityType('distances', ns.activityType);
         for (const range of ns.allPeriodRanges) {
             range.label = H.peakPeriod(range.value);
+            range.labelHTML = H.peakPeriod(range.value, {html: true});
         }
         for (const range of ns.allDistRanges) {
             range.label = H.raceDistance(range.value);
+            range.labelHTML = H.raceDistance(range.value, {html: true});
         }
         const timeStream = await fetchStream('time');
         const streamData = pageView.streams().streamData;

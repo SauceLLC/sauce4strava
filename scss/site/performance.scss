@@ -95,7 +95,9 @@ html.sauce-performance {
         }
 
         abbr.unit {
-            margin-left: 0.1em;
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-left: 0.15em;
         }
     }
 }
@@ -426,7 +428,7 @@ table.activity-table {
     abbr.unit {
         font-size: 0.8em;
         opacity: 0.9;
-        margin-left: 0.1em;
+        margin-left: 0.15em;
     }
 
     .title {
@@ -849,7 +851,6 @@ table.activity-table {
                     abbr.unit {
                         font-size: 0.72em;
                         font-weight: 300;
-                        margin-left: 0;
                     }
                 }
             }
@@ -1338,7 +1339,6 @@ table.activity-table {
 
                             abbr.unit, small {
                                 font-weight: normal;
-                                margin-left: 0;
                             }
                         }
 

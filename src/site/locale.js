@@ -266,7 +266,7 @@ sauce.ns('locale', ns => {
                 }
                 const unit = options.short ? hdUnits[key][0] : hdUnits[key];
                 const suffix = options.html ? `<abbr class="unit">${unit}</abbr>` : unit;
-                stack.push(`${val}${!options.short ? ' ' : ''}${suffix}`);
+                stack.push(`${val}${options.short || options.html ? '' : ' '}${suffix}`);
                 elapsed %= period;
             }
         }
