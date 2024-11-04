@@ -46,9 +46,12 @@ input[type="range"] {
     display: revert; // Reset Strava CSS for 404 page
 }
 
-input[type="date"] {
-    border-radius: 0.28em;
-    padding: 0.15em 0.3em;
+input {
+    &[type="date"],
+    &[type="search"] {
+        border-radius: 0.28em;
+        padding: 0.15em 0.3em;
+    }
 }
 
 // The CSS for the 404 page (orion) is missing a few things.
@@ -1012,10 +1015,6 @@ table.activity-table {
         }
     }
 
-    .fixed-height.sauce-panel .table-wrap {
-        max-height: initial !important;
-    }
-
     .sauce-panel-content.table-view {
         $panel-height: calc(25vh * var(--height-factor));
         background-color: color.shade(bg, 3%);
@@ -1025,21 +1024,30 @@ table.activity-table {
         font-size: 0.96em;
         flex: 1 1 auto;
 
-        .table-wrap {
+        &:not(.fixed-height) {
             max-height: $panel-height;
+        }
+
+        &.split-view {
+        }
+
+        .table-wrap {
             overflow-y: auto;
             font-size: 0.96em;
             flex: 1 1 100%;
             display: flex;
             flex-direction: column;
-        };
+
+            &.aux {
+                thead {
+                    display: none;
+                }
+            }
+        }
  
-        &.loading-mask.loading {
-            min-height: calc(#{$panel-height} + 2em);
-            background-image: linear-gradient(to bottom,
-                                  #{color.shade(bg, 1%)},
-                                  #{color.shade(bg, 5%)},
-                                  #{color.shade(bg, 2%)});
+        &.loading {
+            border: 10px solid red;
+            height: $panel-height;
         }
 
         .resize-drag {

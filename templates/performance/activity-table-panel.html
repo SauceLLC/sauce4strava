@@ -3,8 +3,24 @@
     <div class="btn btn-xs btn-icon-only btn-unstyled sauce-panel-settings"
          title="{{{panel_settings_tooltip}}}">{{=icon cog-duotone=}}</div>
 </header>
-<div class="sauce-panel-content table-view activity-table-view loading-mask loading">
-    <div class="table-wrap"></div>
+<% const searchHintListId = self.crypto.randomUUID(); %>
+<datalist id="{{searchHintListId}}">
+    <option value="type:Ride">
+    <option value="type:Run">
+    <option value="type:Swim">
+    <option value="type:Workout">
+</datalist>
+<div class="sauce-panel-content table-view activity-table-view {{obj.splitView ? 'split-view' : ''}} loading-mask loading">
+    <header>
+        <input type="search" name="sauce-activity-search"
+               placeholder="Search..." list="{{searchHintListId}}" />
+    </header>
+    <main>
+        <div class="table-wrap main"></div>
+        <% if (obj.splitView) { %>
+            <div class="table-wrap aux"></div>
+        <% } %>
+    </main>
     <div class="resize-drag">{{=icon grip-lines-light=}}</div>
 </div>
  

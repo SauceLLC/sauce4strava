@@ -1246,7 +1246,9 @@ export class ActivityTablePanelView extends ResizablePerfView {
         await super.init({pageView, ...options});
         const {sortBy, sortDesc} = this.getPrefs();
         this.activityTable = new ActivityTableView({pageView, sortBy, sortDesc, ...options});
+        this.activityTableAux = new ActivityTableView({pageView, sortBy, sortDesc, ...options});
         await this.activityTable.initializing;
+        await this.activityTableAux.initializing;
         this.listenTo(this.activityTable, 'sort', this.onTableSort);
         this.listenTo(pageView, 'before-update-activities', () =>
             this.$('.loading-mask').addClass('loading'));
@@ -1256,6 +1258,7 @@ export class ActivityTablePanelView extends ResizablePerfView {
     renderAttrs() {
         return {
             name: this.name,
+            ...this.getPrefs(),
         };
     }
 
@@ -1265,10 +1268,18 @@ export class ActivityTablePanelView extends ResizablePerfView {
             await super.render();
             const enabled = this.getPrefs('columns');
             const columns = this.activityTable.availableColumns.filter(x => enabled[x.id]);
-            this.activityTable.setElement(this.$('.table-wrap'));
+            this.activityTable.setElement(this.$('.table-wrap.main'));
             this.activityTable.setPeakColType('time', this.getPrefs('peakTimeType'));
             this.activityTable.setPeakColType('distance', this.getPrefs('peakDistanceType'));
             await this.activityTable.setColumns(columns);
+            if (this.getPrefs('splitView')) {
+                this.activityTableAux.setElement(this.$('.table-wrap.aux'));
+                this.activityTableAux.setPeakColType('time', this.getPrefs('peakTimeType'));
+                this.activityTableAux.setPeakColType('distance', this.getPrefs('peakDistanceType'));
+                await this.activityTableAux.setColumns(columns);
+            } else {
+                this.$('.table-wrap.aux').empty();
+            }
         } finally {
             this.$('.loading-mask').removeClass('loading');
         }
@@ -1280,7 +1291,11 @@ export class ActivityTablePanelView extends ResizablePerfView {
 
     async onUpdateActivities({activities}) {
         try {
+            await sauce.sleep(10000);
             await this.activityTable.setActivities(activities);
+            if (this.getPrefs('splitView')) {
+                //await this.activityTable.setActivities(activities);
+            }
         } finally {
             this.$('.loading-mask').removeClass('loading');
         }
@@ -1386,6 +1401,7 @@ export class MainView extends PerfView {
     async render() {
         await super.render();
         const $panels = this.$('.sauce-panels');
+        const asyncPending = [];
         for (const [i, x] of this.panels.entries()) {
             x.view.el.classList.add('sauce-panel');
             x.view.el.dataset.id = x.prefs.id;
@@ -1394,9 +1410,9 @@ export class MainView extends PerfView {
             x.view.el.style.setProperty('--width-factor', x.prefs.settings.widthFactor || 1);
             // Required if parent view re-rendered due to jQuery.html removing child event listeners.
             x.view.delegateEvents();
-            await x.view.render();
-            $panels.append(x.view.$el);
+            asyncPending.push(x.view.render().then(() => $panels.append(x.view.$el)));
         }
+        await Promise.all(asyncPending);
     }
 
     async onExpandClick(ev) {
