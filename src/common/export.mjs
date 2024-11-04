@@ -226,12 +226,22 @@ export class TCXSerializer extends DOMSerializer {
                     // XXX Might be more accurate to use RunCadence ext for running types.
                     this.addNodeTo(point, 'Cadence', streams.cadence[i]);
                 }
-                if (streams.watts) {
+                if (streams.watts || streams.velocity_smooth) {
                     const ext = this.addNodeTo(point, 'Extensions');
                     const tpx = this.addNodeTo(ext, 'ns3:TPX');
-                    const watts = streams.watts[i];
-                    if (watts != null) {
-                        this.addNodeTo(tpx, 'ns3:Watts', Math.round(watts));
+
+                    if (streams.watts) {
+                        const watts = streams.watts[i];
+                        if (watts != null) {
+                            this.addNodeTo(tpx, 'ns3:Watts', Math.round(watts));
+                        }
+                    }
+
+                    if (streams.velocity_smooth) {
+                        const velocity_smooth = streams.velocity_smooth[i];
+                        if (velocity_smooth != null) {
+                            this.addNodeTo(tpx, 'ns3:Speed', velocity_smooth);
+                        }
                     }
                 }
             }
