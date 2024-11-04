@@ -229,14 +229,12 @@ export class TCXSerializer extends DOMSerializer {
                 if (streams.watts || streams.velocity_smooth) {
                     const ext = this.addNodeTo(point, 'Extensions');
                     const tpx = this.addNodeTo(ext, 'ns3:TPX');
-
                     if (streams.watts) {
                         const watts = streams.watts[i];
                         if (watts != null) {
                             this.addNodeTo(tpx, 'ns3:Watts', Math.round(watts));
                         }
                     }
-
                     if (streams.velocity_smooth) {
                         const velocity_smooth = streams.velocity_smooth[i];
                         if (velocity_smooth != null) {
