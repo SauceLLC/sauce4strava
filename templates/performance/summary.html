@@ -14,8 +14,7 @@
                 <div class="backdrop-icon">{{=icon watch-duotone=}}</div>
                 <h2>{-humanDuration(totalTime, {maxPeriod: 3600, round: 3600, html: true})-}</h2>
                 <h3>
-                    {-humanDuration(weeklyTime, {maxPeriod: 3600, minPeriod: 3600, precision: 1, html: true})-}
-                    <abbr class="unit">/ {{{/time_week}}}</abbr>
+                    {-humanDuration(weeklyTime, {maxPeriod: 3600, minPeriod: 3600, precision: 1, html: true})-}<abbr class="unit">/ {{{/time_week}}}</abbr>
                 </h3>
             </row>
         <% } %>
@@ -26,8 +25,7 @@
                 <div class="backdrop-icon">{{=icon road-duotone=}}</div>
                 <h2>{-humanDistance(totalDistance, {precision: 0, html: true})-}</h2>
                 <h3>
-                    {-humanDistance(weeklyDistance, {html: true})-}
-                    <abbr class="unit"> / {{{/time_week}}}</abbr>
+                    {-humanDistance(weeklyDistance, {html: true})-}<abbr class="unit">/ {{{/time_week}}}</abbr>
                 </h3>
             </row>
         <% } %>
@@ -38,8 +36,7 @@
                 <div class="backdrop-icon">{{=icon mountains-duotone=}}</div>
                 <h2>{-humanElevation(totalAltGain, {html: true})-}</h2>
                 <h3>
-                    {-humanElevation(weeklyAltGain, {html: true})-}
-                    <abbr class="unit"> / {{{/time_week}}}</abbr>
+                    {-humanElevation(weeklyAltGain, {html: true})-}<abbr class="unit">/ {{{/time_week}}}</abbr>
                 </h3>
             </row>
         <% } %>
@@ -137,11 +134,21 @@
         </select>
 
         <% for (const x of peaks) { %>
-            <row>
-                <key>{{x.key}}</key>
-                <value><a href="javascript:void(0);"
-                          data-id="{{x.activity}}">{{x.prettyValue}}<% if (x.unit) { %><abbr
-                              class="unit short">{{x.unit}}</abbr><% } %></a></value>
+            <row data-activity-id="{{x.activity.id}}">
+                <div class="left">
+                    <key>{-x.key-}</key>
+                    <div title="{{x.activity.name + (x.activity.description ? '\n\n' + x.activity.description : '')}}"
+                         class="date">{{humanDate(x.activity.ts)}}</div>
+                </div>
+                <div class="right">
+                    <value>{{x.prettyValue}}<% if (x.unit) { %><abbr class="unit short">{{x.unit}}</abbr><% } %></a></value>
+                    <% if (x.rankBadge?.badge) { %>
+                        <div class="rank-badge">
+                            <img src="{{x.rankBadge?.badge}}" title="{{x.rankBadge.tooltip}}"
+                                 class="sauce-rank" data-cat="{{x.rankBadge?.cat}}"/>
+                        </div>
+                    <% } %>
+                </div>
             </row>
         <% } %>
     </section>

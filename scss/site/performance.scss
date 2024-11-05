@@ -676,6 +676,7 @@ table.activity-table {
         flex-wrap: wrap;
         margin: 0.15em 0;
         align-items: center;
+        border-radius: 0.3em;
 
         &.warning {
             color: color.shade(accent, -10%);
@@ -717,13 +718,12 @@ table.activity-table {
 
         &:nth-child(even) {
             background-color: color.shade(bg, 8%, 0.5);
-            border-radius: 0.3em;
         }
 
         key {
             flex: 0 0 55%;
             padding-right: 0.4em;
-            font-weight: bold;
+            font-weight: 500;
             font-size: 0.9em;
 
             svg[data-icon] {
@@ -932,6 +932,10 @@ table.activity-table {
                     align-items: center;
                     user-select: none;
 
+                    .title {
+                        font-weight: 500;
+                    }
+
                     i.icon {
                         line-height: 0;
                         margin: -0.5em 0.2em;
@@ -939,6 +943,12 @@ table.activity-table {
                         svg[data-icon] {
                             width: 1.3em;
                         }
+                    }
+                }
+
+                &.overview {
+                    abbr.unit {
+                        margin-left: 0.22em;
                     }
                 }
 
@@ -951,6 +961,63 @@ table.activity-table {
 
                     select {
                         margin: 0.3em;
+                    }
+
+                    row[data-activity-id] {
+                        cursor: pointer;
+                        transition: background 200ms;
+                        flex-wrap: nowrap;
+                        padding: 0.2em 0.5em;;
+
+                        &:hover {
+                            background-color: color.shade(bg, 15%);
+                        }
+
+                        .left {
+                            flex: 0 0 48%;
+                            display: flex;
+                            flex-direction: column;
+
+                            key {
+                                flex: initial;
+
+                                abbr.unit {
+                                    font-size: 0.96em;
+                                    font-weight: 400;
+                                }
+                            }
+                        }
+
+                        .right {
+                            flex: 1 1 100%;
+                            display: flex;
+                            flex-direction: row;
+                            align-items: center;
+                            justify-content: space-between;
+
+                            value {
+                                color: color.get(accent4);
+                                font-size: 1.3em;
+                                font-variant-numeric: tabular-nums;
+
+                                abbr.unit {
+                                    font-size: 0.5em;
+                                    filter: saturate(0.5);
+                                }
+                            }
+                        }
+
+                        .date {
+                            font-size: 0.82em;
+                            font-weight: 300;
+                            white-space: nowrap;
+                        }
+
+                        .rank-badge {
+                            img.sauce-rank {
+                                height: 1.5em;
+                            }
+                        }
                     }
                 }
 
@@ -1776,7 +1843,13 @@ table.activity-table {
                 }
 
                 .window-controls {
-                    display: none;
+                    margin-right: 1rem;
+                    font-size: 1.4em;
+
+                    .btn.expand,
+                    .btn.compress {
+                        display: none;
+                    }
                 }
             }
         }

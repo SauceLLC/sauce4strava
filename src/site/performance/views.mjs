@@ -718,7 +718,7 @@ export class SummaryView extends PerfView {
             'click a.collapser': 'onCollapserClick',
             'click a.expander': 'onExpanderClick',
             'click section.training a.missing-tss': 'onMissingTSSClick',
-            'click section.highlights a[data-id]': 'onHighlightClick',
+            'click section.highlights row[data-activity-id]': 'onHighlightClick',
             'dblclick section > header': 'onDblClickHeader',
             'change select[name="type"]': 'onTypeChange',
         };
@@ -749,12 +749,13 @@ export class SummaryView extends PerfView {
         const keyFormatter = getPeaksKeyFormatter(type);
         const valueFormatter = getPeaksValueFormatter(type);
         const peaks = await sauce.hist.getPeaksForAthlete(this.athlete.id, type,
-            ranges.map(x => x.value), {limit: 1, start, end});
+            ranges.map(x => x.value), {limit: 1, start, end, expandActivities: true});
         return peaks.map(x => ({
-            key: keyFormatter(x.period),
+            key: keyFormatter(x.period, {html: true}),
             prettyValue: valueFormatter(x.value, {activityType: x.activityType}),
             unit: getPeaksUnit(type),
             activity: x.activity,
+            rankBadge: x.rankLevel && sauce.power.rankBadge(x.rankLevel),
         }));
     }
 
@@ -892,7 +893,7 @@ export class SummaryView extends PerfView {
     }
 
     async onHighlightClick(ev) {
-        const activity = await sauce.hist.getActivity(Number(ev.currentTarget.dataset.id));
+        const activity = await sauce.hist.getActivity(Number(ev.currentTarget.dataset.activityId));
         this.pageView.trigger('select-activities', [activity]);
     }
 
