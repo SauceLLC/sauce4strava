@@ -411,8 +411,8 @@ export class ActivityTableView extends PerfView {
                     metric: 'time',
                     label: H.peakPeriod(period, {short: false, html: true}),
                     shortLabel: H.peakPeriod(period, {short: true, html: true}),
-                    sortKey: x => this.peaks.get(x.id)?.[id]?.value,
-                    format: (a, peaks) => this._formatPeak(peaks[id], a),
+                    sortKey: function(x) { return this.peaks.get(x.id)?.[id]?.value; },
+                    format: function(a, peaks) { return this._formatPeak(peaks[id], a); },
                 };
             }),
             ...peakRanges.distances.map(x => {
@@ -426,9 +426,9 @@ export class ActivityTableView extends PerfView {
                     metric: 'distance',
                     label: H.raceDistance(period, {html: true, short: false}),
                     shortLabel: H.raceDistance(period, {html: true, short: true}),
-                    sortKey: x => this.peaks.get(x.id)?.[id]?.value,
+                    sortKey: function(x) { return this.peaks.get(x.id)?.[id]?.value; },
                     sortReverse: true,
-                    format: (a, peaks) => this._formatPeak(peaks[id], a),
+                    format: function(a, peaks) { return this._formatPeak(peaks[id], a); },
                 };
             })
         ];
@@ -517,6 +517,7 @@ export class ActivityTableView extends PerfView {
             sortDesc: this.sortDesc,
             paceLocaleKey: mostlyRuns ? '/pace' : '/speed',
             columns: this.columns,
+            table: this,
         };
     }
 
@@ -530,8 +531,8 @@ export class ActivityTableView extends PerfView {
         if (col && col.sortKey) {
             const sortDir = (this.sortDesc ? 1 : -1) * (col.sortReverse ? -1 : 1);
             this.activities.sort((a, b) => {
-                const aVal = col.sortKey(a);
-                const bVal = col.sortKey(b);
+                const aVal = col.sortKey.call(this, a);
+                const bVal = col.sortKey.call(this, b);
                 if (aVal === bVal || (aVal == null && bVal == null)) {
                     return 0;
                 } else if (aVal == null) {
@@ -1339,10 +1340,7 @@ export class ActivityTablePanelView extends ResizablePerfView {
         }
         const sig = JSON.stringify([range.start, range.end]);
         if (this._lastAuxRangeSig === sig) {
-            console.warn('debounce', sig);
             return;
-        } else {
-            console.error('DO', sig);
         }
         this._lastAuxRangeSig = sig;
         const $start = this.$('input[type="date"][name="aux-start"]');

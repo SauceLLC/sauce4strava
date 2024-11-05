@@ -2,7 +2,7 @@
 <tr data-id="{{a.id}}">
     <% for (const x of columns) { %>
         <td data-column-id="{{x.id}}" class="column {{x.extraClass || ''}}" data-align="{{x.align}}"
-            title="{{typeof x.tooltip === 'function' ? x.tooltip(a) : (x.tooltip || '')}}">{-await x.format(a, peaks.get(a.id))-}</td>
+            title="{{typeof x.tooltip === 'function' ? x.tooltip(a) : (x.tooltip || '')}}">{-await x.format.call(table, a, peaks.get(a.id))-}</td>
     <% } %>
     <td>
          <div class="btn btn-icon-only btn-unstyled collapse-activity"
