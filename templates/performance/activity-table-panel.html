@@ -10,14 +10,27 @@
     <option value="type:Swim">
     <option value="type:Workout">
 </datalist>
-<div class="sauce-panel-content table-view activity-table-view {{obj.splitView ? 'split-view' : ''}} loading-mask loading">
+<div class="sauce-panel-content table-view activity-table-view {{obj.comparisonView ? 'comparison-view' : ''}} loading-mask loading">
     <header>
         <input type="search" name="sauce-activity-search"
                placeholder="Search..." list="{{searchHintListId}}" />
     </header>
     <main>
         <div class="table-wrap main"></div>
-        <% if (obj.splitView) { %>
+        <% if (obj.comparisonView) { %>
+            <div class="aux-table-header">
+                <b>{{{comparison_view}}}:</b>
+                <select name="aux-range">
+                    <option value="prev" {{obj.auxRange === 'prev' ? 'selected' : ''}}>Previous Period</option>
+                    <option value="before" {{obj.auxRange === 'before' ? 'selected' : ''}}>All Before</option>
+                    <option value="after" {{obj.auxRange === 'after' ? 'selected' : ''}}>All After</option>
+                    <option value="next" {{obj.auxRange === 'next' ? 'selected' : ''}}>Next Period</option>
+                    <option value="custom" {{obj.auxRange === 'custom' ? 'selected' : ''}}>Custom</option>
+                </select>
+                <input type="date" name="aux-start"/>
+                {{=icon arrow-alt-right-duotone=}}
+                <input type="date" name="aux-end"/>
+            </div>
             <div class="table-wrap aux"></div>
         <% } %>
     </main>

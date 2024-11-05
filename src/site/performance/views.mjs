@@ -1178,7 +1178,15 @@ class ActivityTablePanelSettingsView extends PanelSettingsView {
             'input input.column[type="checkbox"]': 'onColumnInput',
             'input select[name="peak-time-type"]': 'onPeakTimeTypeInput',
             'input select[name="peak-distance-type"]': 'onPeakDistanceTypeInput',
+            'input input.pref[type="checkbox"]': 'onPrefInput',
         };
+    }
+
+    async onPrefInput(ev) {
+        const enabled = ev.currentTarget.checked;
+        const name = ev.currentTarget.name;
+        await this.panelView.savePrefs({[name]: enabled});
+        await this.panelView.render();
     }
 
     async onColumnInput(ev) {
@@ -1191,17 +1199,27 @@ class ActivityTablePanelSettingsView extends PanelSettingsView {
 
     async onPeakTimeTypeInput(ev) {
         const peakTimeType = ev.currentTarget.value;
-        const table = this.panelView.activityTable;
-        table.setPeakColType('time', peakTimeType);
-        await table.setActivities(table.activities);
+        const tables = [this.panelView.activityTable];
+        if (this.panelView.getPrefs('comparisonView')) {
+            tables.push(this.panelView.activityTableAux);
+        }
+        for (const x of tables) {
+            x.setPeakColType('time', peakTimeType);
+            await x.setActivities(x.activities);
+        }
         await this.panelView.savePrefs({peakTimeType});
     }
 
     async onPeakDistanceTypeInput(ev) {
         const peakDistanceType = ev.currentTarget.value;
-        const table = this.panelView.activityTable;
-        table.setPeakColType('distance', peakDistanceType);
-        await table.setActivities(table.activities);
+        const tables = [this.panelView.activityTable];
+        if (this.panelView.getPrefs('comparisonView')) {
+            tables.push(this.panelView.activityTableAux);
+        }
+        for (const x of tables) {
+            x.setPeakColType('distance', peakDistanceType);
+            await x.setActivities(x.activities);
+        }
         await this.panelView.savePrefs({peakDistanceType});
     }
 
@@ -1226,7 +1244,7 @@ export class ActivityTablePanelView extends ResizablePerfView {
 
     get defaultPrefs() {
         return {
-            splitView: false,
+            comparisonView: false,
             peakTimeType: 'power',
             peakDistanceType: 'pace',
             columns: {
@@ -1240,6 +1258,14 @@ export class ActivityTablePanelView extends ResizablePerfView {
                 'np': true,
                 'tss': true,
             },
+        };
+    }
+
+    get events() {
+        return {
+            ...super.events,
+            'change .aux-table-header select[name="aux-range"]': 'onAuxRangeChange',
+            'input .aux-table-header input[type="date"]': 'onAuxDateChange',
         };
     }
 
@@ -1273,29 +1299,92 @@ export class ActivityTablePanelView extends ResizablePerfView {
             this.activityTable.setPeakColType('time', this.getPrefs('peakTimeType'));
             this.activityTable.setPeakColType('distance', this.getPrefs('peakDistanceType'));
             await this.activityTable.setColumns(columns);
-            if (this.getPrefs('splitView')) {
+            if (this.getPrefs('comparisonView')) {
                 this.activityTableAux.setElement(this.$('.table-wrap.aux'));
                 this.activityTableAux.setPeakColType('time', this.getPrefs('peakTimeType'));
                 this.activityTableAux.setPeakColType('distance', this.getPrefs('peakDistanceType'));
                 await this.activityTableAux.setColumns(columns);
-            } else {
-                this.$('.table-wrap.aux').empty();
+                await this.updateAuxTableActivities();
             }
         } finally {
             this.$('.loading-mask').removeClass('loading');
         }
     }
 
+    async updateAuxTableActivities() {
+        const auxRange = this.getPrefs('auxRange') || this.$('select[name="aux-range"]').val();
+        const range = this.pageView.getRangeClone();
+        if (auxRange === 'custom') {
+            range.start = this.getPrefs('auxRangeStart') || undefined;
+            range.end = this.getPrefs('auxRangeEnd') || undefined;
+        } else if (auxRange === 'prev') {
+            range.shift(-1);
+        } else if (auxRange === 'next') {
+            range.shift(1);
+        } else if (auxRange === 'before') {
+            range.end = range.start;
+            range.start = undefined;
+        } else if (auxRange === 'after') {
+            range.start = range.end;
+            range.end = undefined;
+        } else {
+            console.error('Invalid aux range', auxRange);
+            range.start = range.end = undefined;
+        }
+        if (range.start && range.end) {
+            if (range.start >= range.end) {
+                console.warn("Empty or inverted range", range.start, range.end);
+                range.end = range.start + 1;
+            }
+        }
+        const sig = JSON.stringify([range.start, range.end]);
+        if (this._lastAuxRangeSig === sig) {
+            console.warn('debounce', sig);
+            return;
+        } else {
+            console.error('DO', sig);
+        }
+        this._lastAuxRangeSig = sig;
+        const $start = this.$('input[type="date"][name="aux-start"]');
+        const $end = this.$('input[type="date"][name="aux-end"]');
+        $start.attr('max', $end.val())[0].valueAsNumber = range.start;
+        $end.attr('min', $start.val())[0].valueAsNumber = range.end;
+        const activities = await sauce.hist.getActivitiesForAthlete(this.pageView.athlete.id, {
+            start: range.start != null ? +range.start : undefined,
+            end: range.end != null ? +range.end : undefined,
+            excludeUpper: true
+        });
+        await this.activityTableAux.setActivities(activities);
+    }
+
+    async onAuxRangeChange(ev) {
+        this.savePrefs({auxRange: ev.currentTarget.value});
+        await this.updateAuxTableActivities();
+    }
+
+    async onAuxDateChange(ev) {
+        const isStart = ev.currentTarget.name === 'aux-start';
+        const key = isStart ? 'auxRangeStart' : 'auxRangeEnd';
+        this.$('select[name="aux-range"]').val('custom');
+        await this.savePrefs({[key]: ev.currentTarget.valueAsNumber, auxRange: 'custom'});
+        await this.updateAuxTableActivities();
+    }
+
     async onTableSort({sortBy, sortDesc}) {
         await this.savePrefs({sortBy, sortDesc});
+        if (this.getPrefs('comparisonView')) {
+            this.activityTableAux.sortBy = sortBy;
+            this.activityTableAux.sortDesc = sortDesc;
+            this.activityTableAux.sort();
+            await this.activityTableAux.render();
+        }
     }
 
     async onUpdateActivities({activities}) {
         try {
-            await sauce.sleep(10000);
             await this.activityTable.setActivities(activities);
-            if (this.getPrefs('splitView')) {
-                //await this.activityTable.setActivities(activities);
+            if (this.getPrefs('comparisonView')) {
+                await this.updateAuxTableActivities();
             }
         } finally {
             this.$('.loading-mask').removeClass('loading');
@@ -1647,12 +1736,13 @@ export class MainView extends PerfView {
         const $start = this.$('header .range.start');
         const $end = this.$('header .range.end');
         const selectedRange = this.pageView.allRange ? 'all' : `${range.period},${range.metric}`;
-        let $option = this.$(`select[name="range"] option[value="${selectedRange}"]`);
+        const $range = this.$('> header.filters select[name="range"]');
+        let $option = $range.find(`select[name="range"] option[value="${selectedRange}"]`);
         if (!$option.length) {
             // Just manually add an entry.  The user may be playing with the URL and that's fine.
             $option = jQuery(`<option value="${range.period},${range.metric}"]>` +
                 `${range.period} ${range.metric}</option>`);
-            this.$(`select[name="range"]`).append($option);
+            $range.append($option);
         }
         $option[0].selected = true;
         if (!$start.hasClass('editing')) {
@@ -1903,6 +1993,10 @@ export class PageView extends PerfView {
 
     getRangeSnapshot() {
         return this._range.snapshot;
+    }
+
+    getRangeClone() {
+        return this._range.clone();
     }
 
     async setRangePeriod(period, metric, options={}) {

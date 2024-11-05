@@ -2462,6 +2462,14 @@ sauce.ns('date', function() {
             this.setEndSeed(endDateSeed || tomorrow());
         }
 
+        clone() {
+            const instance = new this.constructor(this.end, this.period, this.metric);
+            instance.start = new Date(this.start);
+            instance.end = new Date(this.end);
+            instance._update();
+            return instance;
+        }
+
         setPeriod(period) {
             if (typeof period !== 'number') {
                 throw new TypeError("Invalid period");
