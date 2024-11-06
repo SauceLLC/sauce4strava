@@ -1,7 +1,13 @@
 <header class="title">
     <span class="panel-name">{{name}}</span>
-    <div class="btn btn-xs btn-icon-only btn-unstyled sauce-panel-settings"
-         title="{{{panel_settings_tooltip}}}">{{=icon cog-duotone=}}</div>
+    <div class="buttons">
+        <div class="btn btn-xs btn-icon-only btn-unstyled sauce-panel-settings"
+             title="{{{panel_settings_tooltip}}}">{{=icon cog-duotone=}}</div>
+        <div class="hidden btn btn-xs btn-icon-only btn-unstyled sauce-panel-restore"
+             title="{{{/compress_tooltip}}}">{{=icon window-restore-regular=}}</div>
+        <div class="btn btn-xs btn-icon-only btn-unstyled sauce-panel-maximize"
+             title="{{{/expand_tooltip}}}">{{=icon window-maximize-regular=}}</div>
+    </div>
 </header>
 <% const searchHintListId = self.crypto.randomUUID(); %>
 <datalist id="{{searchHintListId}}">
@@ -13,7 +19,7 @@
 <div class="sauce-panel-content table-view activity-table-view {{obj.comparisonView ? 'comparison-view' : ''}} loading-mask loading">
     <header>
         <input type="search" name="sauce-activity-search"
-               placeholder="Search..." list="{{searchHintListId}}" />
+               placeholder="{{{/search}}}..." list="{{searchHintListId}}" />
     </header>
     <main>
         <div class="table-wrap main"></div>
@@ -21,11 +27,11 @@
             <div class="aux-table-header">
                 <b>{{{comparison_view}}}:</b>
                 <select name="aux-range">
-                    <option value="prev" {{obj.auxRange === 'prev' ? 'selected' : ''}}>Previous Period</option>
-                    <option value="before" {{obj.auxRange === 'before' ? 'selected' : ''}}>All Before</option>
-                    <option value="after" {{obj.auxRange === 'after' ? 'selected' : ''}}>All After</option>
-                    <option value="next" {{obj.auxRange === 'next' ? 'selected' : ''}}>Next Period</option>
-                    <option value="custom" {{obj.auxRange === 'custom' ? 'selected' : ''}}>Custom</option>
+                    <option value="prev" {{obj.auxRange === 'prev' ? 'selected' : ''}}>{{{previous_period}}}</option>
+                    <option value="before" {{obj.auxRange === 'before' ? 'selected' : ''}}>{{{all_before}}}</option>
+                    <option value="after" {{obj.auxRange === 'after' ? 'selected' : ''}}>{{{all_after}}}</option>
+                    <option value="next" {{obj.auxRange === 'next' ? 'selected' : ''}}>{{{next_period}}}</option>
+                    <option value="custom" {{obj.auxRange === 'custom' ? 'selected' : ''}}>{{{/custom}}}</option>
                 </select>
                 <input type="date" name="aux-start"/>
                 {{=icon arrow-alt-right-duotone=}}

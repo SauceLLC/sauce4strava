@@ -45,5 +45,6 @@ export class SauceView extends Backbone.View {
         if (this._tpl) {
             this.$el.html(await this._tpl(await this.renderAttrs(options)));
         }
+        this.trigger('render', this);
     }
 }

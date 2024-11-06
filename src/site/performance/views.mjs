@@ -1277,6 +1277,9 @@ export class ActivityTablePanelView extends ResizablePerfView {
         this.activityTableAux = new ActivityTableView({pageView, sortBy, sortDesc, ...options});
         await this.activityTable.initializing;
         await this.activityTableAux.initializing;
+        this._mainTableResizeObserver = new ResizeObserver(this.onMainTableResize.bind(this));
+        this.listenTo(this.activityTable, 'render', this.onMainTableRender);
+        this.listenTo(this.activityTableAux, 'render', this.onAuxTableRender);
         this.listenTo(this.activityTable, 'sort', this.onTableSort);
         this.listenTo(pageView, 'before-update-activities', () =>
             this.$('.loading-mask').addClass('loading'));
@@ -1368,6 +1371,36 @@ export class ActivityTablePanelView extends ResizablePerfView {
         await this.updateAuxTableActivities();
     }
 
+    onMainTableRender(table) {
+        this._mainTableResizeObserver.disconnect();
+        for (const x of table.el.querySelectorAll(':scope > table > thead > tr > th')) {
+            this._mainTableResizeObserver.observe(x, {box: 'border-box'});
+        }
+    }
+
+    onAuxTableRender(table) {
+        const firstRow = table.el.querySelector(':scope > table > tbody:first-of-type > tr[data-id]');
+        if (!firstRow) {
+            return;
+        }
+        let i = 0;
+        for (const x of this.activityTable.el.querySelectorAll(':scope > table > thead > tr > th')) {
+            firstRow.children[i++].style.width = `${x.getBoundingClientRect().width}px`;
+        }
+    }
+
+    onMainTableResize(resized) {
+        const firstRow = this.activityTableAux.el.querySelector(
+            ':scope > table > tbody:first-of-type > tr[data-id]');
+        if (!firstRow) {
+            return;
+        }
+        for (const [i, x] of resized.entries()) {
+            firstRow.children[i].style.width = `${x.borderBoxSize[0].inlineSize}px`;
+        }
+    }
+
+
     async onTableSort({sortBy, sortDesc}) {
         await this.savePrefs({sortBy, sortDesc});
         if (this.getPrefs('comparisonView')) {
@@ -1413,6 +1446,8 @@ export class MainView extends PerfView {
             'click header.filters .btn.compress': 'onCompressClick',
             'click header.filters .btn.add-panel': 'onPanelAddClick',
             'click .sauce-panel .sauce-panel-settings.btn': 'onPanelSettingsClick',
+            'click .sauce-panel .sauce-panel-maximize.btn': 'onPanelMaximizeClick',
+            'click .sauce-panel .sauce-panel-restore.btn': 'onPanelRestoreClick',
         };
     }
 
@@ -1558,6 +1593,22 @@ export class MainView extends PerfView {
         });
     }
 
+    onPanelMaximizeClick(ev) {
+        const el = ev.currentTarget;
+        el.closest('.sauce-panel').classList.add('maximized');
+        el.classList.add('hidden');
+        el.parentElement.querySelector('.sauce-panel-restore.btn').classList.remove('hidden');
+        this.el.scrollIntoView({behavior: 'smooth'});
+    }
+
+    onPanelRestoreClick(ev) {
+        const el = ev.currentTarget;
+        el.classList.add('hidden');
+        el.parentElement.querySelector('.sauce-panel-maximize.btn').classList.remove('hidden');
+        el.closest('.sauce-panel').classList.remove('maximized');
+        this.toggleMaximized(false, {noSave: true, noAside: false});
+    }
+
     async onPanelSettingsClick(ev) {
         const panelEl = ev.currentTarget.closest('.sauce-panel');
         const id = panelEl.dataset.id;
@@ -1680,35 +1731,28 @@ export class MainView extends PerfView {
             return;
         }
         const isStart = el.classList.contains('start');
-        // XXX  Once we are happy with _range verbs, promote to public method on pageView who owns it
-        const range = this.pageView._range;
         const cal = document.createElement('input');
         cal.type = 'date';
+        const range = this.pageView.getRangeSnapshot();
         if (isStart) {
             cal.valueAsNumber = +range.start;
             cal.max = D.dayBefore(range.end).toISOString().split('T')[0];
         } else {
             cal.valueAsNumber = +D.dayBefore(range.end);
             cal.min = range.start.toISOString().split('T')[0];
-            //cal.max = D.today().toISOString().split('T')[0];
         }
         cal.addEventListener('input', async ev => {
-            if (!cal.value) {
-                console.warn("invalid date, ignore...");
-                return;
+            const date = new Date(cal.valueAsNumber ? D.addTZ(cal.valueAsNumber) : undefined);
+            if (isNaN(date)) {
+                console.warn("invalid date", date);
             }
-            const date = new Date(D.addTZ(cal.valueAsNumber));
+            let start, end;
             if (isStart) {
-                range.start = date;
+                start = date;
             } else {
-                range.end = D.dayAfter(date);
+                end = D.dayAfter(date);
             }
-            // Rough-in the period so shifts and reloads work (but with some slop)...
-            range.setPeriodAggregateDays((range.end - range.start) / DAY);
-            console.log(range, range.end, range.start);
-            //range._update();
-            this.pageView.router.setFilters(this.pageView.athlete, this.pageView._range);
-            await this.pageView.schedUpdateActivities();
+            await this.pageView.setRangeCustomStartEnd(start, end);
         });
         cal.addEventListener('blur', ev => {
             el.classList.remove('editing');
@@ -2000,6 +2044,19 @@ export class PageView extends PerfView {
     async setRangePeriod(period, metric, options={}) {
         this._setRangePeriod(period, metric, options);
         this.router.setFilters(this.athlete, this._range, options);
+        await this.schedUpdateActivities();
+    }
+
+    async setRangeCustomStartEnd(start, end) {
+        debugger;
+        if (start != null) {
+            this._range.start = new Date(start);
+        }
+        if (end != null) {
+            this._range.end = new Date(end);
+        }
+        this._range.setPeriodAggregateDays((this._range.end - this._range.start) / DAY);
+        this.router.setFilters(this.athlete, this._range);
         await this.schedUpdateActivities();
     }
 
