@@ -160,13 +160,14 @@ export class TrainingChartView extends charts.ActivityTimeRangeChartView {
 
     updateChart() {
         const daily = this.daily;
-        const lineWidth = this.range.days > 366 ? 0.66 : this.range.days > 60 ? 1 : 1.25;
+        const rangeDays = this.range.getDays();
+        const lineWidth = rangeDays > 366 ? 0.66 : rangeDays > 60 ? 1 : 1.25;
         const maxCTLIndex = sauce.data.max(daily.map(x => x.ctl), {index: true});
         const minTSBIndex = sauce.data.min(daily.map(x => x.ctl - x.atl), {index: true});
         let future = [];
         if (this.range.end >= Date.now() && daily.length) {
             const last = daily[daily.length - 1];
-            const fDays = Math.floor(Math.min(this.range.days * 0.10, 62));
+            const fDays = Math.floor(Math.min(rangeDays * 0.10, 62));
             const fStart = D.dayAfter(last.date);
             const fEnd = D.roundToLocaleDayDate(+fStart + fDays * DAY);
             const predictions = [];
@@ -875,8 +876,8 @@ export class ElevationChartView extends charts.ActivityTimeRangeChartView {
 
     updateChart() {
         let gain = 0;
-        const days = this.range.days;
-        const lineWidth = days > 366 ? 0.66 : days > 60 ? 1 : 1.25;
+        const rangeDays = this.range.getDays();
+        const lineWidth = rangeDays > 366 ? 0.66 : rangeDays > 60 ? 1 : 1.25;
         const disabled = this.getPrefs('disabledDatasets', {});
         const datasets = [];
         if (!disabled.elevation) {
