@@ -1,7 +1,5 @@
 /* global sauce currentAthlete jQuery */
 
-// XXX All range is not detected properly now, (regression), shows 23 years instead in select
-
 import {SauceView} from '../view.mjs';
 import * as data from './data.mjs';
 
@@ -1881,10 +1879,10 @@ export class MainView extends PerfView {
         const $end = this.$('header .range.end');
         const selectedRange = this.pageView.allRange ? 'all' : `${range.period},${range.metric}`;
         const $range = this.$('> header.filters select[name="range"]');
-        let $option = $range.find(`select[name="range"] option[value="${selectedRange}"]`);
+        let $option = $range.find(`option[value="${selectedRange}"]`);
         if (!$option.length) {
             // Just manually add an entry.  The user may be playing with the URL and that's fine.
-            $option = jQuery(`<option value="${range.period},${range.metric}"]>` +
+            $option = jQuery(`<option value="${range.period},${range.metric}">` +
                 `${range.period} ${range.metric}</option>`);
             $range.append($option);
         }
