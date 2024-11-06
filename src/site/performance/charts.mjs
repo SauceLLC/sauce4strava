@@ -477,7 +477,7 @@ export class ActivityTimeRangeChart extends SauceChart {
         const d = new Date(data.value);
         if (days < 370) {
             if (data.showToday) {
-                return this.view.LM('today'); // XXX [XXX to the XXX, why? 2024 fall]
+                return this.view.LM('today');
             } else if (data.showYear) {
                 return [H.date(d, {style: 'month'}) + ' ', d.getFullYear()];
             } else if (data.showMonth) {
@@ -751,7 +751,7 @@ export class ActivityTimeRangeChartView extends ChartView {
     _onBeforeZoom() {
         this._zoomContext = {
             athlete: this.pageView.athlete,
-            range: this.pageView.getRangeSnapshot(),
+            range: this.pageView.range,
         };
     }
 }

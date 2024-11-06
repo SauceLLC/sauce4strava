@@ -2418,6 +2418,7 @@ sauce.ns('date', function() {
         return time - offt;
     }
 
+
     function isMonthRange(start, end) {
         // Start should be 00:00:00 of the start day (inclusive)
         // End should be 00:00:00 of the day after (exclusive)
@@ -2432,6 +2433,7 @@ sauce.ns('date', function() {
             e.getFullYear() === eom.getFullYear());
     }
 
+
     function isYearRange(start, end) {
         // Start should be 00:00:00 of the start day (inclusive)
         // End should be 00:00:00 of the day after (exclusive)
@@ -2442,12 +2444,17 @@ sauce.ns('date', function() {
             e.getFullYear() - s.getFullYear() === 1);
     }
 
+
     class CalendarRange {
+
         static isValidMetric(metric) {
             return ['weeks', 'months', 'years'].includes(metric);
         }
 
-        constructor(endDateSeed, period, metric) {
+        constructor(endDateSeed, period, metric, _cloning) {
+            if (_cloning) {
+                return;
+            }
             if (endDateSeed != null && !(endDateSeed instanceof Date)) {
                 throw new TypeError('Date object required');
             }
@@ -2457,36 +2464,49 @@ sauce.ns('date', function() {
             if (period == null) {
                 throw new TypeError('period is invalid');
             }
+            this.frozen = false;
             this.period = period;
             this.metric = metric;
             this.setEndSeed(endDateSeed || tomorrow());
         }
 
-        clone() {
-            const instance = new this.constructor(this.end, this.period, this.metric);
+        clone({frozen}={}) {
+            const instance = new this.constructor(null, null, null, /*cloning*/ true);
             instance.start = new Date(this.start);
             instance.end = new Date(this.end);
-            instance._update();
+            instance.period = this.period;
+            instance.metric = this.metric;
+            if (frozen) {
+                instance.frozen = true;
+                Object.freeze(instance);
+            }
             return instance;
         }
 
         setPeriod(period) {
+            if (this.frozen) {
+                throw new TypeError("frozen");
+            }
             if (typeof period !== 'number') {
                 throw new TypeError("Invalid period");
             }
             this.period = period;
-            this._update();
         }
 
         setMetric(metric) {
+            if (this.frozen) {
+                throw new TypeError("frozen");
+            }
             if (!this.constructor.isValidMetric(metric)) {
                 throw new TypeError("Invalid metric");
             }
             this.metric = metric;
-            this._update();
         }
 
         setPeriodAggregateDays(days, precision=2) {
+            if (this.frozen) {
+                throw new TypeError("frozen");
+            }
             let period;
             if (this.metric === 'weeks') {
                 period = days / 7;
@@ -2499,6 +2519,9 @@ sauce.ns('date', function() {
         }
 
         shift(amount) {
+            if (this.frozen) {
+                throw new TypeError("frozen");
+            }
             // Date.set*() funcs will floor float arguments, so round them first...
             if (this.metric === 'weeks') {
                 const shift = Math.round(amount * this.period * 7);
@@ -2515,15 +2538,16 @@ sauce.ns('date', function() {
             } else {
                 throw new TypeError('Invalid metric');
             }
-            this._update();
         }
 
-        getDays(options={}) {
-            const end = options.clipped ? this.clippedEnd : this.end;
-            return Math.round((end - this.start) / 86400 / 1000);
+        getDays() {
+            return Math.round((this.end - this.start) / 86400 / 1000);
         }
 
         setEndSeed(endSeed) {
+            if (this.frozen) {
+                throw new TypeError("frozen");
+            }
             const end = toLocaleDayDate(endSeed);
             if (isNaN(end)) {
                 throw new TypeError('invalid end-seed date value');
@@ -2554,10 +2578,12 @@ sauce.ns('date', function() {
             }
             this.start = start;
             this.end = end;
-            this._update();
         }
 
         setStartSeed(startSeed) {
+            if (this.frozen) {
+                throw new TypeError("frozen");
+            }
             const start = toLocaleDayDate(startSeed);
             let end;
             if (this.metric === 'weeks') {
@@ -2578,26 +2604,6 @@ sauce.ns('date', function() {
             }
             this.start = start;
             this.end = end;
-            this._update();
-        }
-
-        _update() {
-            const start = new Date(this.start);
-            const end = new Date(this.end);
-            // XXX test usign tomorrow for compareison vs Date.now(), I think for some TZ or offbyone days tomorrow is better, but verify
-            const maxEnd = tomorrow();
-            this.clippedEnd = end > maxEnd ? maxEnd : end;
-            this.days = this.getDays();
-            this.clippedDays = this.getDays({clipped: true});
-            this.snapshot = {
-                start,
-                end,
-                clippedEnd: this.clippedEnd,
-                period: this.period,
-                metric: this.metric,
-                days: this.days,
-                clippedDays: this.clippedDays,
-            };
         }
     }
 

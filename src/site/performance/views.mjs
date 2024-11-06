@@ -1115,7 +1115,7 @@ export class DetailsView extends PerfView {
     }
 
     async onLoadRecentClick(ev) {
-        const range = this.pageView.getRangeSnapshot();
+        const range = this.pageView.range;
         const start = +range.start;
         const end = +range.end;
         const activities = await sauce.hist.getActivitiesForAthlete(this.pageView.athlete.id,
@@ -1317,7 +1317,7 @@ export class ActivityTablePanelView extends ResizablePerfView {
 
     async updateAuxTableActivities() {
         const auxRange = this.getPrefs('auxRange') || this.$('select[name="aux-range"]').val();
-        const range = this.pageView.getRangeClone();
+        const range = this.pageView.range.clone();
         if (auxRange === 'custom') {
             range.start = this.getPrefs('auxRangeStart') || undefined;
             range.end = this.getPrefs('auxRangeEnd') || undefined;
@@ -1517,7 +1517,7 @@ export class MainView extends PerfView {
     }
 
     renderAttrs() {
-        const range = this.pageView.getRangeSnapshot();
+        const range = this.pageView.range;
         return {range: [range.period, range.metric].join()};
     }
 
@@ -1733,7 +1733,7 @@ export class MainView extends PerfView {
         const isStart = el.classList.contains('start');
         const cal = document.createElement('input');
         cal.type = 'date';
-        const range = this.pageView.getRangeSnapshot();
+        const range = this.pageView.range;
         if (isStart) {
             cal.valueAsNumber = +range.start;
             cal.max = D.dayBefore(range.end).toISOString().split('T')[0];
@@ -1773,7 +1773,7 @@ export class MainView extends PerfView {
     }
 
     updateRangeButtons(range, oldest) {
-        range = range || this.pageView.getRangeSnapshot();
+        range = range || this.pageView.range;
         oldest = oldest || this.pageView.oldest;
         const $start = this.$('header .range.start');
         const $end = this.$('header .range.end');
@@ -1839,7 +1839,7 @@ export class PageView extends PerfView {
         this.summaryView = new SummaryView({pageView: this});
         this.mainView = new MainView({pageView: this});
         this.detailsView = new DetailsView({pageView: this});
-        router.setFilters(this.athlete, this._range, {replace: true, all: this.allRange});
+        router.setFilters(this.athlete, this.range, {replace: true, all: this.allRange});
         router.on('route:onNav', this.onRouterNav.bind(this));
         router.on('route:onNavAll', this.onRouterNav.bind(this));
         await super.init(options);
@@ -1851,9 +1851,9 @@ export class PageView extends PerfView {
         this.allRange = f.all || (f.all === undefined && defaults.all);
         if (this.allRange) {
             const [period, metric] = this.getAllRange();
-            this._range = new D.CalendarRange(null, period, metric);
+            this.range = new D.CalendarRange(null, period, metric);
         } else {
-            this._range = new D.CalendarRange(f.suggestedEnd,
+            this.range = new D.CalendarRange(f.suggestedEnd,
                 f.period || defaults.period || 4,
                 f.metric || defaults.metric || 'weeks');
         }
@@ -1869,11 +1869,10 @@ export class PageView extends PerfView {
     }
 
     renderAttrs() {
-        const range = this.getRangeSnapshot();
         return {
             athletes: Array.from(this.athletes.values()),
             athleteId: this.athlete && this.athlete.id,
-            range: [range.period, range.metric].join(),
+            range: [this.range.period, this.range.metric].join(),
         };
     }
 
@@ -1881,7 +1880,7 @@ export class PageView extends PerfView {
         this.syncButtons.clear();  // Must not reuse on re-render() for DOM events.
         const syncBtnPromise = this.athlete && this.getSyncButton(this.athlete.id);
         await super.render();
-        const range = this._range.snapshot;
+        const range = this.range.clone({frozen: true});
         const actsPromise = this.athlete && this._getActivities(range);
         if (!this.athlete) {
             return;
@@ -1945,9 +1944,9 @@ export class PageView extends PerfView {
         // we need to treat updated activities from about 42 days before our range
         // start as an update to our activities, because it's very possible the
         // ATL/CTL seed values will be forward propagated into our activity range.
-        if (this._range && this._range.start && this._range.end) {
-            const rangeStart = +this._range.start - (42 * 86400 * 1000);
-            if (done.oldest <= this._range.end && done.newest >= rangeStart) {
+        if (this.range && this.range.start && this.range.end) {
+            const rangeStart = +this.range.start - (42 * 86400 * 1000);
+            if (done.oldest <= this.range.end && done.newest >= rangeStart) {
                 await this.schedUpdateActivities();
                 await this.refreshNewestAndOldest();
             }
@@ -1988,7 +1987,7 @@ export class PageView extends PerfView {
             const [period, metric] = this.getAllRange();
             this._setRangePeriod(period, metric, {all: true});
         }
-        this.router.setFilters(this.athlete, this._range, {all: this.allRange});
+        this.router.setFilters(this.athlete, this.range, {all: this.allRange});
         await this.schedUpdateActivities();
     }
 
@@ -2026,61 +2025,53 @@ export class PageView extends PerfView {
         // This keeps the range from floating past the present when we go
         // from a big range to a smaller one.
         this.allRange = !!options.all;
-        this._range.setPeriod(period);
-        this._range.setMetric(metric);
+        this.range.setPeriod(period);
+        this.range.setMetric(metric);
         const tomorrow = D.tomorrow();
-        this._range.setEndSeed(this._range.end > tomorrow ? tomorrow : this._range.end);
+        this.range.setEndSeed(this.range.end > tomorrow ? tomorrow : this.range.end);
         this.savePrefs({defaultRange: {period, metric, all: options.all}});  // bg okay
-    }
-
-    getRangeSnapshot() {
-        return this._range.snapshot;
-    }
-
-    getRangeClone() {
-        return this._range.clone();
     }
 
     async setRangePeriod(period, metric, options={}) {
         this._setRangePeriod(period, metric, options);
-        this.router.setFilters(this.athlete, this._range, options);
+        this.router.setFilters(this.athlete, this.range, options);
         await this.schedUpdateActivities();
     }
 
     async setRangeCustomStartEnd(start, end) {
         debugger;
         if (start != null) {
-            this._range.start = new Date(start);
+            this.range.start = new Date(start);
         }
         if (end != null) {
-            this._range.end = new Date(end);
+            this.range.end = new Date(end);
         }
-        this._range.setPeriodAggregateDays((this._range.end - this._range.start) / DAY);
-        this.router.setFilters(this.athlete, this._range);
+        this.range.setPeriodAggregateDays((this.range.end - this.range.start) / DAY);
+        this.router.setFilters(this.athlete, this.range);
         await this.schedUpdateActivities();
     }
 
     shiftRange(offset) {
         if (offset === Infinity) {
-            this._range.setEndSeed(D.tomorrow());
+            this.range.setEndSeed(D.tomorrow());
         } else if (offset === -Infinity) {
-            this._range.setStartSeed(this.oldest);
+            this.range.setStartSeed(this.oldest);
         } else {
-            this._range.shift(offset);
+            this.range.shift(offset);
         }
-        this.router.setFilters(this.athlete, this._range);
+        this.router.setFilters(this.athlete, this.range);
         return this.schedUpdateActivities();
     }
 
     async _schedUpdateActivities() {
-        const range = this._range.snapshot;
+        const range = this.range.clone({frozen: true});
         this.trigger('before-update-activities', {athlete: this.athlete, range});
         this._updateActivities(await this._getActivities(range));
     }
 
     async _getActivities(range) {
         const start = +range.start;
-        const end = +range.clippedEnd;
+        const end = +range.end;
         const activities = await sauce.hist.getActivitiesForAthlete(this.athlete.id,
             {start, end, includeTrainingLoadSeed: true, excludeUpper: true});
         return {activities, range};
@@ -2092,7 +2083,8 @@ export class PageView extends PerfView {
         if (activities.length) {
             ({atl, ctl} = activities[0].trainingLoadSeed);
         }
-        const daily = data.activitiesByDay(activities, range.start, range.clippedEnd, atl, ctl);
+        const end = Math.min(range.end, D.tomorrow());
+        const daily = data.activitiesByDay(activities, range.start, end, atl, ctl);
         let metricData;
         if (range.metric === 'weeks') {
             metricData = data.aggregateActivitiesByWeek(daily, {isoWeekStart: true});

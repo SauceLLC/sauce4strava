@@ -166,7 +166,7 @@ export class PeaksTableView extends views.ResizablePerfView {
         this.filters = {};
         this.hasMore = false;
         this.pageSize = 100;
-        this.range = pageView.getRangeSnapshot();
+        this.range = pageView.range.clone({frozen: true});
         this.athlete = pageView.athlete;
         this.controlsView = new PeaksControlsView({panelView: this});
         this.listenTo(pageView, 'before-update-activities',
