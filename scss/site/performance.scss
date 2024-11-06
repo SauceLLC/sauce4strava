@@ -745,10 +745,12 @@ table.activity-table {
         flex: 1 0 $nav-width;
         padding: 1.2em;
         background-attachment: local;
-        background-image: linear-gradient(to left,
-                                    #{color.shade(bg, 18%)},
-                                    #{color.shade(bg, 15%)} 0.4em,
-                                    #{color.shade(bg, 12%)});
+        background-image:
+            linear-gradient(105deg, #ffaf2f1c, transparent),
+            linear-gradient(to left,
+                #{color.shade(bg, 12%)},
+                #{color.shade(bg, 8%)} 0.4em,
+                #{color.shade(bg, 5%)});
 
         @media only screen and (max-width: 768px) {
             padding: 1em 0.5em;
@@ -1107,7 +1109,7 @@ table.activity-table {
         .aux-table-header {
             font-size: 0.88em;
             padding: 0.5rem 0.8rem;
-            background-color: color.shade(fg, 40%);
+            background-color: color.shade(fg, 20%);
             color: color.get(bg);
             display: flex;
             flex-wrap: wrap;

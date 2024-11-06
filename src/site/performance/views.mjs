@@ -411,8 +411,8 @@ export class ActivityTableView extends PerfView {
                     metric: 'time',
                     label: H.peakPeriod(period, {short: false, html: true}),
                     shortLabel: H.peakPeriod(period, {short: true, html: true}),
-                    sortKey: function(x) { return this.peaks.get(x.id)?.[id]?.value; },
-                    format: function(a, peaks) { return this._formatPeak(peaks[id], a); },
+                    sortKey: function(x) { return this.peaks.get(x.id)?.[id]?.peak?.value; },
+                    format: function(a, peaks) { return this._formatPeak(peaks[id]?.peak, a); },
                 };
             }),
             ...peakRanges.distances.map(x => {
@@ -426,9 +426,9 @@ export class ActivityTableView extends PerfView {
                     metric: 'distance',
                     label: H.raceDistance(period, {html: true, short: false}),
                     shortLabel: H.raceDistance(period, {html: true, short: true}),
-                    sortKey: function(x) { return this.peaks.get(x.id)?.[id]?.value; },
+                    sortKey: function(x) { return this.peaks.get(x.id)?.[id]?.peak?.value; },
                     sortReverse: true,
-                    format: function(a, peaks) { return this._formatPeak(peaks[id], a); },
+                    format: function(a, peaks) { return this._formatPeak(peaks[id]?.peak, a); },
                 };
             })
         ];
@@ -474,23 +474,32 @@ export class ActivityTableView extends PerfView {
     async setActivities(activities) {
         this.rowLimit = this.rowPageSize;
         this.activities = Array.from(activities || []);
-        const activityIds = activities.map(x => x.id);
-        const newPeaks = new Map(activityIds.map(x => [x, {}]));
+        const activityIds = new Set(activities.map(x => x.id));
+        const newPeaks = new Map(Array.from(activityIds).map(x => [x, {}]));
         // Benchmark optimized...
         const peakMetrics = new Set(this.columns.map(x => x.metric).filter(x => x));
         await Promise.all([...peakMetrics].map(async metric => {
-            const periods = this.columns
-                .filter(x => x.type === 'peak' && x.metric === metric)
-                .map(x => x.period);
-            periods.sort((a, b) => a - b);
-            const ps = await sauce.hist.getPeaksForActivityIds(activityIds,
-                {type: this.peakColTypes[metric], period: [periods.at(0), periods.at(-1)]});
-            for (const peaks of ps) {
-                for (const peak of peaks) {
-                    const col = this.columns.find(x => x.metric === metric && x.period === peak.period);
-                    if (col) {
-                        newPeaks.get(peak.activity)[col.id] = peak;
-                    }
+            const mColumns = this.columns.filter(x => x.type === 'peak' && x.metric === metric);
+            mColumns.sort((a, b) => a.period - b.period);
+            const type = this.peakColTypes[metric];
+            const needed = [];
+            for (const id of activityIds) {
+                const existing = this.peaks.get(id);
+                if (existing && mColumns.every(x => existing[x.id]?.type === type)) {
+                    newPeaks.set(id, existing);
+                } else {
+                    needed.push(id);
+                }
+            }
+            const ps = await sauce.hist.getPeaksForActivityIds(needed, {
+                type,
+                period: [mColumns.at(0).period, mColumns.at(-1).period]
+            });
+            for (const [i, peaks] of ps.entries()) {
+                const id = needed[i];
+                for (const col of mColumns) {
+                    const peak = peaks.find(x => x.period === col.period);
+                    newPeaks.get(id)[col.id] = {type, peak};
                 }
             }
         }));
@@ -1285,14 +1294,15 @@ export class ActivityTablePanelView extends ResizablePerfView {
     async init({pageView, ...options}) {
         await super.init({pageView, ...options});
         const {sortBy, sortDesc} = this.getPrefs();
-        this.layoutAuxTable = sauce.settled(this._layoutAuxTable, 1000);
+        this._searchTrigramCache = new WeakMap();
         this.activityTable = new ActivityTableView({pageView, sortBy, sortDesc, ...options});
         this.activityTableAux = new ActivityTableView({pageView, sortBy, sortDesc, ...options});
         await this.activityTable.initializing;
         await this.activityTableAux.initializing;
-        this._mainTableResizeObserver = new ResizeObserver(this.layoutAuxTable.bind(this));
+        this._mainTableResizeObserver = new ResizeObserver(
+            sauce.settled(this.layoutAuxTable, 200).bind(this));
         this.listenTo(this.activityTable, 'render', this.onMainTableRender);
-        this.listenTo(this.activityTableAux, 'render', this._layoutAuxTable);
+        this.listenTo(this.activityTableAux, 'render', this.layoutAuxTable);
         this.listenTo(this.activityTable, 'sort', this.onTableSort);
         this.listenTo(pageView, 'before-update-activities', () =>
             this.$('.loading-mask').addClass('loading'));
@@ -1381,65 +1391,66 @@ export class ActivityTablePanelView extends ResizablePerfView {
         const ises = [];
         let name;
         const texts = [];
-        for (const x of parts) {
-            if (!x || !x.match(/[a-zA-Z0-9]/)) {
+        for (const part of parts) {
+            if (!part || !part.match(/[a-zA-Z0-9]/)) {
                 continue;
             }
-            if (x.match(/^type:[a-z]+$/)) {
-                const type = x.split('type:')[1];
+            if (part.match(/^type:[a-z]+$/)) {
+                const type = part.split('type:')[1];
                 if (['ride', 'run', 'swim', 'workout'].includes(type)) {
                     types.push(type);
                 }
-            } else if (x.match(/^is:[a-z]+$/)) {
-                const is = x.split('is:')[1];
+            } else if (part.match(/^is:[a-z]+$/)) {
+                const is = part.split('is:')[1];
                 if (['virtual', 'commute'].includes(is)) {
                     ises.push(is);
                 }
-            } else if (x.match(/^name:".*?"$/)) {
-                name = x.split('name:')[1].slice(1, -1);
+            } else if (part.match(/^name:".*?"$/)) {
+                name = part.split('name:')[1].slice(1, -1);
             } else {
-                if (x && x.trim().length >= 2) {
-                    texts.push(x);
+                if (part && part.trim().length >= 2) {
+                    texts.push(part);
                 }
             }
         }
         const filterFns = [];
         if (types.length) {
-            filterFns.push(x => types.includes(x.basetype));
+            filterFns.push(activity => types.includes(activity.basetype));
         }
         if (ises.length) {
-            filterFns.push(x => ises.some(xx => x[xx] === true));
+            filterFns.push(activity => ises.some(x => activity[x] === true));
         }
         if (name && name.length > 3) {
-            filterFns.push(x => x.name && x.name.toLowerCase().includes(name));
+            filterFns.push(activity => activity.name && activity.name.toLowerCase().includes(name));
         }
         if (texts.length) {
             const searchGrams = this.makeTrigrams(texts.join(' '));
-            const matchCrit = Math.round(searchGrams.size * 0.80);
-            filterFns.push(x => {
-                const actGrams = this.makeTrigrams(`${x.name || ''}\n\n${x.description || ''}`);
-                if (actGrams.intersection) {
-                    return searchGrams.intersection(actGrams).size >= matchCrit;
-                } else {
-                    let found = 0;
-                    for (const xx of searchGrams) {
-                        if (actGrams.has(xx)) {
-                            found++;
-                            if (found > matchCrit) {
-                                return true;
-                            }
+            const similarity = 0.8;
+            const similaritySize = Math.round(searchGrams.size * similarity);
+            filterFns.push(activity => {
+                let actGrams = this._searchTrigramCache.get(activity);
+                if (!actGrams) {
+                    actGrams = this.makeTrigrams(`${activity.name || ''}\n\n${activity.description || ''}`);
+                    this._searchTrigramCache.set(activity, actGrams);
+                }
+                // NOTE: Don't use `intersection()` even when available.  It's slower.
+                let found = 0;
+                for (const xx of searchGrams) {
+                    if (actGrams.has(xx)) {
+                        if (++found >= similaritySize) {
+                            return true;
                         }
                     }
-                    return false;
                 }
+                return false;
             });
         }
-        const tables = [this.activityTable];
+        const filter = filterFns.length > 1 ?
+            activity => filterFns.every(x => x(activity)) :
+            filterFns[0];
+        this.activityTable.setActivityFilter(filter);
         if (this.getPrefs('comparisonView')) {
-            tables.push(this.activityTableAux);
-        }
-        for (const x of tables) {
-            x.setActivityFilter(filterFns.length ? x => filterFns.every(xx => xx(x)) : undefined);
+            this.activityTableAux.setActivityFilter(filter);
         }
     }
 
@@ -1448,7 +1459,7 @@ export class ActivityTablePanelView extends ResizablePerfView {
         if (!value) {
             return grams;
         }
-        value = value.toLowerCase().replace(/\s+/g, ' ');
+        value = value.toLowerCase().replace(/\s+/g, ' ').padEnd(3, ' ');
         for (let i = 0; i < value.length; i++) {
             const gram = value.substr(i, 3);
             if (gram.length === 3) {
@@ -1478,7 +1489,7 @@ export class ActivityTablePanelView extends ResizablePerfView {
         }
     }
 
-    _layoutAuxTable() {
+    layoutAuxTable() {
         const firstRow = this.activityTableAux.el.querySelector(
             ':scope > table > tbody:first-of-type > tr[data-id]');
         if (!firstRow) {
