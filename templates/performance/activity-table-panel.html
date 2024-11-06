@@ -11,10 +11,13 @@
 </header>
 <% const searchHintListId = self.crypto.randomUUID(); %>
 <datalist id="{{searchHintListId}}">
-    <option value="type:Ride">
-    <option value="type:Run">
-    <option value="type:Swim">
-    <option value="type:Workout">
+    <option value="type:ride">
+    <option value="type:run">
+    <option value="type:swim">
+    <option value="type:workout">
+    <option value="is:virtual">
+    <option value="is:commute">
+    <option value="name:&quot;Is something&quot;">
 </datalist>
 <div class="sauce-panel-content table-view activity-table-view {{obj.comparisonView ? 'comparison-view' : ''}} loading-mask loading">
     <header>

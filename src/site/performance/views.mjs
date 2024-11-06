@@ -1,5 +1,7 @@
 /* global sauce currentAthlete jQuery */
 
+// XXX All range is not detected properly now, (regression), shows 23 years instead in select
+
 import {SauceView} from '../view.mjs';
 import * as data from './data.mjs';
 
@@ -499,17 +501,26 @@ export class ActivityTableView extends PerfView {
         await this.render();
     }
 
+    async setActivityFilter(fn) {
+        this._filterFn = fn;
+        await this.setActivities(this.activities);
+    }
+
     async setMode(mode) {
         this.mode = mode;
         await this.render();
     }
 
+    getFilteredActivities() {
+        return this._filterFn ? this.activities.filter(this._filterFn) : this.activities;
+    }
+
     renderAttrs() {
-        const acts = this.activities;
-        const mostlyRuns = acts.filter(x => x.basetype === 'run').length / acts.length > 0.5;
+        const activities = this.getFilteredActivities();
+        const mostlyRuns = activities.filter(x => x.basetype === 'run').length / activities.length > 0.5;
         return {
             entryTpl: 'performance/activity-table-entry.html',
-            activities: this.activities,
+            activities,
             peaks: this.peaks,
             mode: this.mode,
             rowLimit: this.rowLimit,
@@ -563,15 +574,17 @@ export class ActivityTableView extends PerfView {
     async onLoadMoreClick(ev) {
         const loadMore = ev.currentTarget;
         loadMore.classList.add('loading');
+        let activities;
         try {
             const tpl = await sauce.template.getTemplate('performance/activity-table-entry.html',
                 'performance');
             const attrs = this.renderAttrs();
-            const moreActs = this.activities.slice(this.rowLimit, this.rowLimit += this.rowPageSize);
+            activities = this.getFilteredActivities();
+            const moreActs = activities.slice(this.rowLimit, this.rowLimit += this.rowPageSize);
             const newRows = await Promise.all(moreActs.map(a => tpl({a, ...attrs})));
             sauce.adjacentNodeContents(loadMore, 'beforebegin', newRows.join('\n'));
         } finally {
-            if (this.activities.length <= this.rowLimit) {
+            if (!activities || activities.length <= this.rowLimit) {
                 loadMore.classList.add('hidden');
             }
             loadMore.classList.remove('loading');
@@ -1267,6 +1280,7 @@ export class ActivityTablePanelView extends ResizablePerfView {
             ...super.events,
             'change .aux-table-header select[name="aux-range"]': 'onAuxRangeChange',
             'input .aux-table-header input[type="date"]': 'onAuxDateChange',
+            'input header input[name="sauce-activity-search"]': 'onActivitySearch',
         };
     }
 
@@ -1356,6 +1370,91 @@ export class ActivityTablePanelView extends ResizablePerfView {
             excludeUpper: true
         });
         await this.activityTableAux.setActivities(activities);
+    }
+
+    onActivitySearch(ev) {
+        const el = ev.currentTarget;
+        const rawValue = el.value;
+        const parts = rawValue.toLowerCase().split(/(type:[a-z]+)|(is:[a-z]+)|(name:".*?")/);
+        const types = [];
+        const ises = [];
+        let name;
+        const texts = [];
+        for (const x of parts) {
+            if (!x || !x.match(/[a-zA-Z0-9]/)) {
+                continue;
+            }
+            if (x.match(/^type:[a-z]+$/)) {
+                const type = x.split('type:')[1];
+                if (['ride', 'run', 'swim', 'workout'].includes(type)) {
+                    types.push(type);
+                }
+            } else if (x.match(/^is:[a-z]+$/)) {
+                const is = x.split('is:')[1];
+                if (['virtual', 'commute'].includes(is)) {
+                    ises.push(is);
+                }
+            } else if (x.match(/^name:".*?"$/)) {
+                name = x.split('name:')[1].slice(1, -1);
+            } else {
+                if (x && x.trim().length >= 2) {
+                    texts.push(x);
+                }
+            }
+        }
+        const filterFns = [];
+        if (types.length) {
+            filterFns.push(x => types.includes(x.basetype));
+        }
+        if (ises.length) {
+            filterFns.push(x => ises.some(xx => x[xx] === true));
+        }
+        if (name && name.length > 3) {
+            filterFns.push(x => x.name && x.name.toLowerCase().includes(name));
+        }
+        if (texts.length) {
+            const searchGrams = this.makeTrigrams(texts.join(' '));
+            const matchCrit = searchGrams.size * 0.80;
+            filterFns.push(x => {
+                const actGrams = this.makeTrigrams(`${x.name || ''}\n\n${x.description || ''}`);
+                if (actGrams.intersection) {
+                    return searchGrams.intersection(actGrams).size > matchCrit;
+                } else {
+                    let found = 0;
+                    for (const xx of searchGrams) {
+                        if (actGrams.has(xx)) {
+                            found++;
+                            if (found > matchCrit) {
+                                return true;
+                            }
+                        }
+                    }
+                    return false;
+                }
+            });
+        }
+        const tables = [this.activityTable];
+        if (this.getPrefs('comparisonView')) {
+            tables.push(this.activityTableAux);
+        }
+        for (const x of tables) {
+            x.setActivityFilter(filterFns.length ? x => filterFns.every(xx => xx(x)) : undefined);
+        }
+    }
+
+    makeTrigrams(value) {
+        const grams = new Set();
+        if (!value) {
+            return grams;
+        }
+        value = value.toLowerCase().replace(/\s+/g, ' ');
+        for (let i = 0; i < value.length; i++) {
+            const gram = value.substr(i, 3);
+            if (gram.length === 3) {
+                grams.add(gram);
+            }
+        }
+        return grams;
     }
 
     async onAuxRangeChange(ev) {
