@@ -3,6 +3,7 @@
 @use 'dialog';
 @use 'buttons';
 @use 'sync';
+@use 'defines';
 
 @font-face {
     font-family: 'Material Icons';
@@ -1137,14 +1138,23 @@ table.activity-table {
             min-height: 8em;
 
             &.aux {
-                thead {
-                    display: none;
+                > table {
+                    table-layout: fixed;
+
+                    > thead {
+                        display: none;
+                    }
+
+                    td {
+                        min-width: 0 !important;
+                        max-width: none !important;
+                    }
                 }
             }
         }
- 
+
         &.loading {
-            min-height: calc(25vh * var(--height-factor));
+            min-height: var(--suggested-height);
         }
 
         .resize-drag {
@@ -1221,6 +1231,15 @@ table.activity-table {
         padding: 1em;
         display: flex;
         flex-direction: column;
+
+        &:has(.sauce-panels .sauce-panel.maximized) {
+            height: 100vh !important;
+            overflow: hidden !important;
+
+            .sauce-panels {
+                overflow: hidden !important;
+            }
+        }
 
         &.maximized {
             .window-controls .btn.expand {
@@ -1336,18 +1355,41 @@ table.activity-table {
                 overflow: hidden;
                 position: relative;
 
-                &:not(.fixed-height) {
+                &:has(~ .maximized) {
+                    display: none;
+                }
+
+                &.maximized {
+                    height: 100% !important;
+                    flex-basis: 100% !important;
+
+                    & ~ .sauce-panel {
+                        display: none;
+                    }
+
+                    .sauce-panel-content {
+                        margin-bottom: 0;
+
+                        .resize-drag {
+                            display: none;
+                        }
+                    }
+                }
+
+                &:not(.fixed-height):not(.maximized) {
                     .table-view {
-                        max-height: calc(25vh * var(--height-factor));
+                        --height-basis: 25vh;
+                        --suggested-height: calc(var(--height-basis) * var(--height-factor));
+                        max-height: var(--suggested-height);
 
                         &.comparison-view {
-                            max-height: calc(38vh * var(--height-factor));
+                            --height-basis: 38vh;
                         }
                     }
                 }
 
                 &:hover {
-                    > header .sauce-panel-settings.btn {
+                    > header .btn {
                         opacity: 0.8;
                         visibility: visible;
                     }
@@ -1372,15 +1414,28 @@ table.activity-table {
                         opacity: 0.7;
                     }
 
-                    .sauce-panel-settings.btn {
+                    > .btn,
+                    > .buttons {
                         position: absolute;
                         top: 0;
                         right: 0;
                         height: 100%;
-                        padding: 0 1em;
+                        margin-right: 0.6em;
+                    }
+
+                    .btn {
+                        font-size: 0.8em;
+                        height: 100%;
+                        padding: 0 0.4em;
                         opacity: 0;
                         visibility: hidden;
                         transition: opacity 300ms, visibility 300ms;
+
+                        svg[data-icon] {
+                            &[data-prefix="far"] {
+                                opacity: 0.7;
+                            }
+                        }
                     }
                 }
 
