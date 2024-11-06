@@ -31,9 +31,10 @@
                 <b>{{{comparison_view}}}:</b>
                 <select name="aux-range">
                     <option value="prev" {{obj.auxRange === 'prev' ? 'selected' : ''}}>{{{previous_period}}}</option>
+                    <option value="next" {{obj.auxRange === 'next' ? 'selected' : ''}}>{{{next_period}}}</option>
                     <option value="before" {{obj.auxRange === 'before' ? 'selected' : ''}}>{{{all_before}}}</option>
                     <option value="after" {{obj.auxRange === 'after' ? 'selected' : ''}}>{{{all_after}}}</option>
-                    <option value="next" {{obj.auxRange === 'next' ? 'selected' : ''}}>{{{next_period}}}</option>
+                    <option value="all" {{obj.auxRange === 'all' ? 'selected' : ''}}>{{{all}}}</option>
                     <option value="custom" {{obj.auxRange === 'custom' ? 'selected' : ''}}>{{{/custom}}}</option>
                 </select>
                 <input type="date" name="aux-start"/>

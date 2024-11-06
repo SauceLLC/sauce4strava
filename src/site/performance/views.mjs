@@ -1285,13 +1285,14 @@ export class ActivityTablePanelView extends ResizablePerfView {
     async init({pageView, ...options}) {
         await super.init({pageView, ...options});
         const {sortBy, sortDesc} = this.getPrefs();
+        this.layoutAuxTable = sauce.settled(this._layoutAuxTable, 1000);
         this.activityTable = new ActivityTableView({pageView, sortBy, sortDesc, ...options});
         this.activityTableAux = new ActivityTableView({pageView, sortBy, sortDesc, ...options});
         await this.activityTable.initializing;
         await this.activityTableAux.initializing;
-        this._mainTableResizeObserver = new ResizeObserver(this.onMainTableResize.bind(this));
+        this._mainTableResizeObserver = new ResizeObserver(this.layoutAuxTable.bind(this));
         this.listenTo(this.activityTable, 'render', this.onMainTableRender);
-        this.listenTo(this.activityTableAux, 'render', this.onAuxTableRender);
+        this.listenTo(this.activityTableAux, 'render', this._layoutAuxTable);
         this.listenTo(this.activityTable, 'sort', this.onTableSort);
         this.listenTo(pageView, 'before-update-activities', () =>
             this.$('.loading-mask').addClass('loading'));
@@ -1343,6 +1344,8 @@ export class ActivityTablePanelView extends ResizablePerfView {
         } else if (auxRange === 'after') {
             range.start = range.end;
             range.end = undefined;
+        } else if (auxRange === 'all') {
+            range.start = range.end = undefined;
         } else {
             console.error('Invalid aux range', auxRange);
             range.start = range.end = undefined;
@@ -1412,11 +1415,11 @@ export class ActivityTablePanelView extends ResizablePerfView {
         }
         if (texts.length) {
             const searchGrams = this.makeTrigrams(texts.join(' '));
-            const matchCrit = searchGrams.size * 0.80;
+            const matchCrit = Math.round(searchGrams.size * 0.80);
             filterFns.push(x => {
                 const actGrams = this.makeTrigrams(`${x.name || ''}\n\n${x.description || ''}`);
                 if (actGrams.intersection) {
-                    return searchGrams.intersection(actGrams).size > matchCrit;
+                    return searchGrams.intersection(actGrams).size >= matchCrit;
                 } else {
                     let found = 0;
                     for (const xx of searchGrams) {
@@ -1475,14 +1478,19 @@ export class ActivityTablePanelView extends ResizablePerfView {
         }
     }
 
-    onAuxTableRender(table) {
-        const firstRow = table.el.querySelector(':scope > table > tbody:first-of-type > tr[data-id]');
+    _layoutAuxTable() {
+        const firstRow = this.activityTableAux.el.querySelector(
+            ':scope > table > tbody:first-of-type > tr[data-id]');
         if (!firstRow) {
             return;
         }
-        let i = 0;
+        // Batch reads and writes to avoid layout thrash..
+        const widths = [];
         for (const x of this.activityTable.el.querySelectorAll(':scope > table > thead > tr > th')) {
-            firstRow.children[i++].style.width = `${x.getBoundingClientRect().width}px`;
+            widths.push(x.getBoundingClientRect().width);
+        }
+        for (const [i, x] of widths.entries()) {
+            firstRow.children[i].style.width = `${x}px`;
         }
     }
 
@@ -1703,7 +1711,6 @@ export class MainView extends PerfView {
         el.classList.add('hidden');
         el.parentElement.querySelector('.sauce-panel-maximize.btn').classList.remove('hidden');
         el.closest('.sauce-panel').classList.remove('maximized');
-        this.toggleMaximized(false, {noSave: true, noAside: false});
     }
 
     async onPanelSettingsClick(ev) {
@@ -2045,7 +2052,7 @@ export class PageView extends PerfView {
         // start as an update to our activities, because it's very possible the
         // ATL/CTL seed values will be forward propagated into our activity range.
         if (this.range && this.range.start && this.range.end) {
-            const rangeStart = +this.range.start - (42 * 86400 * 1000);
+            const rangeStart = +this.range.start - (42 * DAY);
             if (done.oldest <= this.range.end && done.newest >= rangeStart) {
                 await this.schedUpdateActivities();
                 await this.refreshNewestAndOldest();
@@ -2106,7 +2113,7 @@ export class PageView extends PerfView {
     getAllRange() {
         let period, metric;
         const now = new Date();
-        const days = (now - this.oldest) / 1000 / 86400;
+        const days = (now - this.oldest) / DAY;
         if (days > 3 * 365) {
             metric = 'years';
             period = (now.getFullYear() - new Date(this.oldest).getFullYear()) + 1;
