@@ -1598,7 +1598,7 @@ export class MainView extends PerfView {
         el.closest('.sauce-panel').classList.add('maximized');
         el.classList.add('hidden');
         el.parentElement.querySelector('.sauce-panel-restore.btn').classList.remove('hidden');
-        this.el.scrollIntoView({behavior: 'smooth'});
+        this.el.scrollIntoView();
     }
 
     onPanelRestoreClick(ev) {
@@ -1736,6 +1736,9 @@ export class MainView extends PerfView {
         const range = this.pageView.range;
         if (isStart) {
             cal.valueAsNumber = +range.start;
+            if (this.pageView.oldest) {
+                cal.min = D.dayBefore(this.pageView.oldest).toISOString().split('T')[0];
+            }
             cal.max = D.dayBefore(range.end).toISOString().split('T')[0];
         } else {
             cal.valueAsNumber = +D.dayBefore(range.end);
@@ -2039,7 +2042,10 @@ export class PageView extends PerfView {
     }
 
     async setRangeCustomStartEnd(start, end) {
-        debugger;
+        if ((start || this.range.start) > (end || this.range.end)) {
+            console.warn("Ignoring inverted custom range:", {start, end});
+            return;
+        }
         if (start != null) {
             this.range.start = new Date(start);
         }
