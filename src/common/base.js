@@ -195,8 +195,8 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, name, version) {
                 .catch(reject)
                 .finally(() => active = nextArgs ? runner() : null);
         };
-        const wrap = function(...args) {
-            nextArgs = [this, args];
+        const wrap = function() {
+            nextArgs = [this, arguments];
             if (!nextPromise) {
                 nextPromise = new Promise((resolve, reject) =>
                     (nextResolve = resolve, nextReject = reject));
@@ -209,6 +209,30 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, name, version) {
         };
         if (asyncFn.name) {
             Object.defineProperty(wrap, 'name', {value: `sauce.debounced[${asyncFn.name}]`});
+        }
+        return wrap;
+    };
+
+
+    /*
+     * Wait for `quietTime` amount of time before running a func.
+     * Last arguments passed to func win.
+     */
+    sauce.settled = function(fn, quietTime) {
+        let nextArgs;
+        let nextTimerId;
+        const runner = () => {
+            const [scope, args] = nextArgs;
+            nextArgs = null;
+            return fn.apply(scope, args);
+        };
+        const wrap = function() {
+            clearTimeout(nextTimerId);
+            nextArgs = [this, arguments];
+            nextTimerId = setTimeout(runner, quietTime);
+        };
+        if (fn.name) {
+            Object.defineProperty(wrap, 'name', {value: `sauce.throttled[${fn.name}]`});
         }
         return wrap;
     };
