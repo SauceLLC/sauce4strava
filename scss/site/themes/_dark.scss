@@ -1,6 +1,8 @@
 @use '../color';
 
 @mixin theme {
+    color-scheme: dark;
+
     --sauce-bg-light: 10%;
     --sauce-bg-shade-dir: 1;
 
