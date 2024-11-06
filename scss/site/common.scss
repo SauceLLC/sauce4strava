@@ -1,5 +1,6 @@
 @use 'color';
 @use 'responsive';
+@use 'defines';
 
 :root {
     --sauce-bg-hue: 0;
@@ -152,7 +153,7 @@
     #container-nav {
         ul.global-nav {
             li.drop-down-menu[data-log-category="training"] > ul {
-                max-height: calc(99vh - 55px);
+                max-height: calc(99vh - defines.$global-header-height);
             }
         }
     }
