@@ -556,6 +556,9 @@ class PeaksMainView extends views.MainView {
             }, {
                 id: 'panel-default-peaks-peaks-chart-0',
                 view: '1479b2a2-c8e3-48f9-bf6f-9acce30b12d8',
+            }, {
+                id: 'panel-default-peaks-activity-table-0',
+                view: 'c9222e6a-80ee-4ccc-a45c-dfe996c3ec16'
             }]
         };
     }
