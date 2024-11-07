@@ -51,6 +51,12 @@
     "load_more": {
         "message": "Charger plus"
     },
+    "search": {
+        "message": "Recherche"
+    },
+    "custom": {
+        "message": "Coutume"
+    },
     "menu_performance_fitness": {
         "message": "Traqueur de Fitness",
         "description": "IMMUTABLE"
@@ -1391,8 +1397,20 @@
     "performance_filter": {
         "message": "Filtre"
     },
-    "performance_split_view": {
-        "message": "Vue fractionnée"
+    "performance_comparison_view": {
+        "message": "Vue comparative"
+    },
+    "performance_previous_period": {
+        "message": "Période précédente"
+    },
+    "performance_next_period": {
+        "message": "Prochaine période"
+    },
+    "performance_all_before": {
+        "message": "Tout avant"
+    },
+    "performance_all_after": {
+        "message": "Tout après"
     },
     "season_start": {
         "message": "Début de saison"

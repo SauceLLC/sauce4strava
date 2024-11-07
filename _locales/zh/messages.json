@@ -67,6 +67,12 @@
         "message": "加载更多",
         "description": "IMMUTABLE"
     },
+    "search": {
+        "message": "搜索"
+    },
+    "custom": {
+        "message": "风俗"
+    },
     "menu_performance_fitness": {
         "message": "健身追踪",
         "description": "IMMUTABLE"
@@ -1776,8 +1782,20 @@
         "message": "过滤",
         "description": "IMMUTABLE"
     },
-    "performance_split_view": {
-        "message": "拆分视图"
+    "performance_comparison_view": {
+        "message": "比较视图"
+    },
+    "performance_previous_period": {
+        "message": "前一期间"
+    },
+    "performance_next_period": {
+        "message": "下一期"
+    },
+    "performance_all_before": {
+        "message": "全部之前"
+    },
+    "performance_all_after": {
+        "message": "之后"
     },
     "season_start": {
         "message": "赛季开始",

@@ -53,6 +53,12 @@
     "load_more": {
         "message": "Carga más"
     },
+    "search": {
+        "message": "Buscar"
+    },
+    "custom": {
+        "message": "Costumbre"
+    },
     "menu_performance_fitness": {
         "message": "Rastreador de fitness",
         "description": "IMMUTABLE"
@@ -1415,8 +1421,20 @@
     "performance_filter": {
         "message": "Filtrar"
     },
-    "performance_split_view": {
-        "message": "Vista dividida"
+    "performance_comparison_view": {
+        "message": "Vista comparativa"
+    },
+    "performance_previous_period": {
+        "message": "Periodo anterior"
+    },
+    "performance_next_period": {
+        "message": "Próximo período"
+    },
+    "performance_all_before": {
+        "message": "Todo antes"
+    },
+    "performance_all_after": {
+        "message": "Todo despues"
     },
     "season_start": {
         "message": "Inicio de temporada"

@@ -52,6 +52,12 @@
     "load_more": {
         "message": "Mehr laden"
     },
+    "search": {
+        "message": "Suchen"
+    },
+    "custom": {
+        "message": "Brauch"
+    },
     "menu_performance_fitness": {
         "message": "Fitness-Tracking"
     },
@@ -1394,8 +1400,20 @@
     "performance_filter": {
         "message": "Filter"
     },
-    "performance_split_view": {
-        "message": "Geteilte Ansicht"
+    "performance_comparison_view": {
+        "message": "Vergleichsansicht"
+    },
+    "performance_previous_period": {
+        "message": "Vorheriger Zeitraum"
+    },
+    "performance_next_period": {
+        "message": "Nächster Zeitraum"
+    },
+    "performance_all_before": {
+        "message": "Alles vorher"
+    },
+    "performance_all_after": {
+        "message": "Alles danach"
     },
     "season_start": {
         "message": "Saisonbeginn"
