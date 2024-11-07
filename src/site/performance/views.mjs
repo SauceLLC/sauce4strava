@@ -1325,11 +1325,13 @@ export class ActivityTablePanelView extends ResizablePerfView {
             this.activityTable.setElement(this.$('.table-wrap.main'));
             this.activityTable.setPeakColType('time', this.getPrefs('peakTimeType'));
             this.activityTable.setPeakColType('distance', this.getPrefs('peakDistanceType'));
+            this.activityTable.setActivityFilter(undefined);
             await this.activityTable.setColumns(columns);
             if (this.getPrefs('comparisonView')) {
                 this.activityTableAux.setElement(this.$('.table-wrap.aux'));
                 this.activityTableAux.setPeakColType('time', this.getPrefs('peakTimeType'));
                 this.activityTableAux.setPeakColType('distance', this.getPrefs('peakDistanceType'));
+                this.activityTableAux.setActivityFilter(undefined);
                 await this.activityTableAux.setColumns(columns);
                 await this.updateAuxTableActivities();
             }
