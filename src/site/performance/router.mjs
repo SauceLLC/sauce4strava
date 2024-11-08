@@ -33,7 +33,7 @@ class RangeRouter extends Backbone.Router {
         }
         period = validMetric && Number(period) || null;
         if (period) {
-            const days = {days: 1, weeks: 7, months: 365/12, years: 365}[metric] * period;
+            const days = {days: 1, weeks: 7, months: 365 / 12, years: 365}[metric] * period;
             if (days > 100 * 365) {
                 console.error("Invalid period (exceeds 100 years)");
                 period = null;

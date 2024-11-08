@@ -24,6 +24,11 @@ function hasSyncController(athleteId) {
 }
 
 
+function isoDate(d) {
+    return new Date(d).toISOString().substr(0, 10);
+}
+
+
 const _peakRanges = {};
 export async function getPeakRanges(type) {
     if (!_peakRanges[type]) {
@@ -1863,18 +1868,19 @@ export class MainView extends PerfView {
         const range = this.pageView.range;
         if (isStart) {
             cal.valueAsNumber = +range.start;
-            if (this.pageView.oldest) {
-                cal.min = D.dayBefore(this.pageView.oldest).toISOString().split('T')[0];
-            }
-            cal.max = D.dayBefore(range.end).toISOString().split('T')[0];
+            cal.min = isoDate(D.dayBefore(this.pageView.oldest || 0));
+            cal.max = isoDate(D.dayBefore(range.end));
         } else {
             cal.valueAsNumber = +D.dayBefore(range.end);
-            cal.min = range.start.toISOString().split('T')[0];
+            cal.min = isoDate(range.start);
+            cal.max = isoDate(D.adjacentDay(D.tomorrow(), 365));
         }
         cal.addEventListener('input', async ev => {
-            const date = new Date(cal.valueAsNumber ? D.addTZ(cal.valueAsNumber) : undefined);
+            const date = (cal.checkValidity() && cal.valueAsNumber) ?
+                new Date(D.addTZ(cal.valueAsNumber)) :
+                NaN;
             if (isNaN(date)) {
-                console.warn("invalid date", date);
+                console.warn("Ignoring invalid date:", cal.value);
                 return;
             }
             let start, end;
@@ -2177,8 +2183,14 @@ export class PageView extends PerfView {
     }
 
     async setRangeCustomStartEnd(start, end) {
-        if ((start || this.range.start) > (end || this.range.end)) {
-            console.warn("Ignoring inverted custom range:", {start, end});
+        const proposedRange = (end != null ? end : this.range.end) -
+            (start != null ? start : this.range.start);
+        if (proposedRange > 100 * 365 * DAY) {
+            // Prevent OOM bugs with insane ranges...
+            console.error('Invalid range (too big)', proposedRange);
+            return;
+        } else if (proposedRange < 0) {
+            console.error('Invalid range (negative)', proposedRange);
             return;
         }
         if (start != null) {
