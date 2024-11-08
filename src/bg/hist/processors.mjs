@@ -432,7 +432,7 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
             if (streams.distance && stats.distance == null && streams.distance.length > 1) {
                 stats.distance = streams.distance[streams.distance.length - 1] - streams.distance[0];
             }
-            const ftp = athlete.getFTPAt(activity.get('ts'));
+            const ftp = athlete.getFTPAt(activity.get('ts'), activity.get('basetype'));
             if (streams.heartrate && hrZones) {
                 try {
                     const restingHR = ftp ? sauce.perf.estimateRestingHR(ftp) : 60;

@@ -2630,20 +2630,25 @@ sauce.ns('date', function() {
 sauce.ns('model', function() {
     'use strict';
 
-    function getAthleteHistoryValueAt(values, ts) {
-        ts = ts || Date.now();
-        if (values) {
-            const sorted = values.sort((a, b) => (b.ts - a.ts));
-            let v;
-            for (const x of sorted) {
-                v = x.value;
-                if (x.ts <= ts) {
-                    break;
-                }
-            }
-            return v;
+    function getAthleteWeightAt(athlete, ts) {
+        return _getAthleteHistoryEntryAt(athlete.weightHistory, ts)?.value;
+    }
+
+
+    function getAthleteFTPAt(athlete, ts, basetype) {
+        const simpleType = {ride: 'ride', run: 'run'}[basetype] || 'other';
+        const filtered = athlete.ftpHistory?.filter(x => !x.type || x.type === simpleType || !basetype);
+        return _getAthleteHistoryEntryAt(filtered, ts)?.value;
+    }
+
+
+    function _getAthleteHistoryEntryAt(data, ts) {
+        if (data && data.length) {
+            data = Array.from(data).sort((a, b) => ((b.ts || 0) - (a.ts || 0)));
+            return data.find(x => (x.ts || 0) <= ts);
         }
     }
+
 
     function getActivityTSSMeta(a) {
         const preferEstPower = !!sauce?.options['analysis-prefer-estimated-power-tss'];
@@ -2668,6 +2673,7 @@ sauce.ns('model', function() {
         }
         return {tss, type};
     }
+
 
     function getActivityTSS(a, options) {
         return getActivityTSSMeta(a, options).tss;
@@ -2707,7 +2713,8 @@ sauce.ns('model', function() {
     }
 
     return {
-        getAthleteHistoryValueAt,
+        getAthleteWeightAt,
+        getAthleteFTPAt,
         getActivityTSS,
         getActivityTSSMeta,
         getActivityBaseType,

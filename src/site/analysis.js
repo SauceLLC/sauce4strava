@@ -3339,11 +3339,11 @@ sauce.ns('analysis', ns => {
         }
 
         getFTPAt(ts) {
-            return sauce.model.getAthleteHistoryValueAt(this.ftpHistory, ts);
+            return sauce.model.getAthleteFTPAt(this, ts, ns.activityType);
         }
 
         getWeightAt(ts) {
-            return sauce.model.getAthleteHistoryValueAt(this.weightHistory, ts);
+            return sauce.model.getAthleteWeightAt(this, ts);
         }
     }
 

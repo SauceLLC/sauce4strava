@@ -43,16 +43,6 @@ function humanWatts(watts, options={}) {
 }
 
 
-function getAthleteWeightAt(athlete, ts) {
-    return sauce.model.getAthleteHistoryValueAt(athlete.weightHistory, ts);
-}
-
-
-function getAthleteFTPAt(athlete, ts) {
-    return sauce.model.getAthleteHistoryValueAt(athlete.ftpHistory, ts);
-}
-
-
 function roundNumber(n, prec) {
     return n ? Number(n.toFixed(prec)) : 0;
 }
@@ -370,7 +360,8 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
                             let zones;
                             let units;
                             if (group === 'power') {
-                                zones = sauce.power.cogganZones(getAthleteFTPAt(this.athlete, ds.ts));
+                                zones = sauce.power.cogganZones(
+                                    sauce.model.getAthleteFTPAt(this.athlete, ds.ts));
                                 units = 'w';
                             } else if (group === 'hr') {
                                 zones = {...this.athlete.hrZones, z5: Infinity};
@@ -905,7 +896,7 @@ export class AthleteStatsChartView extends charts.ActivityTimeRangeChartView {
     static typeLocaleKey = 'performance_athlete_chart_type';
     static nameLocaleKey = 'performance_athlete_chart_name';
     static descLocaleKey = 'performance_athlete_chart_desc';
-    static localeKeys = ['/weight', ...super.localeKeys];
+    static localeKeys = ['/weight', 'rides', 'runs', 'other', ...super.localeKeys];
 
     async init(options) {
         await super.init(options);
@@ -956,6 +947,13 @@ export class AthleteStatsChartView extends charts.ActivityTimeRangeChartView {
     updateChart() {
         const disabled = this.getPrefs('disabledDatasets', {});
         const datasets = [];
+        const getMetricTimes = bucket => {
+            const times = [];
+            for (let i = 0; i < bucket.days; i++) {
+                times.push(+bucket.date + i * DAY);
+            }
+            return times;
+        };
         if (!disabled.weight) {
             datasets.push({
                 id: 'weight',
@@ -968,38 +966,39 @@ export class AthleteStatsChartView extends charts.ActivityTimeRangeChartView {
                     return {
                         b,
                         x: b.date,
-                        y: b.activities.length ?
-                            roundAvg(b.activities.map(x => getAthleteWeightAt(this.athlete, x.ts)), 4) :
-                            roundNumber(getAthleteWeightAt(this.athlete, b.date), 4),
+                        y: roundAvg(getMetricTimes(b).map(x =>
+                            sauce.model.getAthleteWeightAt(this.athlete, x)), 4)
                     };
                 }),
             });
         }
         if (!disabled.ftp) {
-            datasets.push({
-                id: 'ftp',
-                label: this.availableDatasets.ftp.label,
-                yAxisID: 'ftp',
-                backgroundColor: '#e347',
-                borderColor: '#d23f',
-                tooltipFormat: x => x ? humanWatts(x, {html: true}) : '-',
-                data: this.metricData.map(b => {
-                    return {
-                        b,
-                        x: b.date,
-                        y: b.activities.length ?
-                            roundAvg(b.activities.map(x => getAthleteFTPAt(this.athlete, x.ts)), 4) :
-                            roundNumber(getAthleteFTPAt(this.athlete, b.date), 4),
-                    };
-                }),
-            });
+            const typedData = {};
+            for (const type of ['ride', 'run', 'other']) {
+                typedData[type] = this.metricData.map(b => ({
+                    b,
+                    x: b.date,
+                    y: roundAvg(getMetricTimes(b).map(x =>
+                        sauce.model.getAthleteFTPAt(this.athlete, x, type)), 4)
+                }));
+            }
+            for (const [type, data] of Object.entries(typedData)) {
+                datasets.push({
+                    id: `ftp-${type}`,
+                    label: `${this.availableDatasets.ftp.label} - ` +
+                        `${this.LM({ride: 'rides', run: 'runs', other: 'other'}[type])}`,
+                    yAxisID: 'ftp',
+                    backgroundColor: '#e347',
+                    borderColor: '#d23f',
+                    tooltipFormat: x => x ? humanWatts(x, {html: true}) : '-',
+                    data
+                });
+            }
         }
-
         this.chart.data.datasets = datasets;
         this.chart.update();
     }
 }
-
 
 
 export const PanelViews = [

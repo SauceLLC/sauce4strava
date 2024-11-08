@@ -28,7 +28,7 @@ export function peaksProcessor(actStreams, athlete, activities, {periods, distan
         const wattsStream = streams.watts || streams.watts_calc;
         const estPower = !streams.watts;
         const totalTime = streams.time[streams.time.length - 1] - streams.time[0];
-        const weight = sauce.model.getAthleteHistoryValueAt(athlete.weightHistory, activity.ts);
+        const weight = sauce.model.getAthleteWeightAt(athlete, activity.ts);
 
         const addPeak = (a1, a2, a3, a4, extra) => {
             const entry = sauce.peaks.createStoreEntry(a1, a2, a3, a4, streams.time, activity, extra);

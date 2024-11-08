@@ -326,12 +326,12 @@ sauce.ns('hist.db', ns => {
             return !!this.data.sync;
         }
 
-        getFTPAt(ts) {
-            return sauce.model.getAthleteHistoryValueAt(this.data.ftpHistory, ts);
+        getFTPAt(ts, basetype) {
+            return sauce.model.getAthleteFTPAt(this.data, ts, basetype);
         }
 
         getWeightAt(ts) {
-            return sauce.model.getAthleteHistoryValueAt(this.data.weightHistory, ts);
+            return sauce.model.getAthleteWeightAt(this.data, ts);
         }
 
         setFTPHistory(data) {

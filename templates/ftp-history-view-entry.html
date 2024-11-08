@@ -1,0 +1,25 @@
+<div class="mutable-data-entry">
+    <key>
+        <input <% if (parent.valueMin != null) { %>min="{{parent.valueMin}}"<% } %>
+               <% if (parent.valueMax != null) { %>max="{{parent.valueMax}}"<% } %>
+               <% if (parent.valueStep != null) { %>step="{{parent.valueStep}}"<% } %>
+               type="number" required style="width: 6ch" value="{{value}}"/>
+        <% if (parent.valueUnit) { %>
+            <abbr class="unit">{{parent.valueUnit}}</abbr>
+        <% } %>
+    </key>
+    <value>
+        <!--Important to set a 4 digit max to avoid chrome reserving too much space for huge years-->
+        <% const saneMax = new Date(Date.now() + 365 * 86400 * 1000).toISOString().substr(0, 10); %>
+        <input type="date" required min="1970-01-01" max="{{saneMax}}" value="{{ts}}"/>
+        
+        <select name="type">
+            <option value="">{{{/performance_all}}}</option>
+            <option value="ride" {{obj.type === 'ride' ? 'selected' : ''}}>{{{/performance_rides}}}</option>
+            <option value="run" {{obj.type === 'run' ? 'selected' : ''}}>{{{/performance_runs}}}</option>
+            <option value="other" {{obj.type === 'other' ? 'selected' : ''}}>{{{/performance_other}}}</option>
+        </select>
+    </value>
+    <div class="btn btn-unstyled btn-icon-only mutable-data-entry-delete"
+         title="{{{delete_entry_tooltip}}}">{{=icon times-circle-duotone=}}</div>
+</div>
