@@ -1875,6 +1875,7 @@ export class MainView extends PerfView {
             const date = new Date(cal.valueAsNumber ? D.addTZ(cal.valueAsNumber) : undefined);
             if (isNaN(date)) {
                 console.warn("invalid date", date);
+                return;
             }
             let start, end;
             if (isStart) {
