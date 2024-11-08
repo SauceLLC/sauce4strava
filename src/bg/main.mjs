@@ -124,7 +124,13 @@ browser.runtime.onInstalled.addListener(async details => {
     if (['install', 'update'].includes(details.reason) && !details.temporary) {
         const version = browser.runtime.getManifest().version;
         if (details.previousVersion && version !== details.previousVersion) {
+            const msg = `Sauce updated: ${details.previousVersion} -> ${version}`;
+            console.warn(msg);
             await sauce.storage.set('recentUpdate', {previousVersion: details.previousVersion, version});
+            const athletes = await hist.getEnabledAthletes();
+            for (const x of athletes) {
+                hist.syncLogsStore.write('warn', x.id, msg);
+            }
         }
     }
 });

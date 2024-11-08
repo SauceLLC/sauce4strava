@@ -830,15 +830,19 @@ sauce.ns('hist.db', ns => {
             return await this.trim(q, len, {index: 'athlete-ts'});
         }
 
-        log(level, athleteId, ...messages) {
+        write(level, athleteId, ...messages) {
             if (!['debug', 'info', 'warn', 'error'].includes(level)) {
                 throw new TypeError("Invalid log level argument");
             }
-            console[level](`Sync Log (${athleteId}):`, ...messages);
             const message = messages.join(' ');
             const record = {athlete: athleteId, ts: Date.now(), message, level};
             this.put(record);  // bg okay
             return record;
+        }
+
+        log(level, athleteId, ...messages) {
+            console[level](`Sync Log (${athleteId}):`, ...messages);
+            return this.write(level, athleteId, ...messages);
         }
 
         logDebug(athleteId, ...messages) {

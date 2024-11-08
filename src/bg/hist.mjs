@@ -1063,7 +1063,20 @@ export async function dangling(options={}) {
 sauce.proxy.export(dangling, {namespace});
 
 
-async function _invalidateSyncStateEnter(athleteId, processor, options) {
+let _peaksGCId;
+function schedPeaksGC(mature=15000) {
+    clearTimeout(_peaksGCId);
+    _peaksGCId = setTimeout(async () => {
+        const status = await danglingPeaks({prune: true});
+        if (status.pruned.length) {
+            console.warn(`Removed ${status.pruned.length} database entries from 'peaks' store`);
+        }
+    }, mature);
+}
+
+
+async function _invalidateSyncStateEnter(athleteId, processor, name, options) {
+    syncLogsStore.logWarn(athleteId, `Invalidating sync state: ${processor}:${name || '*'}`);
     if (!syncManager) {
         return;
     }
@@ -1107,7 +1120,7 @@ export async function invalidateAthleteSyncState(athleteId, processor, name, opt
     if (!athleteId || !processor) {
         throw new TypeError("'athleteId' and 'processor' are required args");
     }
-    const state = await _invalidateSyncStateEnter(athleteId, processor, options);
+    const state = await _invalidateSyncStateEnter(athleteId, processor, name, options);
     await actsStore.invalidateForAthleteWithSync(athleteId, processor, name);
     await _invalidateSyncStateExit(state);
 }
@@ -1125,7 +1138,7 @@ export async function invalidateActivitySyncState(activityId, processor, name, o
     }
     const activity = await actsStore.get(activityId, {model: true});
     const athleteId = activity.get('athlete');
-    const state = await _invalidateSyncStateEnter(athleteId, processor, options);
+    const state = await _invalidateSyncStateEnter(athleteId, processor, name, options);
     for (const m of manifests) {
         activity.clearManifestSyncState(m);
     }
@@ -1964,8 +1977,8 @@ class SyncJob extends EventTarget {
                 const elapsed = Math.round(totTime / finished.length).toLocaleString();
                 const rate = Math.round(finished.length / (totTime / finished.length / 1000))
                     .toLocaleString();
-                this.logDebug(`Proc batch [${m.name}]: ${elapsed}ms (avg), ${finished.length} ` +
-                    `activities (${rate}/s)`);
+                this.logDebug(`Processor batch [${m.name}-v${m.version}]: ${elapsed}ms (avg), ` +
+                    `${finished.length} activities (${rate}/s)`);
             }
             if (proc.stopped && !proc.available) {
                 // It is fulfilled but we need to pickup any errors.
@@ -2063,7 +2076,7 @@ class SyncJob extends EventTarget {
                     if (issubclass(processor, processors.OffloadProcessor)) {
                         let proc = offloadedActive.get(processor);
                         if (!proc || proc.stopping) {
-                            this.logDebug("Creating new offload processor:", m.name);
+                            this.logDebug(`Creating new offload processor: ${m.name}-v${m.version}`);
                             proc = new processor({
                                 manifest: m,
                                 athlete: this.athlete,
@@ -2100,8 +2113,8 @@ class SyncJob extends EventTarget {
                         const elapsed = Math.round((Date.now() - s)).toLocaleString();
                         const rate = Math.round(activities.length / ((Date.now() - s) / 1000))
                             .toLocaleString();
-                        this.logDebug(`Proc batch [${m.name}]: ${elapsed}ms, ${activities.length} ` +
-                            `activities (${rate}/s)`);
+                        this.logDebug(`Processor batch [${m.name}-v${m.version}]: ${elapsed}ms, ` +
+                            `${activities.length} activities (${rate}/s)`);
                     }
                     await sauce.sleep(0); // Run in next task for better offloaded latency
                 }
@@ -2187,7 +2200,13 @@ class SyncJob extends EventTarget {
 class SyncManager extends EventTarget {
     constructor(currentUser) {
         super();
-        console.info(`Starting Sync Manager:`, currentUser);
+        const msg = `Starting Sync Manager (v${sauce.version}): ${currentUser}`;
+        console.info(msg);
+        getEnabledAthletes().then(athletes => {
+            for (const x of athletes) {
+                syncLogsStore.write('debug', x.id, msg);
+            }
+        });
         this.refreshInterval = 12 * 3600 * 1000;
         this.refreshErrorBackoff = 1 * 3600 * 1000;
         this.syncJobTimeout = 4 * 60 * 60 * 1000;
@@ -2245,6 +2264,7 @@ class SyncManager extends EventTarget {
         this._refreshLoop = this.refreshLoop();
         this._refreshLoop.catch(e =>
             console.error('Unexpected sync engine refresh loop error:', e.stack));
+        schedPeaksGC(600000);
     }
 
     async join() {
@@ -2469,6 +2489,8 @@ class SyncManager extends EventTarget {
         if (!id) {
             throw new TypeError('Athlete ID arg required');
         }
+        syncLogsStore.logInfo(id, `Enabling athlete sync`);
+        await invalidateAthleteSyncState(id, 'local');
         await this.updateAthlete(id, {
             sync: DBTrue,
             lastSync: 0,
@@ -2483,13 +2505,16 @@ class SyncManager extends EventTarget {
         if (!id) {
             throw new TypeError('Athlete ID arg required');
         }
+        syncLogsStore.logInfo(id, `Disabling athlete sync`);
         await this.updateAthlete(id, {sync: DBFalse});
         if (this.activeJobs.has(id)) {
             const syncJob = this.activeJobs.get(id);
             await syncJob.cancel();
         }
+        await invalidateAthleteSyncState(id, 'local');
         this._refreshEvent.set();
         this.emitForAthleteId(id, 'disable');
+        schedPeaksGC();
     }
 }
 
