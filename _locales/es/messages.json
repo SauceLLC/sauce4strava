@@ -1158,6 +1158,9 @@
         "message": "Entrenamientos",
         "description": "IMMUTABLE"
     },
+    "performance_other": {
+        "message": "Otro"
+    },
     "performance_ride": {
         "message": "Paseo",
         "description": "IMMUTABLE"

@@ -1137,6 +1137,9 @@
     "performance_workouts": {
         "message": "Entraînements"
     },
+    "performance_other": {
+        "message": "Autre"
+    },
     "performance_ride": {
         "message": "Vélo",
         "description": "IMMUTABLE"

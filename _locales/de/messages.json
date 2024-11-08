@@ -1141,6 +1141,9 @@
     "performance_workouts": {
         "message": "Trainingseinheiten"
     },
+    "performance_other": {
+        "message": "Andere"
+    },
     "performance_ride": {
         "message": "Fahrt"
     },

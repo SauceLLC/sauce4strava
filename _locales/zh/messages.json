@@ -1438,6 +1438,9 @@
         "message": "锻炼",
         "description": "IMMUTABLE"
     },
+    "performance_other": {
+        "message": "其他"
+    },
     "performance_ride": {
         "message": "骑行",
         "description": "IMMUTABLE"

@@ -1236,6 +1236,9 @@
         "message": "Exercícios",
         "description": "IMMUTABLE"
     },
+    "performance_other": {
+        "message": "Outro"
+    },
     "performance_ride": {
         "message": "Pedalada",
         "description": "IMMUTABLE"
