@@ -1,7 +1,7 @@
 @use 'color';
 @use 'buttons';
 
-.mutable-data-view {
+:root .mutable-data-view {
     max-height: 100%;
     min-height: 8em;
 
@@ -28,9 +28,13 @@
         overflow: auto;
 
         .mutable-data-entry {
-            padding: 0.2em 1.2em;
+            padding: 0.2em 0.8em;
             display: flex;
             align-items: center;
+
+            &:nth-child(even) {
+                background-color: color.shade(bg, 10%, 0.3) !important;
+            }
 
             &:hover {
                 background-color: color.shade(bg, 20%, 0.4) !important;
@@ -40,6 +44,25 @@
             input[type="number"] {
                 width: 7ch;
                 text-align: right;
+            }
+
+            input, select {
+                border-radius: 0.28rem;
+                border-color: color.shade(bg, 10%);
+                background-color: color.shade(bg, 0%);
+                color: color.get(fg);
+                padding: 0.22rem 0.34rem;
+
+                &:focus {
+                    border-color: color.shade(accent4, 10%);
+                }
+                &:invalid {
+                    border-color: #f22;
+                }
+            }
+
+            select {
+                font-size: 0.9em;
             }
 
             key {
@@ -56,6 +79,8 @@
             value {
                 flex: 1 1 auto;
                 overflow: hidden;
+                display: flex;
+                justify-content: space-around;
 
                 input[type="date"] {
                     max-width: 100%;

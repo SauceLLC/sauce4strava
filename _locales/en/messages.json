@@ -373,6 +373,7 @@
     "performance_swims": {"message": "Swims"},
     "performance_skis": {"message": "Skis"},
     "performance_workouts": {"message": "Workouts"},
+    "performance_other": {"message": "Other"},
     "performance_ride": {"message": "Ride"},
     "performance_run": {"message": "Run"},
     "performance_swim": {"message": "Swim"},

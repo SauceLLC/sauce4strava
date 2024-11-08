@@ -13,7 +13,7 @@ export class MutableDataView extends SauceView {
             'click .mutable-data-entry-add': '_onAddEntry',
             'click .mutable-data-entry-delete': '_onDeleteEntry',
             'click .mutable-data-save': '_onSave',
-            'input .mutable-data-entry input': '_onInput',
+            'input .mutable-data-entry': '_onInput',
         };
     }
 
@@ -101,6 +101,7 @@ export class MutableDataView extends SauceView {
 
 
 class HistoryView extends MutableDataView {
+
     static entryTpl = 'history-view-entry.html';
 
     async init(options) {
@@ -153,6 +154,9 @@ class HistoryView extends MutableDataView {
 
 
 export class FTPHistoryView extends HistoryView {
+
+    static entryTpl = 'ftp-history-view-entry.html';
+
     constructor({athlete, el}) {
         super({
             el,
@@ -164,6 +168,20 @@ export class FTPHistoryView extends HistoryView {
             valueMax: 1000,
             valueUnit: 'w',
         });
+    }
+
+    parseEntry(entry) {
+        const obj = super.parseEntry(entry);
+        obj.type = entry.querySelector('[name="type"]').value || undefined;
+        return obj;
+    }
+
+    entryData() {
+        const data = super.entryData();
+        for (const [i, x] of data.entries()) {
+            x.type = this.athlete[this.athleteKey][i].type;
+        }
+        return data;
     }
 }
 
