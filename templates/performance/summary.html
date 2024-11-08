@@ -1,5 +1,5 @@
 <% if (obj.athlete) { %>
-    <section class="overview {{prefs.collapsed.overview === true ? 'collapsed' : ''}}"
+    <section class="overview loading-mask {{loading ? 'loading' : ''}} {{prefs.collapsed.overview === true ? 'collapsed' : ''}}"
              data-id="overview">
         <header>
             <i class="icon">{{=icon info-circle-duotone=}}</i>
@@ -70,7 +70,7 @@
         <% } %>
     </section>
 
-    <section class="training {{prefs.collapsed.training === true ? 'collapsed' : ''}}"
+    <section class="training loading-mask {{loading ? 'loading' : ''}} {{prefs.collapsed.training === true ? 'collapsed' : ''}}"
              data-id="training">
         <header>
             <i class="icon">{{=icon transporter-1-duotone=}}</i>
@@ -81,7 +81,7 @@
 
         <% if (missingTSS.length) { %>
             <row class="warning">
-                <key>{{=icon exclamation-triangle-duotone=}}{{{missing}}} <attr for="tp">TSS®</attr>:</key>
+                <key>{{{missing}}} <attr for="tp">TSS®</attr>:</key>
                 <value><a href="javascript:void(0);" class="missing-tss">{{missingTSS.length}} {{{activities}}}</a></value>
             </row>
         <% } %>
@@ -110,7 +110,7 @@
         <% } %>
     </section>
 
-    <section class="highlights {{prefs.collapsed.highlights === true ? 'collapsed' : ''}}"
+    <section class="highlights loading-mask {{loading ? 'loading' : ''}} {{prefs.collapsed.highlights === true ? 'collapsed' : ''}}"
              data-id="highlights">
         <header>
             <i class="icon">{{=icon medal-duotone=}}</i>
@@ -153,7 +153,7 @@
         <% } %>
     </section>
 
-    <section class="sync-stats {{prefs.collapsed.sync_stats === true  ? 'collapsed' : ''}}"
+    <section class="sync-stats loading-mask {{loading ? 'loading' : ''}} {{prefs.collapsed.sync_stats === true  ? 'collapsed' : ''}}"
              data-id="sync_stats">
         <header>
             <i class="icon">{{=icon sync-alt-duotone=}}</i>
@@ -161,12 +161,14 @@
             <a class="view-control collapser">{{=icon minus-square-duotone=}}</a>
             <a class="view-control expander">{{=icon plus-square-duotone=}}</a>
         </header>
-        <% if (sync.active) { %>
-            <row>
-                <key>{{{/sync_control_panel_status}}}:</key>
+        <row>
+            <key>{{{/sync_control_panel_status}}}:</key>
+            <% if (sync.status && sync.status !== 'complete') { %>
                 <value>{{sync.status}}</value>
-            </row>
-        <% } %>
+            <% } else { %>
+                <value style="text-transform:capitalize">{{{/analysis_idle}}}</value>
+            <% } %>
+        </row>
         <% if (sync.error) { %>
             <row>
                 <key>{{{/sync_control_panel_last_error}}}:</key>

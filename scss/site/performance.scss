@@ -334,9 +334,10 @@ table.activity-table {
         opacity: 0;
     }
     &::before {
-        width: 3em;
-        top: calc(50% - 1.5em);
-        left: calc(50% - 1.5em);
+        --size: 4em;
+        width: var(--size);
+        top: calc(50% - var(--size) / 2);
+        left: calc(50% - var(--size) / 2);
         line-height: 0;
         content: url(../../images/fa/spinner-third-duotone.svg);
     }
@@ -345,10 +346,12 @@ table.activity-table {
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: color.shade(bg, 0%, 0.8);
+        background-image: linear-gradient(160deg, color.shade(bg, 10%, 0.8), color.shade(bg, 2%, 0.8));
         content: '';
     }
     &.loading {
+        overflow: hidden;
+
         &::before,
         &::after {
             visibility: visible;
@@ -359,8 +362,9 @@ table.activity-table {
             pointer-events: initial;
         }
         &::before {
-            animation: rotation 3s infinite steps(24 * 3);
+            animation: rotation 6s infinite steps(24 * 6);
             z-index: 3;
+            opacity: 0.4;
         }
     }
 }
@@ -371,6 +375,7 @@ table.activity-table {
     display: flex;
     flex-wrap: wrap;
     position: relative;
+    min-height: 100vh; // reduce load jank
 
     @include buttons.uniform;
 
@@ -887,8 +892,19 @@ table.activity-table {
                 margin-top: 0.5em;
                 margin-bottom: 0.5em;
 
-                a {
-                    //color: inherit;
+                &:not(.collapsed).loading {
+                    &.overview {
+                        min-height: 24em;
+                    }
+                    &.training {
+                        min-height: 12em;
+                    }
+                    &.highlights {
+                        min-height: 30em; // hard to say, with differing periods
+                    }
+                    &.sync-stats {
+                        min-height: 18em;
+                    }
                 }
 
                 &.collapsed {
@@ -896,6 +912,14 @@ table.activity-table {
                     padding-top: 0;
                     padding-bottom: 0;
                     opacity: 0.8;
+
+                    &.loading {
+                        &::before,
+                        &::after {
+                            content: none !important;
+                            display: none !important;
+                        }
+                    }
 
                     &:hover {
                         opacity: 1;
@@ -1883,7 +1907,6 @@ table.activity-table {
             position: sticky;
             top: 0;
             max-height: 100vh;
-            transition: flex 200ms;
 
             > header {
                 position: sticky;

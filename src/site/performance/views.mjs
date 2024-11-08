@@ -746,9 +746,11 @@ export class SummaryView extends PerfView {
     }
 
     async init({pageView, ...options}) {
+        this.loading = true;
         this.sync = {};
         this.daily = [];
         this.missingTSS = [];
+        this.counts = null;
         this.onSyncActive = this._onSyncActive.bind(this);
         this.onSyncStatus = this._onSyncStatus.bind(this);
         this.onSyncError = this._onSyncError.bind(this);
@@ -757,6 +759,7 @@ export class SummaryView extends PerfView {
             await this.setAthlete(pageView.athlete);
         }
         await super.init({pageView, ...options});
+        this.listenTo(pageView, 'before-update-activities', this.onBeforeUpdateActivities);
         this.listenTo(pageView, 'update-activities', sauce.debounced(this.onUpdateActivities));
     }
 
@@ -785,7 +788,8 @@ export class SummaryView extends PerfView {
         const totalTime = sauce.data.sum(this.daily.map(x => x.duration));
         const totalDistance = sauce.data.sum(this.daily.map(x => x.distance));
         const totalAltGain = sauce.data.sum(this.daily.map(x => x.altGain));
-        const r = {
+        return {
+            loading: this.loading,
             athlete: this.athlete,
             prefs: this.getPrefs(),
             sync: this.sync,
@@ -805,7 +809,6 @@ export class SummaryView extends PerfView {
             mostFreqType: this.mostFreqType,
             mostFreqLocaleKey: this.mostFreqType ? this.mostFreqType.type + 's' : null,
         };
-        return r;
     }
 
     async render() {
@@ -833,6 +836,9 @@ export class SummaryView extends PerfView {
     }
 
     async setAthlete(athlete) {
+        // Set loading class early on for better UI feel...
+        this.$('.loading-mask').addClass('loading');
+        this.loading = true;
         this.athlete = athlete;
         const id = athlete && athlete.id;
         if (this.syncController) {
@@ -840,6 +846,7 @@ export class SummaryView extends PerfView {
             this.syncController.removeEventListener('status', this.onSyncStatus);
             this.syncController.removeEventListener('error', this.onSyncError);
             this.syncController.removeEventListener('progress', this.onSyncProgress);
+            this.syncController = null;
         }
         if (id) {
             this.syncController = getSyncController(id);
@@ -849,8 +856,6 @@ export class SummaryView extends PerfView {
             this.syncController.addEventListener('progress', this.onSyncProgress);
             this.sync = await this.syncController.getState();
             this.sync.counts = await sauce.hist.activityCounts(id);
-        } else {
-            this.syncController = null;
         }
     }
 
@@ -883,10 +888,15 @@ export class SummaryView extends PerfView {
         await this.render();
     }
 
-    async onUpdateActivities({athlete, activities, daily, range}) {
+    async onBeforeUpdateActivities({athlete, activities, daily, range}) {
         if (this.athlete !== athlete) {
             await this.setAthlete(athlete);
+            await this.render();
         }
+    }
+
+    async onUpdateActivities({athlete, activities, daily, range}) {
+        this.loading = false;
         this.daily = daily;
         this.activities = activities;
         this.missingTSS = activities.filter(x => sauce.model.getActivityTSS(x) == null);
@@ -2083,6 +2093,13 @@ export class PageView extends PerfView {
             sauce.hist.getNewestActivityForAthlete(id).then(a => a && a.ts),
             sauce.hist.getOldestActivityForAthlete(id).then(a => a && a.ts),
         ]);
+        // Handle new athlete / sync in progress...
+        if (!this.newest) {
+            this.newest = D.tomorrow();
+        }
+        if (!this.oldest) {
+            this.oldest = D.today();
+        }
         const updated = wasNewest !== this.newest || wasOldest !== this.oldest;
         if (updated) {
             this.trigger('available-activities-changed',
