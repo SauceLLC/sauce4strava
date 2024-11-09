@@ -364,20 +364,36 @@ sauce.ns('sync', ns => {
         });
         let syncJobStatus;
 
+        function formatLog(log) {
+            return `
+                <div class="log-entry" data-level="${log.level}">
+                    <div class="time">${H.datetime(log.ts, {concise: true, style: 'short'})}</div>
+                    <div class="level">${log.level.toUpperCase()}</div>
+                    <div class="message">${sauce.template.escape(log.message)}</div>
+                </div>`;
+        }
+
         const curLogs = [];
         function appendLogs(records) {
-            for (const record of records) {
+            const newLogs = [];
+            let fullPaint;
+            const descRecords = Array.from(records).reverse();
+            for (const record of descRecords) {
                 if (!curLogs.find(x => x.ts === record.ts && x.message === record.message)) {
+                    if (curLogs.length && curLogs[curLogs.length - 1].ts > record.ts) {
+                        fullPaint = true;
+                    }
                     curLogs.push(record);
+                    newLogs.push(record);
                 }
             }
-            curLogs.sort((a, b) => b.ts - a.ts);
-            const $cleaner = jQuery('<div></div>');
-            $logs.html(curLogs.map(x => `<div class="log-entry" data-level="${x.level}">
-                <div class="time">${H.datetime(x.ts, {concise: true, style: 'short'})}</div>
-                <div class="level">${x.level.toUpperCase()}</div>
-                <div class="message">${$cleaner.text(x.message).html()}</div>
-            </div>`).join('\n'));
+            if (fullPaint) {
+                console.warn("Unexpected full paint of logs required...");
+                curLogs.sort((a, b) => a.ts - b.ts);
+                $logs.html(Array.from(curLogs).reverse().map(formatLog).join('\n'));
+            } else {
+                $logs.prepend(newLogs.reverse().map(formatLog).join('\n'));
+            }
         }
 
         function setJobStatus(status) {
