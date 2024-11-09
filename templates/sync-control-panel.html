@@ -1,26 +1,18 @@
 <form class="sync-mgmt input sauce-key-value">
 
-    <h3>{{{sync_status}}}</h3>
-
-    <div class="padded-info">
-        <div class="help" data-for="intro">
-            <a class="sauce-dismiss">{{=icon times-circle-duotone=}}</a>
-            {{{intro_help}}}
-        </div>
-        <a class="help-info" data-help="intro" title="{{{/dialog_help_info_tooltip}}}">{{=icon info-circle-duotone=}}</a>
+    <div class="padded-info disabled-only">
         {{{intro}}}
     </div>
 
-    <div class="perf-promo">
+    <div class="perf-promo disabled-only">
         <div class="slides">
             <div class="nav-left hidden">{{=icon angle-left-regular=}}</div>
             <div class="nav-right">{{=icon angle-right-regular=}}</div>
 
-            <img class="selected" src="https://www.sauce.llc/images/perf-promo/1.png"
-                 loading="{{athlete.sync ? 'lazy' : 'eager'}}"/>
-            <img src="https://www.sauce.llc/images/perf-promo/2.png" loading="lazy"/>
-            <img src="https://www.sauce.llc/images/perf-promo/3.png" loading="lazy"/>
-            <img src="https://www.sauce.llc/images/perf-promo/4.png" loading="lazy"/>
+            <img class="selected" src="https://www.sauce.llc/images/perf-promo/1.png"/>
+            <img src="https://www.sauce.llc/images/perf-promo/2.png"/>
+            <img src="https://www.sauce.llc/images/perf-promo/3.png"/>
+            <img src="https://www.sauce.llc/images/perf-promo/4.png"/>
 
             <div class="nav-placement">
                 <div class="bubble selected"></div>
@@ -34,7 +26,18 @@
     </div>
 
     <div class="enabled-only">
+        <div class="help" data-for="intro">
+            <a class="sauce-dismiss">{{=icon times-circle-duotone=}}</a>
+            {{{intro_help}}}
+        </div>
+
         <section>
+            <header class="title">
+                <span>{{{sync_status}}}</span>
+                <a class="help-info" data-help="intro"
+                   title="{{{/dialog_help_info_tooltip}}}">{{=icon info-circle-duotone=}}</a>
+            </header>
+
             <div class="entry enable">
                 <key>{{{enabled}}}:</key>
                 <value><input name="enable" type="checkbox" {{athlete.sync ? 'checked' : ''}}/></value>
@@ -71,8 +74,9 @@
             </div>
         </section>
 
+
         <section class="sync-settings">
-            <h4>{{{sync_settings}}}</h4>
+            <header class="title">{{{sync_settings}}}</header>
 
             <div class="entry" title="{{{disable_run_watts_tooltip}}}">
                 <key>{{{disable_run_watts}}}:</key>
@@ -108,10 +112,14 @@
         </section>
 
         <section class="sync-logs">
-            <h4>{{{sync_logs}}}
-                <a href="javascript:void(0);"
-                   class="download-logs" title="{{{/download}}}">{{=icon download-duotone=}}</a>
-            </h4>
+            <header class="title">
+                <span>{{{sync_logs}}}</span>
+                <div class="buttons">
+                    <div class="btn btn-sm download-logs" title="{{{/download}}}">{{=icon download-duotone=}}</div>
+                    <div class="btn btn-sm restore-logs hidden" title="{{{/compress_tooltip}}}">{{=icon window-restore-regular=}}</div>
+                    <div class="btn btn-sm maximize-logs" title="{{{/expand_tooltip}}}">{{=icon window-maximize-regular=}}</div>
+                </div>
+            </header>
 
             <div class="logs"></div>
         </section>

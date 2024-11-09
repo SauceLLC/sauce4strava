@@ -345,11 +345,22 @@ sauce.ns('sync', ns => {
         const $jobStatus = $modal.find('.entry.status .job-status');
         $modal.find('.download-logs').on('click', async ev => {
             const fullLogs = await syncController.getLogs({limit: null});
+            fullLogs.reverse();
             const blob = new Blob([fullLogs.map(x =>
                 `${(new Date(x.ts)).toISOString()} ` +
                 `[${x.level.toUpperCase().padEnd(5, ' ')}] ` +
                 `${x.message}`).join('\n')]);
             sauce.ui.downloadBlob(blob, `sauce-sync-${athlete.id}.log`);
+        });
+        $modal.find('.maximize-logs').on('click', ev => {
+            ev.currentTarget.closest('section').classList.add('maximized');
+            ev.currentTarget.parentElement.querySelector('.restore-logs').classList.remove('hidden');
+            ev.currentTarget.classList.add('hidden');
+        });
+        $modal.find('.restore-logs').on('click', ev => {
+            ev.currentTarget.closest('section').classList.remove('maximized');
+            ev.currentTarget.parentElement.querySelector('.maximize-logs').classList.remove('hidden');
+            ev.currentTarget.classList.add('hidden');
         });
         let syncJobStatus;
 

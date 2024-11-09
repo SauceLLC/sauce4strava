@@ -70,6 +70,16 @@
 
 @mixin dialog {
     &.sauce-sync-athlete-dialog {
+        .btn {
+            &.btn-sm:not(.btn-unstyled) {
+                padding: 0.4em 0.7em; // make consistent between all pages!
+            }
+
+            &.hidden {
+                display: none;
+            }
+        }
+
         .btn.sync-start {
             color: #00a900;
         }
@@ -84,46 +94,69 @@
         }
 
         .padded-info {
-            padding: 1em;
+            padding: 0.5em 0.8rem;
         }
 
-        h1, h2, h3, h4 {
+        header.title {
+            border: none;
             font-variant: petite-caps;
-            margin: 0.2em 0;
+            padding: 0 1rem;
+            font-size: 1.3em;
+            font-weight: 600;
+            margin: 0 0 0.5rem 0;
+            display: flex;
+            justify-content: space-between;
+
+            &::before,
+            &::after {
+                all: initial !important;
+            }
+        }
+
+        .help {
+            .sauce-dismiss {
+                font-size: 1.2em;
+            }
+        }
+
+        .help-info {
+            font-size: 0.9em;
+        }
+
+        :has(section.maximized) section:not(.maximized) {
+            display: none;
         }
 
         section {
-            padding: 0 0 1rem 0;
-
-            &:nth-child(2) {
-                border-top: 1px solid color.shade(bg, 10%);
-                padding-top: 1rem;
-            }
+            padding: 0 0 0.8rem 0;
 
             &.sync-settings {
                 key {
                     width: 80%;
                 }
             }
+
+            &.maximized {
+                flex: 1 0 100%;
+            }
         }
 
         .sync-logs {
-            .download-logs {
-                color: color.get(fg);
-                opacity: 0.7;
-                margin-left: 0.6em;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 14em;
 
-                &:hover {
-                    opacity: 1;
-                }
+            header .btn {
+                font-size: 0.86rem;
+                min-height: 0;
 
-                [data-icon] {
-                    height: 0.7em;
+                [data-icon][data-prefix="far"] {
+                    color: color.shade(fg, 20%);
                 }
             }
 
             .logs {
-                max-height: 14em;
                 overflow: auto;
                 font-size: 0.86em;
                 padding: 0.4em 0.5em;
@@ -144,6 +177,10 @@
                         font-size: 0.88em;
                         padding-right: 0.5em;
                         white-space: nowrap;
+                    }
+
+                    .message {
+                        word-break: break-word;
                     }
 
                     &[data-level="debug"] {
@@ -191,15 +228,13 @@
                 max-width: 100%;
                 max-height: 100%;
                 overflow: auto;
-                padding-top: 1rem;
+                padding-top: 0.8rem;
                 padding-bottom: 0;
                 display: flex;
                 flex-direction: column;
 
-                h1, h2, h3, h4 {
-                    padding-left: 1rem;
-                    padding-right: 1rem;
-                    padding-bottom: 0.5rem;
+                .help {
+                    margin: 0.5em 1rem;
                 }
             }
 
@@ -215,12 +250,23 @@
                 max-width: 100%;
                 max-height: 100%;
 
-                h1, h2, h3, h4 {
-                    padding-left: 0.5rem;
-                }
-
                 .padded-info {
                     padding-bottom: 0.2em;
+                }
+
+                .history-view {
+                    min-height: 10em;
+
+                    .mutable-data-entries {
+                        margin-bottom: 0;
+                        padding-bottom: 0;
+                    }
+                }
+
+                @media only screen and (max-width: 400px) {
+                    .history-view {
+                        min-height: 15em;
+                    }
                 }
 
                 .entry.block {
@@ -232,6 +278,10 @@
                     padding: 0;
                     overflow: auto;
                     flex: 1 1 auto;
+
+                    &.history {
+                        flex-basis: 0;
+                    }
 
                     &:last-child {
                         margin-bottom: 0;
@@ -271,10 +321,6 @@
                             }
                         }
                     }
-
-                    .mutable-data-entries {
-                        margin-bottom: 0;
-                    }
                 }
             }
 
@@ -290,6 +336,9 @@
                     display: none !important;
                 }
 
+                .entry.synced value .text {
+                    margin-left: 0.5em;
+                }
             }
 
             &.has-error {
@@ -332,6 +381,9 @@
                 .perf-promo {
                     display: none;
                 }
+                .disabled-only {
+                    display: none !important;
+                }
             }
 
             .entry {
@@ -351,7 +403,11 @@
                 }
 
                 .btn {
-                    margin-left: 0.5em;
+                    font-size: 1em;
+                    margin-left: 0.7em;
+                    margin-top: -0.2em;
+                    margin-bottom: -0.2em;
+                    min-height: 0;
                 }
 
                 &.status {
@@ -444,6 +500,7 @@
                 position: relative;
                 overflow: hidden;
                 line-height: 0;
+                user-select: none;
 
                 > img {
                     width: 100%;
@@ -537,8 +594,16 @@
                 }
 
                 &.synced value {
-                    display: inline-flex;
-                    flex-direction: column;
+                    display: flex;
+                    align-items: center;
+
+                    progress {
+                        width: 8em; // def is 10em and overflows sometimes
+                    }
+
+                    .text {
+                        font-variant-numeric: tabular-nums;
+                    }
                 }
             }
         }
