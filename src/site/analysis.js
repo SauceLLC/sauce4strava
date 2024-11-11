@@ -1508,6 +1508,21 @@ sauce.ns('analysis', ns => {
             console.warn('Side nav menu not found: Probably a flagged activity');
             return;
         }
+        jQuery("body").append(jQuery(`
+            <dialog id="sauce-export-dialog">
+                <div>
+                    Activity start time:
+                </div>
+                <input type="datetime-local" class="export-time-picker"/>
+                <button class="sauce-export-dialog-export">Export</button>
+                <button autofocus class="sauce-export-dialog-close">Close</button>
+            </dialog>
+        `));
+        const $exportDialog = jQuery("#sauce-export-dialog");
+        $exportDialog.find(".sauce-export-dialog-close").on("click", async () => {
+            $exportDialog[0].close();
+        });
+        
         $menu.append(jQuery(`
             <li class="sauce-group">
                 <div class="sauce-header">
@@ -1515,15 +1530,6 @@ sauce.ns('analysis', ns => {
                     <img src="${sauce.getURL('images/logo_horiz_320x120.png')}"/>
                 </div>
                 <ul>
-                    <li>
-                        <div>
-                        Activity start time:
-                        </div>
-                        <input
-                            type="datetime-local"
-                            class="export-time-picker"
-                        </input>
-                    </li>
                     <li><a title="TCX files are best for activities with power data (watts)."
                            class="tcx">${exportLocale} TCX</a></li>
                     <li><a title="FIT files are compact binary files for advanced use-cases."
@@ -1531,10 +1537,17 @@ sauce.ns('analysis', ns => {
                 </ul>
             </li>
         `));
-        let timePicker = $menu.find('input.export-time-picker');
-        timePicker.on("click", async (event) => {
-            event.stopPropagation();
-        });
+
+        async function handleExportDialog(exportFn) {
+            $exportDialog[0].showModal();
+            $exportDialog.find(".sauce-export-dialog-export").off().on("click", async () => {
+                const $timePicker = $exportDialog.find(".export-time-picker");
+                const pickerStartTime = new Date($timePicker[0].value);
+                exportFn(pickerStartTime);
+                $exportDialog[0].close();
+            });
+        }
+
         async function getLaps() {
             const lapEfforts = pageView.lapEfforts();
             if (lapEfforts && !lapEfforts.length) {
@@ -1546,23 +1559,26 @@ sauce.ns('analysis', ns => {
                 null;
         }
         $menu.find('a.tcx').on('click', async () => {
-            const laps = await getLaps();
-            const pickerStartTime = new Date(timePicker[0].value);
-            exportActivity('tcx', {laps, pickerStartTime}).catch(console.error);
+            handleExportDialog(async function(pickerStartTime){
+                const laps = await getLaps();
+                exportActivity('tcx', {laps, pickerStartTime}).catch(console.error);
+            });
         });
         $menu.find('a.fit').on('click', async () => {
-            const laps = await getLaps();
-            const pickerStartTime = new Date(timePicker[0].value);
-            exportActivity('fit', {laps, pickerStartTime}).catch(console.error);
+            handleExportDialog(async function(pickerStartTime){
+                const laps = await getLaps();
+                exportActivity('fit', {laps, pickerStartTime}).catch(console.error);
+            });
         });
         $menu.find('.sauce-group ul').append(jQuery(`
             <li><a title="NOTE: GPX files do not support power data (watts)."
                    class="gpx">${exportLocale} GPX</a></li>
         `));
         $menu.find('a.gpx').on('click', async () => {
-            const laps = await getLaps();
-            const pickerStartTime = new Date(timePicker[0].value);
-            exportActivity('gpx', {laps, pickerStartTime}).catch(console.error);
+            handleExportDialog(async function(pickerStartTime){
+                const laps = await getLaps();
+                exportActivity('gpx', {laps, pickerStartTime}).catch(console.error);
+            });
         });
     }
 
