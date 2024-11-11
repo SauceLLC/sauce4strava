@@ -1531,7 +1531,8 @@ sauce.ns('analysis', ns => {
                 </ul>
             </li>
         `));
-        $menu.find('input.export-time-picker').on("click", async (event) => {
+        let timePicker = $menu.find('input.export-time-picker');
+        timePicker.on("click", async (event) => {
             event.stopPropagation();
         });
         async function getLaps() {
@@ -1546,11 +1547,13 @@ sauce.ns('analysis', ns => {
         }
         $menu.find('a.tcx').on('click', async () => {
             const laps = await getLaps();
-            exportActivity('tcx', {laps}).catch(console.error);
+            const pickerStartTime = new Date(timePicker[0].value);
+            exportActivity('tcx', {laps, pickerStartTime}).catch(console.error);
         });
         $menu.find('a.fit').on('click', async () => {
             const laps = await getLaps();
-            exportActivity('fit', {laps}).catch(console.error);
+            const pickerStartTime = new Date(timePicker[0].value);
+            exportActivity('fit', {laps, pickerStartTime}).catch(console.error);
         });
         $menu.find('.sauce-group ul').append(jQuery(`
             <li><a title="NOTE: GPX files do not support power data (watts)."
@@ -1558,7 +1561,8 @@ sauce.ns('analysis', ns => {
         `));
         $menu.find('a.gpx').on('click', async () => {
             const laps = await getLaps();
-            exportActivity('gpx', {laps}).catch(console.error);
+            const pickerStartTime = new Date(timePicker[0].value);
+            exportActivity('gpx', {laps, pickerStartTime}).catch(console.error);
         });
     }
 
@@ -1699,8 +1703,7 @@ sauce.ns('analysis', ns => {
         return new Date();
     }
 
-
-    async function exportActivity(type, {start, end, laps}) {
+    async function exportActivity(type, {pickerStartTime, start, end, laps}) {
         const streamTypes = ['time', 'watts', 'heartrate', 'altitude', 'active',
                              'cadence', 'temp', 'latlng', 'distance', 'velocity_smooth'];
         const streams = (await fetchStreams(streamTypes)).reduce((acc, x, i) =>
@@ -1713,6 +1716,8 @@ sauce.ns('analysis', ns => {
         let date;
         if (realStartTime) {
             date = new Date(realStartTime);
+        } else if (!isNaN(pickerStartTime)) {
+            date = pickerStartTime;
         } else {
             date = await getEstimatedActivityStart();
         }
