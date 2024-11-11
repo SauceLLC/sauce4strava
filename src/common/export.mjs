@@ -170,6 +170,25 @@ export class TCXSerializer extends DOMSerializer {
         this.activityNode.setAttribute('Sport', sportEnum[this.activity.type] || 'Other');
     }
 
+    // Based upon:
+    // https://stackoverflow.com/a/17415677/187469
+    toIsoString(date, timezoneOffset) {
+        let tzo = -timezoneOffset;
+        let dif = tzo >= 0 ? '+' : '-';
+        let pad = function(num) {
+            return (num < 10 ? '0' : '') + num;
+        };
+
+        return date.getFullYear() +
+            '-' + pad(date.getMonth() + 1) +
+            '-' + pad(date.getDate()) +
+            'T' + pad(date.getHours()) +
+            ':' + pad(date.getMinutes()) +
+            ':' + pad(date.getSeconds()) +
+            dif + pad(Math.floor(Math.abs(tzo) / 60)) +
+            ':' + pad(Math.abs(tzo) % 60);
+    }
+
     processStreams(streams, adjStartDate) {
         this.addNodeTo(this.activityNode, 'Id', adjStartDate.toISOString());  // Garmin does, so we will too.
         const notes = this.activity.desc ?
@@ -182,12 +201,13 @@ export class TCXSerializer extends DOMSerializer {
         this.addNodeTo(creator, 'UnitId', 0);
         this.addNodeTo(creator, 'ProductId', 0);
         creator.appendChild(this.sauceVersion.cloneNode(/*deep*/ true));
+        const timezoneOffset = this.activity.date.getTimezoneOffset();
         const startTime = this.activity.date.getTime();
         const hasLaps = !!(this.activity.laps && this.activity.laps.length);
         const laps = hasLaps ? this.activity.laps : [[0, streams.time.length - 1]];
         for (const [start, end] of laps) {
             const lap = this.addNodeTo(this.activityNode, 'Lap');
-            const lapTime = (new Date(startTime + (streams.time[start] * 1000))).toISOString();
+            const lapTime = this.toIsoString(new Date(startTime + (streams.time[start] * 1000)), timezoneOffset);
             lap.setAttribute('StartTime', lapTime);
             this.addNodeTo(lap, 'TriggerMethod', 'Manual');
             this.addNodeTo(lap, 'TotalTimeSeconds', streams.time[end] - streams.time[start]);
