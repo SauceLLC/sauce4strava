@@ -695,6 +695,9 @@
     "analysis_keyboard_tooltip": {
         "message": "分析键盘控件处于活动状态。当分析图表获得焦点时，您可以使用箭头键更改选择或突出显示的数据。左/右：将光标向左或向右移动 1 个数据点。上/下：将光标向左或向右移动 60 个数据点。 Ctrl + 左/右：移动当前选择。 Shift + 左/右：扩展当前选择。 Ctrl + Shift + 左/右：缩小当前选择。"
     },
+    "analysis_any_activity_type": {
+        "message": "任何活动类型"
+    },
     "time_sec": {
         "message": "秒",
         "description": "IMMUTABLE"

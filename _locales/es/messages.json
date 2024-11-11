@@ -570,6 +570,9 @@
     "analysis_keyboard_tooltip": {
         "message": "Los controles del teclado de análisis están activos. Cuando los gráficos de análisis están enfocados, puede cambiar la selección o los datos resaltados con las teclas de flecha. Izquierda/Derecha: Mueva el cursor 1 punto de datos hacia la izquierda o hacia la derecha. Arriba/Abajo: Mueva el cursor 60 puntos de datos hacia la izquierda o hacia la derecha. Ctrl + Izquierda/Derecha: Mueve la selección actual. Shift + Izquierda/Derecha: Expande la selección actual. Ctrl + Shift + Izquierda/Derecha: reduce la selección actual."
     },
+    "analysis_any_activity_type": {
+        "message": "Cualquier tipo de actividad"
+    },
     "time_sec": {
         "message": "sec",
         "description": "IMMUTABLE"

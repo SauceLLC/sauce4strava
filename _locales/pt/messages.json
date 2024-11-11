@@ -595,6 +595,9 @@
     "analysis_keyboard_tooltip": {
         "message": "Os controles do teclado de análise estão ativos. Quando os gráficos de análise estão focados, você pode alterar a seleção ou os dados realçados com as teclas de seta. Esquerda/Direita: Mova o cursor 1 ponto de dados para a esquerda ou para a direita. Para cima/para baixo: Mova o cursor 60 pontos de dados para a esquerda ou para a direita. Ctrl + Esquerda/Direita: move a seleção atual. Shift + Esquerda/Direita: expande a seleção atual. Ctrl + Shift + Esquerda/Direita: Reduz a seleção atual."
     },
+    "analysis_any_activity_type": {
+        "message": "Qualquer tipo de atividade"
+    },
     "time_sec": {
         "message": "seg",
         "description": "IMMUTABLE"

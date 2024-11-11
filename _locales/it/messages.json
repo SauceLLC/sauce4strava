@@ -561,6 +561,9 @@
     "analysis_keyboard_tooltip": {
         "message": "I controlli della tastiera di analisi sono attivi. Quando i grafici di analisi sono focalizzati è possibile modificare la selezione oi dati evidenziati con i tasti freccia. Sinistra/destra: sposta il cursore di 1 punto dati a sinistra oa destra. Su/Giù: sposta il cursore di 60 punti dati a sinistra oa destra. Ctrl + Sinistra/Destra: sposta la selezione corrente. Maiusc + Sinistra/Destra: Espande la selezione corrente. Ctrl + Maiusc + Sinistra/Destra: riduce la selezione corrente."
     },
+    "analysis_any_activity_type": {
+        "message": "Qualsiasi tipo di attività"
+    },
     "time_sec": {
         "message": "sec"
     },

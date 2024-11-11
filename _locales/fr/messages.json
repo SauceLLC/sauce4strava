@@ -564,6 +564,9 @@
     "analysis_keyboard_tooltip": {
         "message": "Les commandes du clavier d'analyse sont actives. Lorsque les graphiques d'analyse sont ciblés, vous pouvez modifier la sélection ou les données en surbrillance à l'aide des touches fléchées. Gauche/Droite : Déplace le curseur d'un point de données vers la gauche ou vers la droite. Haut/Bas : Déplace le curseur de 60 points de données vers la gauche ou vers la droite. Ctrl + Gauche/Droite : Déplacer la sélection actuelle. Maj + Gauche/Droite : Agrandir la sélection actuelle. Ctrl + Maj + Gauche/Droite : Réduire la sélection actuelle."
     },
+    "analysis_any_activity_type": {
+        "message": "Tout type d'activité"
+    },
     "time_sec": {
         "message": "sec",
         "description": "IMMUTABLE"

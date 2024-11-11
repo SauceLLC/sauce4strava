@@ -560,6 +560,9 @@
     "analysis_keyboard_tooltip": {
         "message": "Die Tastatursteuerungen für die Analyse sind aktiv. Wenn die Analysediagramme fokussiert sind, können Sie die Auswahl oder die hervorgehobenen Daten mit den Pfeiltasten ändern. Links/Rechts: Bewegen Sie den Cursor um einen Datenpunkt nach links oder rechts. Nach oben/unten: Bewegen Sie den Cursor um 60 Datenpunkte nach links oder rechts. Strg + Links/Rechts: Verschieben Sie die aktuelle Auswahl. Umschalt + Links/Rechts: Erweitern Sie die aktuelle Auswahl. Strg + Umschalt + Links/Rechts: Aktuelle Auswahl verkleinern."
     },
+    "analysis_any_activity_type": {
+        "message": "Jeder Aktivitätstyp"
+    },
     "time_sec": {
         "message": "Sek.",
         "description": "IMMUTABLE"
