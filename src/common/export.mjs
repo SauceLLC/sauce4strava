@@ -2,6 +2,24 @@
 
 import * as fit from '../common/jsfit/fit.mjs';
 
+// Based upon:
+// https://stackoverflow.com/a/17415677/187469
+function toIsoString(date, timezoneOffset) {
+    let tzo = -timezoneOffset;
+    let dif = tzo >= 0 ? '+' : '-';
+    let pad = function(num) {
+        return (num < 10 ? '0' : '') + num;
+    };
+
+    return date.getFullYear() +
+        '-' + pad(date.getMonth() + 1) +
+        '-' + pad(date.getDate()) +
+        'T' + pad(date.getHours()) +
+        ':' + pad(date.getMinutes()) +
+        ':' + pad(date.getSeconds()) +
+        dif + pad(Math.floor(Math.abs(tzo) / 60)) +
+        ':' + pad(Math.abs(tzo) % 60);
+}
 
 class Serializer {
     constructor({name, desc, type, date, laps, athlete}) {
@@ -83,8 +101,9 @@ export class GPXSerializer extends DOMSerializer {
     }
 
     processStreams(streams, adjStartDate) {
+        const timezoneOffset = adjStartDate.getTimezoneOffset();
         const metadata = this.addNodeTo(this.rootNode, 'metadata');
-        this.addNodeTo(metadata, 'time', adjStartDate.toISOString());
+        this.addNodeTo(metadata, 'time', toIsoString(adjStartDate, timezoneOffset));
         const trk = this.addNodeTo(this.rootNode, 'trk');
         this.addNodeTo(trk, 'name', this.activity.name);
         if (this.activity.desc) {
@@ -107,7 +126,7 @@ export class GPXSerializer extends DOMSerializer {
                 point.setAttribute('lon', lon);
             }
             const t = (new Date(startTime + (streams.time[i] * 1000)));
-            this.addNodeTo(point, 'time', t.toISOString());
+            this.addNodeTo(point, 'time', toIsoString(t, timezoneOffset));
             if (streams.altitude) {
                 this.addNodeTo(point, 'ele', streams.altitude[i]);
             }
@@ -170,27 +189,9 @@ export class TCXSerializer extends DOMSerializer {
         this.activityNode.setAttribute('Sport', sportEnum[this.activity.type] || 'Other');
     }
 
-    // Based upon:
-    // https://stackoverflow.com/a/17415677/187469
-    toIsoString(date, timezoneOffset) {
-        let tzo = -timezoneOffset;
-        let dif = tzo >= 0 ? '+' : '-';
-        let pad = function(num) {
-            return (num < 10 ? '0' : '') + num;
-        };
-
-        return date.getFullYear() +
-            '-' + pad(date.getMonth() + 1) +
-            '-' + pad(date.getDate()) +
-            'T' + pad(date.getHours()) +
-            ':' + pad(date.getMinutes()) +
-            ':' + pad(date.getSeconds()) +
-            dif + pad(Math.floor(Math.abs(tzo) / 60)) +
-            ':' + pad(Math.abs(tzo) % 60);
-    }
-
     processStreams(streams, adjStartDate) {
-        this.addNodeTo(this.activityNode, 'Id', adjStartDate.toISOString());  // Garmin does, so we will too.
+        const timezoneOffset = adjStartDate.getTimezoneOffset();
+        this.addNodeTo(this.activityNode, 'Id', toIsoString(adjStartDate, timezoneOffset));  // Garmin does, so we will too.
         const notes = this.activity.desc ?
             `${this.activity.name}\n\n${this.activity.desc}` :
             this.activity.name;
@@ -201,13 +202,12 @@ export class TCXSerializer extends DOMSerializer {
         this.addNodeTo(creator, 'UnitId', 0);
         this.addNodeTo(creator, 'ProductId', 0);
         creator.appendChild(this.sauceVersion.cloneNode(/*deep*/ true));
-        const timezoneOffset = this.activity.date.getTimezoneOffset();
         const startTime = this.activity.date.getTime();
         const hasLaps = !!(this.activity.laps && this.activity.laps.length);
         const laps = hasLaps ? this.activity.laps : [[0, streams.time.length - 1]];
         for (const [start, end] of laps) {
             const lap = this.addNodeTo(this.activityNode, 'Lap');
-            const lapTime = this.toIsoString(new Date(startTime + (streams.time[start] * 1000)), timezoneOffset);
+            const lapTime = toIsoString(new Date(startTime + (streams.time[start] * 1000)), timezoneOffset);
             lap.setAttribute('StartTime', lapTime);
             this.addNodeTo(lap, 'TriggerMethod', 'Manual');
             this.addNodeTo(lap, 'TotalTimeSeconds', streams.time[end] - streams.time[start]);
@@ -224,7 +224,8 @@ export class TCXSerializer extends DOMSerializer {
             const track = this.addNodeTo(lap, 'Track');
             for (let i = start; i <= end; i++) {
                 const point = this.addNodeTo(track, 'Trackpoint');
-                const time = (new Date(startTime + (streams.time[i] * 1000))).toISOString();
+                const time = toIsoString(new Date(startTime + (streams.time[i] * 1000)), timezoneOffset);
+
                 this.addNodeTo(point, 'Time', time);
                 if (streams.latlng) {
                     const [lat, lon] = streams.latlng[i];
