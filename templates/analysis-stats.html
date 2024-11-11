@@ -218,7 +218,7 @@
 
 <div class="sauce-data-divider"></div>
 <div class="sauce-data-tuple sauce-rank-badge">
-    <% if (supportsRankBadge && obj.power && !power.estimate && power.rank && power.rank.level > 1) { %>
+    <% if (supportsRankBadge && obj.power && !power.estimate && power.rank && power.rank.level > 0) { %>
         <line class="heading">
             <key>{{{/rank}}}</key>
             <value>{-hNum(power.rank.level * 100, '%')-}</value>
