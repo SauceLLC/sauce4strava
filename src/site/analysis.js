@@ -1515,6 +1515,15 @@ sauce.ns('analysis', ns => {
                     <img src="${sauce.getURL('images/logo_horiz_320x120.png')}"/>
                 </div>
                 <ul>
+                    <li>
+                        <div>
+                        Activity start time:
+                        </div>
+                        <input
+                            type="datetime-local"
+                            class="export-time-picker"
+                        </input>
+                    </li>
                     <li><a title="TCX files are best for activities with power data (watts)."
                            class="tcx">${exportLocale} TCX</a></li>
                     <li><a title="FIT files are compact binary files for advanced use-cases."
@@ -1522,6 +1531,9 @@ sauce.ns('analysis', ns => {
                 </ul>
             </li>
         `));
+        $menu.find('input.export-time-picker').on("click", async (event) => {
+            event.stopPropagation();
+        });
         async function getLaps() {
             const lapEfforts = pageView.lapEfforts();
             if (lapEfforts && !lapEfforts.length) {
