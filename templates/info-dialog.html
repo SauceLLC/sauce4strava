@@ -224,7 +224,11 @@
     <div class="right-aside">
         <% if (supportsRanks) { %>
             <section class="ranks hidden">
-                <heading><div class="title">{{{/best_performances}}}</div></heading>
+                <heading>
+                    <div class="title">{{{/best_performances}}}</div>
+                    <label><input type="checkbox" {{peaksRanksAllActivityTypes ? 'checked' : ''}}
+                                  name="any-activity-type"/>{{{any_activity_type}}}</label>
+                </heading>
                 <div class="btn-group btn-group-sm btn-group-justified rank-filter">
                     <div class="btn btn-secondary" data-filter="all">{{{best_all}}}</div>
                     <div class="btn" data-filter="year">{{{best_year}}}</div>

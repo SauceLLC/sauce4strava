@@ -619,7 +619,13 @@ sauce.ns('analysis', ns => {
             return;
         }
         const periods = rows.map(x => x.rangeValue);
-        const options = {limit: 3, filterTS: getActivityTS()};
+        const options = {
+            limit: 3,
+            filterTS: getActivityTS()
+        };
+        if (!await sauce.storage.getPref('analysisPeaksRanksAllActivityTypes')) {
+            options.activityType = ns.activityType;
+        }
         const [all, year, recent] = await Promise.all([
             sauce.hist.getPeaksForAthlete(ns.athlete.id, type, periods, options),
             sauce.hist.getPeaksForAthlete(ns.athlete.id, type, periods, {filter: 'year', ...options}),
@@ -927,6 +933,7 @@ sauce.ns('analysis', ns => {
             attachInfo(panel.$el);
             await panel.render();
             ns.afterSyncActivity.then(() => panel.render());  // Only runs if we needed a sync.
+            ns.peaksPanel = panel;
         }
     }
 
@@ -1258,9 +1265,19 @@ sauce.ns('analysis', ns => {
             isDistanceRange,
             overlappingSegments,
             hasSegments,
+            peaksRanksAllActivityTypes: await sauce.storage.getPref('analysisPeaksRanksAllActivityTypes'),
         });
-        const $dialog = await createInfoDialog({heading, label, source, body, originEl,
-            start: startTime, end: endTime});
+        const $dialog = await createInfoDialog({
+            heading,
+            label,
+            source,
+            body,
+            originEl,
+            start:
+            startTime,
+            end:
+            endTime,
+        });
         const $sparkline = $dialog.find('.sauce-sparkline');
         async function renderGraphs() {
             const graphs = [];
@@ -1311,8 +1328,16 @@ sauce.ns('analysis', ns => {
             const [getPeaks, actArg] = ns.syncActivity ?
                 [sauce.hist.getPeaksRelatedToActivity, ns.syncActivity] :
                 [sauce.hist.getPeaksRelatedToActivityId, id];
-            const peaks = await getPeaks(actArg, type, [range],
-                {filter, limit: 10, expandActivities: true});
+            let activityType;
+            if (!await sauce.storage.getPref('analysisPeaksRanksAllActivityTypes')) {
+                activityType = ns.activityType;
+            }
+            const peaks = await getPeaks(actArg, type, [range], {
+                filter,
+                activityType,
+                limit: 10,
+                expandActivities: true
+            });
             if (!peaks || !peaks.length || !supportsPeaksRanks(type)) {
                 if (!hasSegments) {
                     $dialog.find('.empty-message').removeClass('hidden');
@@ -1351,24 +1376,32 @@ sauce.ns('analysis', ns => {
             }).join(''));
             $section.removeClass('hidden');
         }
+        let curRankFilter = 'all';
         if ((await sauce.storage.getPref('expandInfoDialog')) || ns.isMobile) {
             $dialog.addClass('expanded');
             if (supportsRanks) {
-                loadRanks('all');  // bg okay
+                loadRanks(curRankFilter);  // bg okay
             }
         }
         $dialog.on('click', '.expander', async () => {
             const expanded = $dialog[0].classList.toggle('expanded');
             await sauce.storage.setPref('expandInfoDialog', expanded);
             if (expanded && supportsRanks && !ranksLoaded) {
-                await loadRanks('all');
+                await loadRanks(curRankFilter);
             }
         });
         $dialog.on('click', 'section.ranks .btn-group.rank-filter .btn', async ev => {
             const $btn = jQuery(ev.currentTarget);
             $btn.siblings().removeClass('btn-secondary');
             $btn.addClass('btn-secondary');
-            await loadRanks($btn.data('filter'));
+            curRankFilter = $btn.data('filter');
+            await loadRanks(curRankFilter);
+        });
+        $dialog.on('input', 'section.ranks heading input[name="any-activity-type"]', async ev => {
+            const en = ev.currentTarget.checked;
+            await sauce.storage.setPref('analysisPeaksRanksAllActivityTypes', en);
+            await loadRanks(curRankFilter);
+            ns.peaksPanel.render();
         });
         $dialog.on('click', '.selectable', async ev => {
             const graph = ev.currentTarget.dataset.graph;

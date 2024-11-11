@@ -348,25 +348,34 @@
                 display: none;
             }
 
-            &.ranks table {
-                tr {
-                    &.split {
-                        box-shadow: 0 -2px 0 0 color.shade(fg, 20%);
-                    }
-
-                    &.self {
-                        background-color: color.shade(fg, 20%);
-                        color: color.shade(bg, 20%);
-
-                        a {
-                            color: inherit;
-                        }
-                    }
+            &.ranks {
+                heading label {
+                    margin: 0;
+                    font-size: 0.9em;
+                    font-variant: all-small-caps;
+                    color: color.shade(fg, 10%);
                 }
 
-                td {
-                    font-size: 0.86em;
-                    white-space: nowrap;
+                table {
+                    tr {
+                        &.split {
+                            box-shadow: 0 -2px 0 0 color.shade(fg, 20%);
+                        }
+
+                        &.self {
+                            background-color: color.shade(fg, 20%);
+                            color: color.shade(bg, 20%);
+
+                            a {
+                                color: inherit;
+                            }
+                        }
+                    }
+
+                    td {
+                        font-size: 0.86em;
+                        white-space: nowrap;
+                    }
                 }
             }
 
