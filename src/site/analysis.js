@@ -1541,21 +1541,6 @@ sauce.ns('analysis', ns => {
             console.warn('Side nav menu not found: Probably a flagged activity');
             return;
         }
-        jQuery("body").append(jQuery(`
-            <dialog id="sauce-export-dialog">
-                <div>
-                    Activity start time:
-                </div>
-                <input type="datetime-local" class="export-time-picker"/>
-                <button class="sauce-export-dialog-export">Export</button>
-                <button autofocus class="sauce-export-dialog-close">Close</button>
-            </dialog>
-        `));
-        const $exportDialog = jQuery("#sauce-export-dialog");
-        $exportDialog.find(".sauce-export-dialog-close").on("click", async () => {
-            $exportDialog[0].close();
-        });
-        
         $menu.append(jQuery(`
             <li class="sauce-group">
                 <div class="sauce-header">
@@ -1570,17 +1555,6 @@ sauce.ns('analysis', ns => {
                 </ul>
             </li>
         `));
-
-        async function handleExportDialog(exportFn) {
-            $exportDialog[0].showModal();
-            $exportDialog.find(".sauce-export-dialog-export").off().on("click", async () => {
-                const $timePicker = $exportDialog.find(".export-time-picker");
-                const pickerStartTime = new Date($timePicker[0].value);
-                exportFn(pickerStartTime);
-                $exportDialog[0].close();
-            });
-        }
-
         async function getLaps() {
             const lapEfforts = pageView.lapEfforts();
             if (lapEfforts && !lapEfforts.length) {
@@ -1592,26 +1566,20 @@ sauce.ns('analysis', ns => {
                 null;
         }
         $menu.find('a.tcx').on('click', async () => {
-            handleExportDialog(async function(pickerStartTime){
-                const laps = await getLaps();
-                exportActivity('tcx', {laps, pickerStartTime}).catch(console.error);
-            });
+            const laps = await getLaps();
+            exportActivity('tcx', {laps}).catch(console.error);
         });
         $menu.find('a.fit').on('click', async () => {
-            handleExportDialog(async function(pickerStartTime){
-                const laps = await getLaps();
-                exportActivity('fit', {laps, pickerStartTime}).catch(console.error);
-            });
+            const laps = await getLaps();
+            exportActivity('fit', {laps}).catch(console.error);
         });
         $menu.find('.sauce-group ul').append(jQuery(`
             <li><a title="NOTE: GPX files do not support power data (watts)."
                    class="gpx">${exportLocale} GPX</a></li>
         `));
         $menu.find('a.gpx').on('click', async () => {
-            handleExportDialog(async function(pickerStartTime){
-                const laps = await getLaps();
-                exportActivity('gpx', {laps, pickerStartTime}).catch(console.error);
-            });
+            const laps = await getLaps();
+            exportActivity('gpx', {laps}).catch(console.error);
         });
     }
 
@@ -1713,46 +1681,38 @@ sauce.ns('analysis', ns => {
     }
 
 
-    async function getEstimatedActivityStart() {
-        // Activity start time is sadly complicated.  Despite being visible in the header
-        // for all activities we only have access to it for rides and self-owned runs.  Trying
-        // to parse the html might work for english rides but will fail for non-english users.
-        const localTime = pageView.activity().get('startDateLocal') * 1000;
-        if (localTime) {
-            // Do a very basic tz correction based on the longitude of any geo data we can find.
-            // Using a proper timezone API is too expensive for this use case.
-            const geoStream = await fetchStream('latlng');
-            let longitude;
-            if (geoStream) {
-                for (const [, lng] of geoStream) {
-                    if (lng != null) {
-                        longitude = lng;
-                        console.info('Getting longitude of activity based on latlng stream');
-                        break;
-                    }
-                }
-            }
-            if (longitude == null) {
-                // Take a wild guess that the activity should match the geo location of the athlete.
-                const athleteGeo = ns.athlete.get('geo');
-                if (athleteGeo && athleteGeo.lat_lng) {
-                    longitude = athleteGeo.lat_lng[1];
-                    console.info('Getting longitude of activity based on athlete\'s location');
-                }
-            }
-            let offset = 0;
-            if (longitude != null) {
-                offset = Math.round((longitude / 180) * (24 / 2)) * 3600000;
-                console.info('Using laughably bad timezone correction:', offset);
-            }
-            return new Date(localTime - offset);  // Subtract offset to counteract the localtime.
+    async function promptForActivityStart() {
+        const locale = await L.getMessagesObject(['analysis_activity_start_time', 'export', 'close']);
+        const $exportDialog = jQuery(`
+            <dialog class="sauce-export-dialog">
+                <div>${locale.analysis_activity_start_time}:</div>
+                <input type="datetime-local" class="export-time-picker"/>
+                <button class="sauce-export-dialog-export">${locale.export}</button>
+                <button autofocus class="sauce-export-dialog-close">${locale.close}</button>
+            </dialog>
+        `);
+        const hint = pageView.activity().get('startDateLocal');
+        if (hint && typeof hint === 'number') {
+            $exportDialog.find('input.export-time-picker')[0].valueAsNumber = hint * 1000;
         }
-        // Sadly we would have to resort to HTML scraping here. Which for now, I won't..
-        console.info('No activity start date could be acquired');
-        return new Date();
+        try {
+            const p = new Promise(resolve => {
+                $exportDialog.on("click", ".sauce-export-dialog-close", () => resolve(null));
+                $exportDialog.on("click", ".sauce-export-dialog-export", () => {
+                    const $timePicker = $exportDialog.find(".export-time-picker");
+                    resolve(new Date($timePicker[0].valueAsNumber));
+                });
+            });
+            jQuery('body').append($exportDialog);
+            $exportDialog[0].showModal();
+            return await p;
+        } finally {
+            $exportDialog[0].close();
+        }
     }
 
-    async function exportActivity(type, {pickerStartTime, start, end, laps}) {
+
+    async function exportActivity(type, {start, end, laps}) {
         const streamTypes = ['time', 'watts', 'heartrate', 'altitude', 'active',
                              'cadence', 'temp', 'latlng', 'distance', 'velocity_smooth'];
         const streams = (await fetchStreams(streamTypes)).reduce((acc, x, i) =>
@@ -1760,15 +1720,23 @@ sauce.ns('analysis', ns => {
         if (!streams.watts) {
             streams.watts = await fetchStream('watts_calc');
         }
-        const fullActivity = await fetchFullActivity();
-        const realStartTime = fullActivity && fullActivity.get('start_time');
-        let date;
-        if (realStartTime) {
-            date = new Date(realStartTime);
-        } else if (!isNaN(pickerStartTime)) {
-            date = pickerStartTime;
-        } else {
-            date = await getEstimatedActivityStart();
+        let date = ns.syncActivity ? new Date(ns.syncActivity.ts) : undefined;
+        if (!date) {
+            const fullActivity = await fetchFullActivity();
+            const realStartTime = fullActivity && fullActivity.get('start_time');
+            if (realStartTime) {
+                date = new Date(realStartTime);
+            }
+        }
+        if (!date) {
+            date = await promptForActivityStart();
+            if (date === null) {
+                return;
+            }
+        }
+        if (date == null || isNaN(date)) {
+            alert("Invalid/unavailable activity start date: " + date);
+            return;
         }
         // Name and description are not available in the activity model for other users..
         let name = document.querySelector('#heading .activity-name').textContent.trim();
