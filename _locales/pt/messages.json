@@ -60,6 +60,12 @@
     "custom": {
         "message": "Personalizado"
     },
+    "close": {
+        "message": "Fechar"
+    },
+    "cancel": {
+        "message": "Cancelar"
+    },
     "menu_performance_fitness": {
         "message": "Rastreador de fitness",
         "description": "IMMUTABLE"
@@ -597,6 +603,9 @@
     },
     "analysis_any_activity_type": {
         "message": "Qualquer tipo de atividade"
+    },
+    "analysis_activity_start_time": {
+        "message": "Hora de início da atividade"
     },
     "time_sec": {
         "message": "seg",

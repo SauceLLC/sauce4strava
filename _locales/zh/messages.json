@@ -73,6 +73,12 @@
     "custom": {
         "message": "风俗"
     },
+    "close": {
+        "message": "关闭"
+    },
+    "cancel": {
+        "message": "取消"
+    },
     "menu_performance_fitness": {
         "message": "健身追踪",
         "description": "IMMUTABLE"
@@ -697,6 +703,9 @@
     },
     "analysis_any_activity_type": {
         "message": "任何活动类型"
+    },
+    "analysis_activity_start_time": {
+        "message": "活动开始时间"
     },
     "time_sec": {
         "message": "秒",

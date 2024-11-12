@@ -57,6 +57,12 @@
     "custom": {
         "message": "Coutume"
     },
+    "close": {
+        "message": "Fermer"
+    },
+    "cancel": {
+        "message": "Annuler"
+    },
     "menu_performance_fitness": {
         "message": "Traqueur de Fitness",
         "description": "IMMUTABLE"
@@ -566,6 +572,9 @@
     },
     "analysis_any_activity_type": {
         "message": "Tout type d'activité"
+    },
+    "analysis_activity_start_time": {
+        "message": "Heure de début de l'activité"
     },
     "time_sec": {
         "message": "sec",

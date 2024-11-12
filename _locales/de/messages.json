@@ -58,6 +58,12 @@
     "custom": {
         "message": "Brauch"
     },
+    "close": {
+        "message": "Schließen"
+    },
+    "cancel": {
+        "message": "Stornieren"
+    },
     "menu_performance_fitness": {
         "message": "Fitness-Tracking"
     },
@@ -562,6 +568,9 @@
     },
     "analysis_any_activity_type": {
         "message": "Jeder Aktivitätstyp"
+    },
+    "analysis_activity_start_time": {
+        "message": "Startzeit der Aktivität"
     },
     "time_sec": {
         "message": "Sek.",

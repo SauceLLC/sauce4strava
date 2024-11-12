@@ -59,6 +59,12 @@
     "custom": {
         "message": "Costumbre"
     },
+    "close": {
+        "message": "Cerca"
+    },
+    "cancel": {
+        "message": "Cancelar"
+    },
     "menu_performance_fitness": {
         "message": "Rastreador de fitness",
         "description": "IMMUTABLE"
@@ -572,6 +578,9 @@
     },
     "analysis_any_activity_type": {
         "message": "Cualquier tipo de actividad"
+    },
+    "analysis_activity_start_time": {
+        "message": "Hora de inicio de la actividad"
     },
     "time_sec": {
         "message": "sec",

@@ -57,6 +57,12 @@
     "custom": {
         "message": "Costume"
     },
+    "close": {
+        "message": "Vicino"
+    },
+    "cancel": {
+        "message": "Cancellare"
+    },
     "menu_performance_fitness": {
         "message": "Monitoraggio della forma fisica"
     },
@@ -563,6 +569,9 @@
     },
     "analysis_any_activity_type": {
         "message": "Qualsiasi tipo di attività"
+    },
+    "analysis_activity_start_time": {
+        "message": "Ora di inizio dell'attività"
     },
     "time_sec": {
         "message": "sec"
