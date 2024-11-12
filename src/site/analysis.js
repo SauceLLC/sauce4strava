@@ -1541,6 +1541,21 @@ sauce.ns('analysis', ns => {
             console.warn('Side nav menu not found: Probably a flagged activity');
             return;
         }
+        jQuery("body").append(jQuery(`
+            <dialog id="sauce-export-dialog">
+                <div>
+                    Activity start time:
+                </div>
+                <input type="datetime-local" class="export-time-picker"/>
+                <button class="sauce-export-dialog-export">Export</button>
+                <button autofocus class="sauce-export-dialog-close">Close</button>
+            </dialog>
+        `));
+        const $exportDialog = jQuery("#sauce-export-dialog");
+        $exportDialog.find(".sauce-export-dialog-close").on("click", async () => {
+            $exportDialog[0].close();
+        });
+        
         $menu.append(jQuery(`
             <li class="sauce-group">
                 <div class="sauce-header">
@@ -1555,6 +1570,17 @@ sauce.ns('analysis', ns => {
                 </ul>
             </li>
         `));
+
+        async function handleExportDialog(exportFn) {
+            $exportDialog[0].showModal();
+            $exportDialog.find(".sauce-export-dialog-export").off().on("click", async () => {
+                const $timePicker = $exportDialog.find(".export-time-picker");
+                const pickerStartTime = new Date($timePicker[0].value);
+                exportFn(pickerStartTime);
+                $exportDialog[0].close();
+            });
+        }
+
         async function getLaps() {
             const lapEfforts = pageView.lapEfforts();
             if (lapEfforts && !lapEfforts.length) {
@@ -1566,20 +1592,26 @@ sauce.ns('analysis', ns => {
                 null;
         }
         $menu.find('a.tcx').on('click', async () => {
-            const laps = await getLaps();
-            exportActivity('tcx', {laps}).catch(console.error);
+            handleExportDialog(async function(pickerStartTime){
+                const laps = await getLaps();
+                exportActivity('tcx', {laps, pickerStartTime}).catch(console.error);
+            });
         });
         $menu.find('a.fit').on('click', async () => {
-            const laps = await getLaps();
-            exportActivity('fit', {laps}).catch(console.error);
+            handleExportDialog(async function(pickerStartTime){
+                const laps = await getLaps();
+                exportActivity('fit', {laps, pickerStartTime}).catch(console.error);
+            });
         });
         $menu.find('.sauce-group ul').append(jQuery(`
             <li><a title="NOTE: GPX files do not support power data (watts)."
                    class="gpx">${exportLocale} GPX</a></li>
         `));
         $menu.find('a.gpx').on('click', async () => {
-            const laps = await getLaps();
-            exportActivity('gpx', {laps}).catch(console.error);
+            handleExportDialog(async function(pickerStartTime){
+                const laps = await getLaps();
+                exportActivity('gpx', {laps, pickerStartTime}).catch(console.error);
+            });
         });
     }
 
@@ -1720,8 +1752,7 @@ sauce.ns('analysis', ns => {
         return new Date();
     }
 
-
-    async function exportActivity(type, {start, end, laps}) {
+    async function exportActivity(type, {pickerStartTime, start, end, laps}) {
         const streamTypes = ['time', 'watts', 'heartrate', 'altitude', 'active',
                              'cadence', 'temp', 'latlng', 'distance', 'velocity_smooth'];
         const streams = (await fetchStreams(streamTypes)).reduce((acc, x, i) =>
@@ -1734,6 +1765,8 @@ sauce.ns('analysis', ns => {
         let date;
         if (realStartTime) {
             date = new Date(realStartTime);
+        } else if (!isNaN(pickerStartTime)) {
+            date = pickerStartTime;
         } else {
             date = await getEstimatedActivityStart();
         }
