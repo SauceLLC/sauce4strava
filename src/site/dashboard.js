@@ -2,7 +2,7 @@
 
 sauce.ns('dashboard', function(ns) {
 
-    const cardSelector = '[class*="FeedEntry__entry-container--"]';
+    const cardSelector = '[id^="feed-entry-"]';
 
 
     function _findActivityProps(p, _depth=1) {
