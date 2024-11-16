@@ -2,16 +2,17 @@
 @use 'animations';
 
 
-[class*="_feedCol-"] {
-    position: relative;
+form[class*="-FeedFilterSelect-"] {
+    max-width: none;
+    justify-content: space-between;
 }
 
 #sauce-kudo-all {
-    position: absolute;
-    right: 6px;
-    top: 10px;
     display: flex;
-    padding-top: 0.6em;
+    margin: 0.75rem 0; // copy strava filter select
+    height: 40px; // copy strava filter select
+    border: 1px solid color.shade(bg, 10%);
+    border-radius: 4px; // copy left side drop down
 
     &:not(.active) {
         .active-only {
@@ -75,12 +76,12 @@
     }
 
     button {
-        background-color: color.shade(bg, 10%);
+        background-color: color.shade(bg, 0%);
         color: color.shade(fg, 5%);
 
         &:hover {
-            background-color: color.shade(accent, 10%);
-            color: color.shade(accent, 80%);
+            background-color: color.shade(bg, 4%);
+            border-color: color.shade(bg, 40%);
         }
     }
 
