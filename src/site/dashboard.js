@@ -2,7 +2,10 @@
 
 sauce.ns('dashboard', function(ns) {
 
-    const cardSelector = '[id^="feed-entry-"]';
+    const cardSelector = [
+        '[id^="feed-entry-"]', // >= 2024-11-16
+        '[class*="FeedEntry__entry-container--"]', // <= 2024-11
+    ].join(', ');
 
 
     function _findActivityProps(p, _depth=1) {
@@ -602,7 +605,10 @@ sauce.ns('dashboard', function(ns) {
             monitorFeed(feedEl);
         }
         if (!sauce.options['dashboard-disable-kudoall']) {
-            const feedHeaderSelector = 'main form[class*="-FeedFilterSelect-"]';
+            const feedHeaderSelector = [
+                'main form[class*="-FeedFilterSelect-"]', // >= 2024 (preferred, unestablished)
+                'main [class*="_feedCol-"] > form', // >= 2024 (safe fallback, established)
+            ].join(', ');
             const feedHeaderEl = document.querySelector(feedHeaderSelector);
             if (!feedHeaderEl) {
                 const mo = new MutationObserver(() => {
