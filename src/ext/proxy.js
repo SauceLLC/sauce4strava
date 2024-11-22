@@ -48,18 +48,30 @@ sauce.ns('proxy', ns => {
             inflight.delete(msg.pid);
             resolve(msg);
         });
-        mainBGPort.onDisconnect.addListener(port => {
-            console.info("Background worker disconnected");
+        const handleDisconnect = port => {
+            if (port !== mainBGPort) {
+                console.warn("Dedup background worker [port] disconnect", port);
+                return;
+            }
+            console.info("Background worker [port] disconnected");
             ns.isConnected = false;
             mainBGPort = null;
             bgConnecting = null;
             clearInterval(keepaliveInterval);
-        });
+        };
+        mainBGPort.onDisconnect.addListener(handleDisconnect);
         mainBGPort.postMessage({desc: {call: 'sauce-proxy-init'}, pid: connectPid});
         await bgConnecting;
         keepaliveInterval = setInterval(() => {
             if (mainBGPort && !document.hidden) {
-                mainBGPort.postMessage({type: 'keepalive', ts: Date.now()});
+                try {
+                    mainBGPort.postMessage({type: 'keepalive', ts: Date.now()});
+                } catch(e) {
+                    if (e.message && e.message.match(/disconnected port/)) {
+                        // Devtools pause breaks onDisconnect when SW dies during breakpoint (chromium)
+                        handleDisconnect(mainBGPort);
+                    }
+                }
             }
         }, 15000);
     };
