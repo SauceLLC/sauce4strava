@@ -1314,6 +1314,7 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, name, version) {
         }
     };
 
+
     sauce.lruCache = function(func, size=100) {
         const _lc = new sauce.LRUCache(size);
         const wrap = function(...args) {
@@ -1327,5 +1328,90 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, name, version) {
         };
         Object.defineProperty(wrap, 'name', {value: func.name});
         return wrap;
+    };
+
+
+    class TreeStop extends Error {}
+    class TreeExclude {}
+    const _treeExclude = new TreeExclude();
+
+    function _enterTree(obj, depth, filter, find, findAll, path, refs) {
+        if (!depth || (filter && !filter(obj, path))) {
+            return !findAll ? {'<stop>': !depth ? 'depth' : 'filter'} : _treeExclude;
+        }
+        depth--;
+        if (find && find(obj, path)) {
+            const stop = new TreeStop();
+            stop.value = obj;
+            stop.path = path;
+            throw stop;
+        }
+        const type = typeof obj;
+        if (obj === null || (type !== 'object' && type !== 'function')) {
+            if (findAll && !findAll(obj, path)) {
+                return _treeExclude;
+            }
+            return obj;
+        }
+        if (!refs.has(obj)) {
+            refs.set(obj, path.join('.'));
+            if (Array.isArray(obj)) {
+                let output = obj.map((x, i) =>
+                    _enterTree(x, depth, filter, find, findAll, [...path, i], refs));
+                if (findAll) {
+                    output = output.filter(x => !Object.is(x, _treeExclude));
+                    if (!output.length) {
+                        return _treeExclude;
+                    }
+                }
+                return output;
+            } else  {
+                let output = [];
+                for (const k in obj) {
+                    let child;
+                    try {
+                        child = obj[k];
+                    } catch(e) {
+                        if (!findAll) {
+                            output.push([k, {'<error>': e}]);
+                        }
+                        continue;
+                    }
+                    if (child instanceof Promise) {
+                        child.catch(() => undefined);
+                    }
+                    output.push([k, _enterTree(child, depth, filter, find, findAll, [...path, k], refs)]);
+                }
+                if (obj.prototype) {
+                    output.push(['<prototype>', _enterTree(obj.prototype, depth, filter, find, findAll,
+                        [...path, 'prototype'], refs)]);
+                }
+                if (findAll) {
+                    output = output.filter(x => !Object.is(x[1], _treeExclude));
+                    if (!output.length) {
+                        return _treeExclude;
+                    }
+                }
+                return Object.fromEntries(output);
+            }
+        } else {
+            return !findAll ? {'<reference>': refs.get(obj)} : _treeExclude;
+        }
+    }
+
+
+    sauce.tree = function(obj, {depth=6, filter, find, findAll}={}) {
+        let tree;
+        try {
+            tree = _enterTree(obj, depth, filter, find, findAll, [], new Map());
+        } catch(e) {
+            if (e instanceof TreeStop) {
+                return {path: e.path.join('.'), value: e.value};
+            }
+            throw e;
+        }
+        if (!find) {
+            return findAll && Object.is(tree, _treeExclude) ? undefined : tree;
+        }
     };
 };
