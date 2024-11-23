@@ -26,11 +26,23 @@ sauce.ns('dashboard', function(ns) {
                         }
                     }
                 }
-            } else if (p.children && p.children.props) {
-                return _findActivityProps(p.children.props, _depth + 1);
+            } else if (p.children) {
+                if (p.children.props) {
+                    const r = _findActivityProps(p.children.props, _depth + 1);
+                    if (r) {
+                        return r;
+                    }
+                }
+            }
+            if (p.memoizedProps) {
+                const r = _findActivityProps(p.memoizedProps, _depth + 1);
+                if (r) {
+                    return r;
+                }
             }
         }
     }
+
 
     // Group activities appear to be mechanistically translated to snake case (or vice versa).
     function snakeToCamelCase(input) {
@@ -52,10 +64,11 @@ sauce.ns('dashboard', function(ns) {
     const _cardPropCache = new Map();
     function getCardProps(cardEl) {
         if (!_cardPropCache.has(cardEl)) {
+            let props;
             try {
                 for (const [k, o] of Object.entries(cardEl)) {
-                    if (k.startsWith('__reactEventHandlers$')) {
-                        const props = _findActivityProps(o);
+                    if (k.match(/^__reactEventHandlers\$|^__reactFiber\$/)) {
+                        props = _findActivityProps(o);
                         if (props) {
                             // Normalize activities...
                             if (props.entity === 'GroupActivity') {
@@ -72,20 +85,22 @@ sauce.ns('dashboard', function(ns) {
                                 });
                                 props.activities = [props.activity];
                             }
-                            _cardPropCache.set(cardEl, props);
-                        } else {
-                            console.warn("Could not find props for:", cardEl);
-                            _cardPropCache.set(cardEl, {});
                         }
                         break;
                     }
                 }
+                if (props) {
+                    _cardPropCache.set(cardEl, props);
+                } else {
+                    console.warn("Could not find props for:", cardEl);
+                    _cardPropCache.set(cardEl, null);
+                }
             } catch(e) {
                 console.error('Get card props error:', e);
-                _cardPropCache.set(cardEl, {});
+                _cardPropCache.set(cardEl, null);
             }
         }
-        return _cardPropCache.get(cardEl) || {};
+        return _cardPropCache.get(cardEl);
     }
 
 
@@ -349,16 +364,16 @@ sauce.ns('dashboard', function(ns) {
     }
 
 
-    function filterFeed(feedEl) {
+    function filterFeed(cards) {
         try {
-            _filterFeed(feedEl);
+            _filterFeed(cards);
         } catch(e) {
             console.error('Filter feed error:', e);
         }
     }
 
 
-    function _filterFeed(feedEl) {
+    function _filterFeed(cards) {
         const filters = sauce.options['activity-filters'];
         if (!filters || !filters.length) {
             return;
@@ -381,10 +396,19 @@ sauce.ns('dashboard', function(ns) {
             'social-description': hasDescription,
         };
         const actions = [];
-        for (const card of feedEl.querySelectorAll(cardSelector + ':not(.sauce-checked)')) {
+        for (const card of cards) {
+            if (card.classList.contains('sauce-checked')) {
+                continue;
+            }
             card.classList.add('sauce-checked');
-            const props = getCardProps(card);
-            if (isSelfEntity(props)) {
+            let props;
+            try {
+                props = getCardProps(card);
+                if (!props || isSelfEntity(props)) {
+                    continue;
+                }
+            } catch(e) {
+                console.error("Failed to get card props:", e);
                 continue;
             }
             for (const {type, criteria, action} of filters) {
@@ -449,12 +473,28 @@ sauce.ns('dashboard', function(ns) {
 
 
     function monitorFeed(feedEl) {
-        const mo = new MutationObserver(() => {
-            filterFeed(feedEl);
-            resetKudoButton();
+        const seenCards = new Set(Array.from(feedEl.querySelectorAll(cardSelector)));
+        const mo = new MutationObserver(events => {
+            const cards = feedEl.querySelectorAll(cardSelector);
+            const beforeSize = seenCards.size;
+            for (const x of cards) {
+                seenCards.add(x);
+            }
+            if (seenCards.size > beforeSize) {
+                filterFeed(cards);
+                resetKudoButton();
+            }
         });
-        mo.observe(feedEl, {childList: true});
-        filterFeed(feedEl);
+        // Take note this page updates in unexpected ways.
+        // 1. No feed element is present.
+        // 2. Feed element is inserted and contains about some number of empty divs
+        // 3. The empty divs are filled with feed entries.
+        // 4. Sometimes the feed is immediately updated with additional div > feed entries.
+        mo.observe(feedEl, {childList: true, subtree: true});
+        if (seenCards.size) {
+            debugger; // cool cool
+            filterFeed(Array.from(seenCards));
+        }
     }
 
 
@@ -488,10 +528,12 @@ sauce.ns('dashboard', function(ns) {
         // Strava kinda has bootstrap dropdowns, but most of the style is missing or broken.
         // I think it still is worth it to reuse the basics though (for now)  A lot of css
         // is required to fix this up though.
-        await sauce.proxy.connected;
-        await sauce.propDefined('jQuery.prototype.dropdown', {once: true, ignoreDefinedParents: true});
-        const rl = await getKudoRateLimiter();
-        const tpl = await sauce.template.getTemplate('kudo-all.html', 'dashboard');
+        const [rl, tpl] = await Promise.all([
+            getKudoRateLimiter(),
+            sauce.template.getTemplate('kudo-all.html', 'dashboard'),
+            sauce.proxy.connected,
+            sauce.propDefined('jQuery.prototype.dropdown', {once: true, ignoreDefinedParents: true}),
+        ]);
         const filters = new Set((await sauce.storage.getPref('kudoAllFilters') || []));
         const suspended = rl.willSuspendFor();
         const $kudoAll = jQuery(await tpl({
@@ -519,7 +561,11 @@ sauce.ns('dashboard', function(ns) {
             const kudoButtons = [];
             const ignore = new Set(['FancyPromo', 'SimplePromo', 'Challenge', 'Club', 'SuggestedRoutes']);
             for (const card of cards) {
+                card._sauceKudoSeen = true;
                 const props = getCardProps(card);
+                if (!props) {
+                    continue;
+                }
                 if ((filters.has('commutes') && isCommute(props)) ||
                     (filters.has('virtual') && isVirtual(props))) {
                     continue;
@@ -596,12 +642,12 @@ sauce.ns('dashboard', function(ns) {
                 if (feedEl) {
                     mo.disconnect();
                     // Chrome devtools bug workaround...
-                    //setTimeout(() => monitorFeed(feedEl), 0);
-                    monitorFeed(feedEl);
+                    setTimeout(() => monitorFeed(feedEl), 0);
                 }
             });
             mo.observe(document.documentElement, {childList: true, subtree: true});
         } else {
+            // Unlikely...
             monitorFeed(feedEl);
         }
         if (!sauce.options['dashboard-disable-kudoall']) {
@@ -616,12 +662,12 @@ sauce.ns('dashboard', function(ns) {
                     if (feedHeaderEl) {
                         mo.disconnect();
                         // Chrome devtools bug workaround...
-                        //setTimeout(() => monitorFeed(feedHeaderEl), 0);
-                        loadKudoAll(feedHeaderEl);
+                        setTimeout(() => loadKudoAll(feedHeaderEl), 0);
                     }
                 });
                 mo.observe(document.documentElement, {childList: true, subtree: true});
             } else {
+                // Unlikely...
                 loadKudoAll(feedHeaderEl);
             }
         }
