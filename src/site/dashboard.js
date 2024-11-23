@@ -492,7 +492,6 @@ sauce.ns('dashboard', function(ns) {
         // 4. Sometimes the feed is immediately updated with additional div > feed entries.
         mo.observe(feedEl, {childList: true, subtree: true});
         if (seenCards.size) {
-            debugger; // cool cool
             filterFeed(Array.from(seenCards));
         }
     }
