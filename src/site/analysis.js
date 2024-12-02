@@ -1767,25 +1767,10 @@ sauce.ns('analysis', ns => {
     async function attachComments() {
         const commentsTpl = await getTemplate('comments.html');
         const feedTpl = await getTemplate('comments-feed.html');
-        const newCommentsHack = [];
+        const newComments = [];
         const $comments = jQuery(await commentsTpl());
         async function render() {
-            let comments;
-            const reactNode = document.querySelector('[data-react-class="ADPKudosAndComments"]');
-            if (reactNode) {
-                for (const [k, v] of Object.entries(reactNode)) {
-                    if (k.startsWith('__reactContainere$')) {
-                        if (v && v.alternate && v.alternate.child && v.alternate.child.memoizedProps) {
-                            comments = v.alternate.child.memoizedProps.comments;
-                        }
-                        break;
-                    }
-                }
-            } else {
-                // Legacy method.  Still kinda works but I expect it to disappear.
-                comments = pageView.commentsController().hash;
-            }
-            comments = (comments || []).concat(newCommentsHack);
+            const comments = [...pageView.commentsController().hash, ...newComments];
             if (comments.length) {
                 const data = comments.map(x => ({
                     comment: x.comment,
@@ -1797,7 +1782,7 @@ sauce.ns('analysis', ns => {
         }
         pageView.commentsController().on('commentCreated', async comment => {
             // Convert legacy format to a html string.
-            newCommentsHack.push({
+            newComments.push({
                 comment: comment.comment.reduce((agg, x) => {
                     if (x.type === 'mention_token') {
                         return agg + `<a href="${x.path}">${x.text}</a>`;
