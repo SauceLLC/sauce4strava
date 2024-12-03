@@ -3699,7 +3699,11 @@ sauce.ns('analysis', ns => {
             return n;
         };
         const prevBigVer = bigIntVersion(recentUpdate.previousVersion);
-        releases = releases.filter(x => bigIntVersion(x.version) > prevBigVer);
+        const curBigVer = bigIntVersion(sauce.version);
+        releases = releases.filter(x => {
+            const v = bigIntVersion(x.version);
+            return v > prevBigVer && v <= curBigVer;
+        });
         if (!releases.length) {
             // No releases to show.
             await sauce.storage.remove('recentUpdate');
