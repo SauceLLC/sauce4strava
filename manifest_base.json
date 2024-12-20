@@ -62,7 +62,7 @@
         "matches": ["https://www.strava.com/*"],
         "world": "MAIN",
         "js": [
-            "src/common/base-symlink-1.js",
+            "src/site/base.js",
             "src/site/preloader.js",
             "src/site/base_init.js"
         ]
