@@ -1420,11 +1420,15 @@ class SyncJob extends EventTarget {
                     adding++;
                 }
             }
+            const f = new Intl.DateTimeFormat();
+            const range = f.formatRange(
+                sauce.data.min(batch.map(x => x.ts)),
+                sauce.data.max(batch.map(x => x.ts)));
             if (adding) {
-                this.logInfo(`Adding ${adding} new activities`);
+                this.logInfo(`Adding ${adding} new activities:`, range);
             }
             if (updating) {
-                this.logInfo(`Updating ${updating} existing activities`);
+                this.logInfo(`Updating ${updating} existing activities:`, range);
             }
             await actsStore.updateMany(new Map(batch.map(x => [x.id, x])));
             await this.niceSendProgressEvent();
@@ -1627,11 +1631,15 @@ class SyncJob extends EventTarget {
             // NOTE: If the user deletes a large number of items we may end up not
             // syncing some activities.  A full resync will be required to recover.
             if (adding.length) {
+                const f = new Intl.DateTimeFormat();
+                const range = f.formatRange(
+                    sauce.data.min(adding.map(x => x.ts)),
+                    sauce.data.max(adding.map(x => x.ts)));
                 if (forceUpdate) {
-                    this.logInfo(`Updating ${adding.length} activities`);
+                    this.logInfo(`Updating ${adding.length} activities:`, range);
                     await actsStore.updateMany(new Map(adding.map(x => [x.id, x])));
                 } else {
-                    this.logInfo(`Adding ${adding.length} new activities`);
+                    this.logInfo(`Adding ${adding.length} new activities:`, range);
                     await actsStore.putMany(adding);
                 }
             } else if (knownIds.size >= total) {
