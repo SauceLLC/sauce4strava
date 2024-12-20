@@ -198,6 +198,6 @@ sauce.ns('proxy', ns => {
     }
 
 
-    ns.ensureConnected();
     self.addEventListener('message', onMessageEstablishChannel);
+    ns.ensureConnected();
 });
