@@ -1,0 +1,13 @@
+{
+    "name": "Sauce for Strava™ [ALPHA]",
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "{e88a46e7-0ca7-40fc-a7c9-cc9faa843c90}",
+            "strict_min_version": "128.0"
+        }
+    },
+    "background": {
+        "type": "module",
+        "scripts": ["src/bg/main.mjs"]
+    }
+}
