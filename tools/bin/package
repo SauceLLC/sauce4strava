@@ -46,7 +46,7 @@ BUILDS=$(pwd)/builds
 mkdir -p $BUILDS
 cd $TMPDIR
 OUTFILE="${BUILDS}/sauce-${KIND}-${VERSION}-${GIT_COMMIT}.${EXT}"
-zip -9 --symlinks -r -FS "$OUTFILE" *
+zip -9 -r -FS "$OUTFILE" *
 cd -
 rm -rf $TMPDIR
 echo Wrote $OUTFILE
