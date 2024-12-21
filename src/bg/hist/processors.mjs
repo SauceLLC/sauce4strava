@@ -481,7 +481,10 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
                 stats.altitudeGain = sauce.geo.altitudeChanges(altStream).gain;
             }
             let estimate = false;
-            let watts = activity.data.basetype !== 'run' && !disableRunWatts ? streams.watts : undefined;
+            let watts = streams.watts;
+            if (watts && activity.data.basetype === 'run' && disableRunWatts) {
+                watts = undefined;
+            }
             if (!watts && useEstWatts(activity)) {
                 watts = streams.watts_calc;
                 estimate = true;

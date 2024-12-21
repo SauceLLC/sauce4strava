@@ -104,7 +104,7 @@ ActivityModel.addSyncManifest({
 ActivityModel.addSyncManifest({
     processor: 'local',
     name: 'activity-stats',
-    version: 5,  // TSS prefer trimp
+    version: 6,  // Fix disableRunWatts causing eTSS use bug
     depends: ['extra-streams', 'athlete-settings', 'run-power'],
     storageOptionTriggers: ['analysis-prefer-estimated-power-tss'],
     data: {processor: processors.activityStatsProcessor}
