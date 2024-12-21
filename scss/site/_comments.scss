@@ -41,14 +41,15 @@
                 flex: 1 100%;
 
                 p {
-                    font-size: .85em;
+                    font-size: .85rem;
                     margin: 0;
                 }
             }
 
             .sauce-header {
-                font-size: 0.75em;
-                color: color.shade(fg, 15%);
+                font-size: 0.82rem;
+                color: color.shade(fg, 12%);
+                margin-bottom: 0.2rem;
             }
         }
     }
