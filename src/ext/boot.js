@@ -1,37 +1,76 @@
 /* global sauce, browser */
 
 
-let _attrDialog;
 function handleAttributionDialog() {
+    const hoverDelay = 500;
+    let dialogSingleton;
+    let hoverTimeout;
+    function makeAttrDialog(el, key) {
+        const dialog = document.createElement('dialog');
+        dialog.srcElement = el;
+        dialog.classList.add('sauce-attr');
+        sauce.adjacentNodeContents(dialog, 'beforeend',
+            browser.i18n.getMessage(`attribution_${key}`));
+        const pos = el.getBoundingClientRect();
+        if (pos.x || pos.y) {
+            dialog.style.setProperty('top', pos.y + pos.height + 'px');
+            dialog.style.setProperty('left', pos.x + 'px');
+            dialog.classList.add('anchored');
+        } else {
+            // Needs a note as to why/where this happens...
+            console.warn("XXX: Triage this context", el);
+            debugger;
+        }
+        dialog.addEventListener('click', ev => dialog.close());
+        dialog.addEventListener('close', ev => {
+            if (dialog === dialogSingleton) {
+                dialogSingleton = null;
+            }
+            dialog.remove();
+        });
+        document.body.append(dialog);
+        dialogSingleton = dialog;
+        return dialog;
+    }
     document.documentElement.addEventListener('click', ev => {
+        if (dialogSingleton) {
+            dialogSingleton.close();
+        }
         const attr = ev.target.closest('attr[for]');
         if (!attr) {
             return;
         }
-        if (_attrDialog) {
-            _attrDialog.close();
-        } else {
-            const dialog = document.createElement('dialog');
-            dialog.classList.add('sauce-attr');
-            sauce.adjacentNodeContents(dialog, 'beforeend',
-                browser.i18n.getMessage(`attribution_${attr.getAttribute('for')}`));
-            const pos = attr.getBoundingClientRect(attr);
-            if (pos.left || pos.top) {
-                dialog.style.setProperty('top', pos.top + pos.height + 'px');
-                dialog.style.setProperty('left', pos.left + 'px');
-                dialog.classList.add('anchored');
-            }
-            dialog.addEventListener('click', ev => dialog.close());
-            dialog.addEventListener('close', ev => {
-                if (dialog === _attrDialog) {
-                    _attrDialog = null;
-                    dialog.remove();
+        const dialog = makeAttrDialog(attr, attr.getAttribute('for'));
+        dialog.persistent = true;
+        dialog.showModal();
+    });
+    document.documentElement.addEventListener('pointerover', ev => {
+        clearTimeout(hoverTimeout);
+        const attr = ev.target.closest('[attr-tooltip]');
+        if (!attr) {
+            if (dialogSingleton && !dialogSingleton.persistent) {
+                const rect = dialogSingleton.getBoundingClientRect();
+                const pad = 20;
+                const x = ev.pageX - scrollX;
+                const y = ev.pageY - scrollY;
+                if (x < (rect.x - pad) || x > (rect.x + rect.width + pad) ||
+                    y < (rect.y - pad) || y > (rect.y + rect.height + pad)) {
+                    console.info("left the rect", x, y, rect);
+                    dialogSingleton.close();
+                } else {
+                    console.info("inside the rect", ev.pageX, ev.pageY, rect);
                 }
-            });
-            _attrDialog = dialog;
-            document.body.append(dialog);
-            dialog.showModal();
+            }
+            return;
         }
+        if (dialogSingleton) {
+            if (dialogSingleton.srcElement === attr) {
+                return;
+            }
+            dialogSingleton.close();
+        }
+        hoverTimeout = setTimeout(() => makeAttrDialog(attr, attr.getAttribute('attr-tooltip')).show(),
+            hoverDelay);
     });
 }
 

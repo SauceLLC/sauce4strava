@@ -1736,11 +1736,31 @@ sauce.ns('pace', function() {
     }
 
 
+    /*
+     * Equivalent Speed (ES) is the distance weighted average speed. This compensates for
+     * climbing, traffic, etc. Discovered independently by Lee Naish and Scott Bollt.
+     *
+     * See: https://lee-naish.github.io/src/posavespeed/
+     * See: https://www.researchgate.net/publication/353625461
+     */
+    function equivalentSpeed(velocityStream) {
+        let sum = 0;
+        let sumSquared = 0;
+        for (let i = 0; i < velocityStream.length; i++) {
+            const v = velocityStream[i];
+            sum += v;
+            sumSquared += v * v;
+        }
+        return sumSquared / sum;
+    }
+
+
     return {
+        RollingPace,
         bestPace,
         work,
         createWattsStream,
-        RollingPace,
+        equivalentSpeed
     };
 });
 

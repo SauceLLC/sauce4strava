@@ -32,6 +32,13 @@
                 <value>{-humanPace(pace.gap, {html: true, suffix: true})-}</value>
             </line>
         <% } %>
+
+        <% if (pace.es) { %>
+            <line attr-tooltip="es">
+                <key>ES</key>
+                <value>{-humanPace(pace.es, {html: true, suffix: true})-}</value>
+            </line>
+        <% } %>
     <% } %>
 
     <% if (elapsed !== active) { %>

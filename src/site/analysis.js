@@ -1241,10 +1241,7 @@ sauce.ns('analysis', ns => {
                 activeTime,
             }),
             pace: distance && {
-                // LEE possible temporary hack - replace average speed by ES
-                // I'm not sure if/where this gets used...
-                // avg: 1 / getEqvSpeed(startIdx, endIdx),
-                avg: 1 / (distance / elapsedTime), // ave. active speed
+                avg: 1 / (distance / elapsedTime),
                 max: 1 / sauce.data.max(streams.velocity_smooth),
                 gap: streams.grade_adjusted_distance &&
                     (1 / (streamDelta(streams.grade_adjusted_distance) / elapsedTime)),
@@ -2479,18 +2476,6 @@ sauce.ns('analysis', ns => {
         return sauce.data.activeTime(timeStream, activeStream);
     }
 
-    // LEE
-    // ES is essentially the speed averaged over the position rather
-    // than time (each meter travelled has the same weight rather than
-    // the more traditional each second travelled having the same
-    // weight. See https://lee-naish.github.io/src/posavespeed/
-    function getEqvSpeed(start, end) {
-        const velocity_smoothStream = _getStream('velocity_smooth', start, end);
-        const sumSpeed = sauce.data.sum(velocity_smoothStream);
-        const sumSpeedSquared = sauce.data.sum(velocity_smoothStream.map(v => v*v));
-        return sumSpeedSquared / sumSpeed;
-    }
-
 
     function getStopCount(start, end) {
         let stops = 0;
@@ -2598,7 +2583,6 @@ sauce.ns('analysis', ns => {
         const activeTime = getActiveTime(start, end);
         const elapsedTime = streamDelta(timeStream);
         const distance = streamDelta(distStream);
-        const eqvSpeed = getEqvSpeed(start, end); // LEE
         const tplData = {
             logo: sauce.getURL('images/logo_vert_48x128.png'),
             supportsRankBadge: pageView.activity().isRide(),
@@ -2652,14 +2636,15 @@ sauce.ns('analysis', ns => {
         if (distance) {
             const gradeDistStream = await fetchGradeDistStream({start, end});
             const gradeDistance = gradeDistStream && streamDelta(gradeDistStream);
+            let equivSpeed;
+            if (pageView.isRide()) {
+                const velocityStream = await fetchStream('velocity_smooth', start, end);
+                equivSpeed = sauce.pace.equivalentSpeed(velocityStream);
+            }
             tplData.pace = {
                 elapsed: 1 / (distance / elapsedTime),
-                // LEE temporary hack - replace average speed by ES
-                // XXX rename this to eqv or some such and change
-                // active_old back to active plus change other code so eqv
-                // is displayed (possibly with active also)
-                active: 1 / eqvSpeed, // ES - "equivalent speed"
-                active_old: 1 / (distance / activeTime), // ave. active speed
+                es: equivSpeed ? 1 / equivSpeed : undefined,
+                active: 1 / (distance / activeTime),
                 gap: gradeDistance && (1 / (gradeDistance / activeTime)),
             };
         }
