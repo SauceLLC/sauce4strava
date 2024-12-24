@@ -45,7 +45,10 @@ function handleAttributionDialog() {
         dialog.showModal();
     });
     document.documentElement.addEventListener('pointerover', ev => {
-        clearTimeout(hoverTimeout);
+        if (hoverTimeout) {
+            clearTimeout(hoverTimeout);
+            hoverTimeout = null;
+        }
         const attr = ev.target.closest('[attr-tooltip]');
         if (!attr) {
             if (dialogSingleton && !dialogSingleton.persistent) {
@@ -55,10 +58,7 @@ function handleAttributionDialog() {
                 const y = ev.pageY - scrollY;
                 if (x < (rect.x - pad) || x > (rect.x + rect.width + pad) ||
                     y < (rect.y - pad) || y > (rect.y + rect.height + pad)) {
-                    console.info("left the rect", x, y, rect);
                     dialogSingleton.close();
-                } else {
-                    console.info("inside the rect", ev.pageX, ev.pageY, rect);
                 }
             }
             return;
