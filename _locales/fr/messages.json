@@ -1692,5 +1692,8 @@
     },
     "attribution_tp": {
         "message": "Normalized Power®, NP®, Training Stress Score®, TSS®, Intensity Factor®, IF® sont des marques commerciales de TrainingPeaks, LLC et sont utilisées avec autorisation. Apprenez-en plus sur <a href=\"https://www.trainingpeaks.com/learn/articles/glossary-of-trainingpeaks-metrics/?utm_source=newsletter&utm_medium=partner&utm_term=sauce_trademark&utm_content=cta&utm_campaign=sauce\">https://www.trainingpeaks.com/learn/articles/glossary-of-trainingpeaks-metrics/</a> ."
+    },
+    "attribution_es": {
+        "message": "La vitesse équivalente (ES) est la vitesse moyenne pondérée par la distance. Elle compense les montées, le trafic, etc. Découverte indépendamment par <a href=\"https://lee-naish.github.io/src/posavespeed/\">Lee Naish</a> et <a href=\"https://www.researchgate.net/publication/353625461\">Scott Bollt</a> ."
     }
 }

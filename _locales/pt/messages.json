@@ -1821,5 +1821,8 @@
     },
     "attribution_tp": {
         "message": "Normalized Power®, NP®, Training Stress Score®, TSS®, Intensity Factor®, IF® são marcas registradas da TrainingPeaks, LLC e são usadas com permissão. Saiba mais em <a href=\"https://www.trainingpeaks.com/learn/articles/glossary-of-trainingpeaks-metrics/?utm_source=newsletter&utm_medium=partner&utm_term=sauce_trademark&utm_content=cta&utm_campaign=sauce\">https://www.trainingpeaks.com/learn/articles/glossary-of-trainingpeaks-metrics/</a> ."
+    },
+    "attribution_es": {
+        "message": "Velocidade Equivalente (ES) é a velocidade média ponderada pela distância. Isso compensa subidas, trânsito, etc. Descoberto independentemente por <a href=\"https://lee-naish.github.io/src/posavespeed/\">Lee Naish</a> e <a href=\"https://www.researchgate.net/publication/353625461\">Scott Bollt</a> ."
     }
 }
