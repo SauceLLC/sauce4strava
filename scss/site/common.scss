@@ -96,6 +96,10 @@
         box-shadow: 1px 1px 4px 0 #0003;
         max-width: 40ch;
 
+        a:focus {
+            outline: none;
+        }
+
         &.anchored {
             margin: 0.32em 0 0 0;
         }
