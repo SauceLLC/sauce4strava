@@ -425,6 +425,9 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
                             value: {
                                 display: ctx => {
                                     const el = ctx.chart.getDatasetMeta(ctx.datasetIndex).data[ctx.dataIndex];
+                                    if (!el) {
+                                        return false;
+                                    }
                                     const m = el._model;
                                     if ((m.width || 0) < 20) {
                                         return false;
