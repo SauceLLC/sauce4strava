@@ -422,12 +422,15 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, name, version) {
         } else {
             options = options || {};
         }
+        if (options.multiple && !callback) {
+            throw new Error("multiple mode requires callback");
+        }
         const ourListeners = [];
         function addListener(propDesc, fn, obj, prop) {
             propDesc.set.listeners.push(fn);
             ourListeners.push({fn, propDesc, obj, prop});
         }
-        const cleanup = options.once && function() {
+        const cleanup = !options.multiple && function() {
             for (const {fn, propDesc, obj, prop} of ourListeners) {
                 const idx = propDesc.set.listeners.indexOf(fn);
                 propDesc.set.listeners.splice(idx, 1);
@@ -475,7 +478,7 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, name, version) {
                 const curValue = obj[prop];
                 if (curValue !== undefined) {
                     onSet(curValue);
-                    if ((isLeaf && options.once) || options.ignoreDefinedParents) {
+                    if ((isLeaf && !options.multiple) || options.ignoreDefinedParents) {
                         return;
                     }
                 }
@@ -486,7 +489,7 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, name, version) {
                     } else if (propDesc.set && !propDesc.get) {
                         throw new TypeError('Write-only property');
                     } else if ((propDesc.get && !propDesc.set) || propDesc.writable === false) {
-                        // Options `once` or `ignoreDefinedParents` may help resolve this.
+                        // Options `!multiple` or `ignoreDefinedParents` may help resolve this.
                         throw new TypeError('Read-only property');
                     }
                 }
