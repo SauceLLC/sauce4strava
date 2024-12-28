@@ -45,14 +45,10 @@
 sauce.propDefined('jQuery', function($) {
     'use strict';
 
-    var UNSET_OPTION = {},
-        getDefaults, createClass, SPFormat, clipval, quartile, normalizeValue, normalizeValues,
-        remove, isNumber, all, addCSS, ensureArray, formatNumber, RangeMap,
-        MouseHandler, Tooltip, barHighlightMixin,
-        line, bar, colorline, tristate, discrete, bullet, pie, box, defaultStyles, initStyles,
-        VShape, VCanvas_base, VCanvas_canvas, pending, shapeCount = 0;
+    const UNSET_OPTION = {};
+    let SPFormat, RangeMap, line, bar, colorline, tristate, discrete, bullet, pie, box, shapeCount = 0;
 
-    getDefaults = function() {
+    function getDefaults() {
         return {
             common: {
                 type: 'line',
@@ -94,7 +90,8 @@ sauce.propDefined('jQuery', function($) {
                 chartRangeMax: undefined,
                 chartRangeMinX: undefined,
                 chartRangeMaxX: undefined,
-                tooltipFormat: new SPFormat('<span style="color: {{color}}">&#9679;</span> {{prefix}}{{y}}{{suffix}}')
+                tooltipFormat: new SPFormat(
+                    '<span style="color: {{color}}">&#9679;</span> {{prefix}}{{y}}{{suffix}}')
             },
             bar: {
                 barColor: '#3366cc',
@@ -110,7 +107,8 @@ sauce.propDefined('jQuery', function($) {
                 chartRangeMin: undefined,
                 chartRangeClip: false,
                 colorMap: undefined,
-                tooltipFormat: new SPFormat('<span style="color: {{color}}">&#9679;</span> {{prefix}}{{value}}{{suffix}}')
+                tooltipFormat: new SPFormat(
+                    '<span style="color: {{color}}">&#9679;</span> {{prefix}}{{value}}{{suffix}}')
             },
             colorline: {
                 barColor: '#3366cc',
@@ -124,7 +122,8 @@ sauce.propDefined('jQuery', function($) {
                 chartRangeMin: undefined,
                 chartRangeClip: false,
                 colorMap: undefined,
-                tooltipFormat: new SPFormat('<span style="color: {{color}}">&#9679;</span> {{prefix}}{{value}}{{suffix}}')
+                tooltipFormat: new SPFormat(
+                    '<span style="color: {{color}}">&#9679;</span> {{prefix}}{{value}}{{suffix}}')
             },
             tristate: {
                 barWidth: 4,
@@ -160,7 +159,8 @@ sauce.propDefined('jQuery', function($) {
                     '#dd4477', '#0099c6', '#990099'],
                 borderWidth: 0,
                 borderColor: '#000',
-                tooltipFormat: new SPFormat('<span style="color: {{color}}">&#9679;</span> {{value}} ({{percent.1}}%)')
+                tooltipFormat: new SPFormat(
+                    '<span style="color: {{color}}">&#9679;</span> {{value}} ({{percent.1}}%)')
             },
             box: {
                 raw: false,
@@ -184,10 +184,10 @@ sauce.propDefined('jQuery', function($) {
                     lw: 'Left Whisker', rw: 'Right Whisker'} }
             }
         };
-    };
+    }
 
     // You can have tooltips use a css class other than jqstooltip by specifying tooltipClassname
-    defaultStyles = `
+    const defaultStyles = `
         .jqstooltip {
             position: absolute;
             left: 0;
@@ -213,9 +213,8 @@ sauce.propDefined('jQuery', function($) {
      * Utilities
      */
 
-    createClass = function(/* [baseclass, [mixin, ...]], definition */) {
-        var Class, args;
-        Class = function() {
+    function createClass(/* [baseclass, [mixin, ...]], definition */) {
+        const Class = function() {
             this.init.apply(this, arguments);
         };
         if (arguments.length > 1) {
@@ -226,7 +225,7 @@ sauce.propDefined('jQuery', function($) {
                 Class.prototype = arguments[arguments.length - 1];
             }
             if (arguments.length > 2) {
-                args = Array.prototype.slice.call(arguments, 1, -1);
+                const args = Array.prototype.slice.call(arguments, 1, -1);
                 args.unshift(Class.prototype);
                 $.extend.apply($, args);
             }
@@ -235,7 +234,7 @@ sauce.propDefined('jQuery', function($) {
         }
         Class.prototype.cls = Class;
         return Class;
-    };
+    }
 
     /**
      * Wraps a format string for tooltips
@@ -253,11 +252,11 @@ sauce.propDefined('jQuery', function($) {
         },
 
         render: function(fieldset, lookups, options) {
-            var self = this,
-                fields = fieldset,
-                match, token, lookupkey, fieldvalue, prec;
+            const self = this;
+            const fields = fieldset;
+            let match, token, lookupkey, fieldvalue, prec;
             return this.format.replace(this.fre, function() {
-                var lookup;
+                let lookup;
                 token = arguments[1];
                 lookupkey = arguments[3];
                 match = self.precre.exec(token);
@@ -299,7 +298,7 @@ sauce.propDefined('jQuery', function($) {
         return new SPFormat(format, fclass);
     };
 
-    clipval = function(val, min, max) {
+    function clipval(val, min, max) {
         if (val < min) {
             return min;
         }
@@ -307,10 +306,10 @@ sauce.propDefined('jQuery', function($) {
             return max;
         }
         return val;
-    };
+    }
 
-    quartile = function(values, q) {
-        var vl;
+    function quartile(values, q) {
+        let vl;
         if (q === 2) {
             vl = Math.floor(values.length / 2);
             return values.length % 2 ? values[vl] : (values[vl-1] + values[vl]) / 2;
@@ -324,10 +323,10 @@ sauce.propDefined('jQuery', function($) {
 
             }
         }
-    };
+    }
 
-    normalizeValue = function(val) {
-        var nf;
+    function normalizeValue(val) {
+        let nf;
         switch (val) {
         case 'undefined':
             val = undefined;
@@ -343,68 +342,70 @@ sauce.propDefined('jQuery', function($) {
             break;
         default:
             nf = parseFloat(val);
+            debugger;
             if (val == nf) {
                 val = nf;
             }
         }
         return val;
-    };
+    }
 
-    normalizeValues = function(vals) {
-        var i, result = [];
-        for (i = vals.length; i--;) {
+    function normalizeValues(vals) {
+        const result = [];
+        for (let i = vals.length; i--;) {
             result[i] = normalizeValue(vals[i]);
         }
         return result;
-    };
+    }
 
-    remove = function(vals, filter) {
-        var i, vl, result = [];
-        for (i = 0, vl = vals.length; i < vl; i++) {
+    function remove(vals, filter) {
+        const result = [];
+        for (let i = 0; i < vals.length; i++) {
             if (vals[i] !== filter) {
                 result.push(vals[i]);
             }
         }
         return result;
-    };
+    }
 
-    isNumber = function(num) {
+    function isNumber(num) {
         return !isNaN(parseFloat(num)) && isFinite(num);
-    };
+    }
 
-    formatNumber = function(num, prec, groupsize, groupsep, decsep) {
-        var p, i;
+    function formatNumber(num, prec, groupsize, groupsep, decsep) {
+        let p;
         num = (prec === false ? parseFloat(num).toString() : num.toFixed(prec)).split('');
         p = (p = $.inArray('.', num)) < 0 ? num.length : p;
         if (p < num.length) {
             num[p] = decsep;
         }
-        for (i = p - groupsize; i > 0; i -= groupsize) {
+        for (let i = p - groupsize; i > 0; i -= groupsize) {
             num.splice(i, 0, groupsep);
         }
         return num.join('');
-    };
+    }
 
     // determine if all values of an array match a value
     // returns true if the array is empty
-    all = function(val, arr, ignoreNull) {
-        var i;
-        for (i = arr.length; i--; ) {
-            if (ignoreNull && arr[i] === null) continue;
+    function all(val, arr, ignoreNull) {
+        for (let i = arr.length; i--; ) {
+            if (ignoreNull && arr[i] === null) {
+                continue;
+            }
             if (arr[i] !== val) {
                 return false;
             }
         }
         return true;
-    };
+    }
 
-    ensureArray = function(val) {
+    function ensureArray(val) {
         return $.isArray(val) ? val : [val];
-    };
+    }
 
     // http://paulirish.com/2008/bookmarklet-inject-new-css-rules/
-    addCSS = function(css) {
-        var tag;
+    function addCSS(css) {
+        let tag;
         //if ('\v' == 'v') /* ie only */ {
         if (document.createStyleSheet) {
             document.createStyleSheet().cssText = css;
@@ -412,13 +413,14 @@ sauce.propDefined('jQuery', function($) {
             tag = document.createElement('style');
             tag.type = 'text/css';
             document.getElementsByTagName('head')[0].appendChild(tag);
-            tag[(typeof document.body.style.WebkitAppearance == 'string') /* webkit only */ ? 'innerText' : 'innerHTML'] = css;
+            tag[(typeof document.body.style.WebkitAppearance === 'string') /* webkit only */ ?
+                'innerText' : 'innerHTML'] = css;
         }
-    };
+    }
 
     // Provide a cross-browser interface to a few simple drawing primitives
     $.fn.simpledraw = function(width, height, useExisting, interact) {
-        var target, mhandler;
+        let target;
         if (useExisting && (target = this.data('_jqs_vcanvas'))) {
             return target;
         }
@@ -426,7 +428,7 @@ sauce.propDefined('jQuery', function($) {
             return false;
         } else if ($.fn.sparkline.canvas === undefined) {
             // No function defined yet -- need to see if we support Canvas
-            var el = document.createElement('canvas');
+            const el = document.createElement('canvas');
             if (el.getContext && el.getContext('2d')) {
                 // Canvas is available
                 $.fn.sparkline.canvas = (width, height, target, interact) =>
@@ -443,7 +445,7 @@ sauce.propDefined('jQuery', function($) {
             height = $(this).innerHeight();
         }
         target = $.fn.sparkline.canvas(width, height, this, interact);
-        mhandler = $(this).data('_jqs_mhandler');
+        const mhandler = $(this).data('_jqs_mhandler');
         if (mhandler) {
             mhandler.registerCanvas(target);
         }
@@ -451,7 +453,7 @@ sauce.propDefined('jQuery', function($) {
     };
 
     $.fn.cleardraw = function() {
-        var target = this.data('_jqs_vcanvas');
+        const target = this.data('_jqs_vcanvas');
         if (target) {
             target.reset();
         }
@@ -492,9 +494,9 @@ sauce.propDefined('jQuery', function($) {
         return new RangeMap(map);
     };
 
-    MouseHandler = createClass({
+    const MouseHandler = createClass({
         init: function(el, options) {
-            var $el = $(el);
+            const $el = $(el);
             this.$el = $el;
             this.options = options;
             this.currentPageX = 0;
@@ -515,7 +517,7 @@ sauce.propDefined('jQuery', function($) {
         },
 
         registerCanvas: function(canvas) {
-            var $canvas = $(canvas.canvas);
+            const $canvas = $(canvas.canvas);
             this.canvas = canvas;
             this.$canvas = $canvas;
             $canvas.mouseenter($.proxy(this.mouseenter, this));
@@ -532,7 +534,7 @@ sauce.propDefined('jQuery', function($) {
         },
 
         mouseclick: function(e) {
-            var clickEvent = $.Event('sparklineClick');
+            const clickEvent = $.Event('sparklineClick');
             clickEvent.originalEvent = e;
             clickEvent.sparklines = this.splist;
             this.$el.trigger(clickEvent);
@@ -554,18 +556,17 @@ sauce.propDefined('jQuery', function($) {
 
         mouseleave: function() {
             $(document.body).unbind('mousemove.jqs');
-            var splist = this.splist,
-                spcount = splist.length,
-                needsRefresh = false,
-                sp, i;
+            const splist = this.splist;
+            const spcount = splist.length;
+            let needsRefresh = false;
             this.over = false;
             this.currentEl = null;
             if (this.tooltip) {
                 this.tooltip.remove();
                 this.tooltip = null;
             }
-            for (i = 0; i < spcount; i++) {
-                sp = splist[i];
+            for (let i = 0; i < spcount; i++) {
+                const sp = splist[i];
                 if (sp.clearRegionHighlight()) {
                     needsRefresh = true;
                 }
@@ -586,12 +587,11 @@ sauce.propDefined('jQuery', function($) {
         },
 
         updateDisplay: function() {
-            var splist = this.splist,
-                needsRefresh = false,
-                offset = this.$canvas.offset(),
-                localX = this.currentPageX - offset.left,
-                localY = this.currentPageY - offset.top,
-                tooltiphtml, changeEvent;
+            const splist = this.splist;
+            const offset = this.$canvas.offset();
+            const localX = this.currentPageX - offset.left;
+            const localY = this.currentPageY - offset.top;
+            let needsRefresh = false;
             if (!this.over) {
                 return;
             }
@@ -599,11 +599,11 @@ sauce.propDefined('jQuery', function($) {
                 needsRefresh |= sp.setRegionHighlight(this.currentEl, localX, localY);
             }
             if (needsRefresh) {
-                changeEvent = $.Event('sparklineRegionChange');
+                const changeEvent = $.Event('sparklineRegionChange');
                 changeEvent.sparklines = this.splist;
                 this.$el.trigger(changeEvent);
                 if (this.tooltip) {
-                    tooltiphtml = '';
+                    let tooltiphtml = '';
                     for (const sp of splist) {
                         tooltiphtml += sp.getCurrentRegionTooltip();
                     }
@@ -616,16 +616,15 @@ sauce.propDefined('jQuery', function($) {
         }
     });
 
-    Tooltip = createClass({
+    const Tooltip = createClass({
         sizeStyle: 'position: static !important;' +
             'display: block !important;' +
             'visibility: hidden !important;' +
             'float: left !important;',
 
         init: function(options) {
-            var tooltipClassname = options.get('tooltipClassname', 'jqstooltip'),
-                sizetipStyle = this.sizeStyle,
-                offset;
+            const tooltipClassname = options.get('tooltipClassname', 'jqstooltip');
+            const sizetipStyle = this.sizeStyle;
             this.container = options.get('tooltipContainer') || document.body;
             this.tooltipOffsetX = options.get('tooltipOffsetX', 10);
             this.tooltipOffsetY = options.get('tooltipOffsetY', 12);
@@ -642,7 +641,7 @@ sauce.propDefined('jQuery', function($) {
                 'class': tooltipClassname
             }).appendTo(this.container);
             // account for the container's location
-            offset = this.tooltip.offset();
+            const offset = this.tooltip.offset();
             // NOTE: Chrome returns floats for these, but mousemove events are seemingly floored.
             // This will lead to occasional mouse events outside our region.
             this.offsetLeft = offset.left;
@@ -728,22 +727,21 @@ sauce.propDefined('jQuery', function($) {
         }
     });
 
-    initStyles = function() {
+    function initStyles() {
         addCSS(defaultStyles);
-    };
+    }
 
     $(initStyles);
 
-    pending = [];
+    const pending = [];
     $.fn.sparkline = function(userValues, userOptions) {
         return this.each(function() {
-            var options = new $.fn.sparkline.options(this, userOptions),
-                $this = $(this),
-                render;
-            render = function() {
-                var values, mhandler, sp, vals;
+            const options = new $.fn.sparkline.options(this, userOptions);
+            const $this = $(this);
+            const render = function() {
+                let values, mhandler;
                 if (userValues === 'html' || userValues === undefined) {
-                    vals = this.getAttribute(options.get('tagValuesAttribute'));
+                    let vals = this.getAttribute(options.get('tagValuesAttribute'));
                     if (vals === undefined || vals === null) {
                         vals = $this.html();
                     }
@@ -779,9 +777,10 @@ sauce.propDefined('jQuery', function($) {
                     mhandler = false;
                 }
                 if (options.get('composite') && !$.data(this, '_jqs_vcanvas')) {
-                    throw new Error('Attempted to attach a composite sparkline to an element with no existing sparkline');
+                    throw new Error(
+                        'Attempted to attach a composite sparkline to an element with no existing sparkline');
                 }
-                sp = new $.fn.sparkline[options.get('type')](this, values, options, width, height);
+                const sp = new $.fn.sparkline[options.get('type')](this, values, options, width, height);
                 sp.render();
                 if (mhandler) {
                     mhandler.registerSparkline(sp);
@@ -792,6 +791,7 @@ sauce.propDefined('jQuery', function($) {
                 if (!options.get('composite') && $.data(this, '_jqs_pending')) {
                     // remove any existing references to the element
                     for (let i = pending.length; i; i--) {
+                        debugger;
                         if (pending[i - 1][0] == this) {
                             pending.splice(i - 1, 1);
                         }
@@ -807,12 +807,10 @@ sauce.propDefined('jQuery', function($) {
 
     $.fn.sparkline.defaults = getDefaults();
 
-
     $.sparkline_display_visible = function() {
-        var el, i, pl;
-        var done = [];
-        for (i = 0, pl = pending.length; i < pl; i++) {
-            el = pending[i][0];
+        const done = [];
+        for (let i = 0; i < pending.length; i++) {
+            const el = pending[i][0];
             if ($(el).is(':visible') && !$(el).parents().is(':hidden')) {
                 pending[i][1].call(el);
                 $.data(pending[i][0], '_jqs_pending', false);
@@ -826,7 +824,7 @@ sauce.propDefined('jQuery', function($) {
                 done.push(i);
             }
         }
-        for (i = done.length; i; i--) {
+        for (let i = done.length; i; i--) {
             pending.splice(done[i - 1], 1);
         }
     };
@@ -837,14 +835,15 @@ sauce.propDefined('jQuery', function($) {
      */
     $.fn.sparkline.options = createClass({
         init: function(tag, userOptions) {
-            var extendedOptions, defaults, base, tagOptionType;
             this.userOptions = userOptions = userOptions || {};
             this.tag = tag;
             this.tagValCache = {};
-            defaults = $.fn.sparkline.defaults;
-            base = defaults.common;
-            this.tagOptionsPrefix = userOptions.enableTagOptions && (userOptions.tagOptionsPrefix || base.tagOptionsPrefix);
-            tagOptionType = this.getTagSetting('type');
+            const defaults = $.fn.sparkline.defaults;
+            const base = defaults.common;
+            this.tagOptionsPrefix = userOptions.enableTagOptions &&
+                (userOptions.tagOptionsPrefix || base.tagOptionsPrefix);
+            const tagOptionType = this.getTagSetting('type');
+            let extendedOptions;
             if (tagOptionType === UNSET_OPTION) {
                 extendedOptions = defaults[userOptions.type || base.type];
             } else {
@@ -854,11 +853,11 @@ sauce.propDefined('jQuery', function($) {
         },
 
         getTagSetting: function(key) {
-            var prefix = this.tagOptionsPrefix,
-                val, i, pairs, keyval;
+            const prefix = this.tagOptionsPrefix;
             if (prefix === false || prefix === undefined) {
                 return UNSET_OPTION;
             }
+            let val;
             if (Object.prototype.hasOwnProperty.call(this.tagValCache, key)) {
                 val = this.tagValCache.key;
             } else {
@@ -867,15 +866,16 @@ sauce.propDefined('jQuery', function($) {
                     val = UNSET_OPTION;
                 } else if (val.substr(0, 1) === '[') {
                     val = val.substr(1, val.length - 2).split(',');
-                    for (i = val.length; i--;) {
+                    for (let i = val.length; i--;) {
                         val[i] = normalizeValue(val[i].replace(/(^\s*)|(\s*$)/g, ''));
                     }
                 } else if (val.substr(0, 1) === '{') {
-                    pairs = val.substr(1, val.length - 2).split(',');
+                    const pairs = val.substr(1, val.length - 2).split(',');
                     val = {};
-                    for (i = pairs.length; i--;) {
-                        keyval = pairs[i].split(':', 2);
-                        val[keyval[0].replace(/(^\s*)|(\s*$)/g, '')] = normalizeValue(keyval[1].replace(/(^\s*)|(\s*$)/g, ''));
+                    for (let i = pairs.length; i--;) {
+                        const keyval = pairs[i].split(':', 2);
+                        val[keyval[0].replace(/(^\s*)|(\s*$)/g, '')] =
+                            normalizeValue(keyval[1].replace(/(^\s*)|(\s*$)/g, ''));
                     }
                 } else {
                     val = normalizeValue(val);
@@ -886,8 +886,8 @@ sauce.propDefined('jQuery', function($) {
         },
 
         get: function(key, defaultval) {
-            var tagOption = this.getTagSetting(key),
-                result;
+            const tagOption = this.getTagSetting(key);
+            let result;
             if (tagOption !== UNSET_OPTION) {
                 return tagOption;
             }
@@ -913,8 +913,9 @@ sauce.propDefined('jQuery', function($) {
          * Setup the canvas
          */
         initTarget: function() {
-            var interactive = !this.options.get('disableInteraction');
-            if (!(this.target = this.$el.simpledraw(this.width, this.height, this.options.get('composite'), interactive))) {
+            const interactive = !this.options.get('disableInteraction');
+            if (!(this.target = this.$el.simpledraw(this.width, this.height,
+                this.options.get('composite'), interactive))) {
                 this.disabled = true;
             } else {
                 this.canvasWidth = this.target.pixelWidth;
@@ -946,19 +947,17 @@ sauce.propDefined('jQuery', function($) {
             const $canvas = $(this.target.canvas);
             x *= (this.canvasWidth / $canvas.width());
             y *= (this.canvasHeight / $canvas.height());
-            var currentRegion = this.currentRegion,
-                highlightEnabled = !this.options.get('disableHighlight'),
-                newRegion;
+            const highlightEnabled = !this.options.get('disableHighlight');
             // NOTE: Chrome returns floats for element offsets but on my device (linux with dpr of 1.39)
             // mouse events are always floored (not rounded).  This leads to mouse events that can be off by
-            // up to 1.  So sadly some mouse events (typically coming in from the top down) will be out of 
+            // up to 1.  So sadly some mouse events (typically coming in from the top down) will be out of
             // bounds.  We assume the pointer will continue to move and recover from this...
             if (x > this.canvasWidth || y > this.canvasHeight || x < 0 || y < 0) {
                 return false;
             }
-            newRegion = this.getRegion(el, x, y);
-            if (currentRegion !== newRegion) {
-                if (currentRegion !== undefined && highlightEnabled) {
+            const newRegion = this.getRegion(el, x, y);
+            if (this.currentRegion !== newRegion) {
+                if (this.currentRegion !== undefined && highlightEnabled) {
                     this.removeHighlight();
                 }
                 this.currentRegion = newRegion;
@@ -987,32 +986,28 @@ sauce.propDefined('jQuery', function($) {
             this.changeHighlight(false);
         },
 
-        changeHighlight: function(highlight)  {},
+        changeHighlight: function(highlight) {},
 
         getCurrentRegionTooltip: function() {
-            var options = this.options,
-                header = '',
-                entries = [],
-                fields, formats, formatlen, fclass, text, i,
-                showFields, showFieldsKey, newFields, fv,
-                formatter, format, fieldlen, j;
+            let header = '';
+            const entries = [];
             if (this.currentRegion === undefined) {
                 return '';
             }
-            fields = this.getCurrentRegionFields();
-            formatter = options.get('tooltipFormatter');
+            let fields = this.getCurrentRegionFields();
+            const formatter = this.options.get('tooltipFormatter');
             if (formatter) {
-                const tooltip = formatter(this, options, fields);
+                const tooltip = formatter(this, this.options, fields);
                 if (!(formatter instanceof SPFormat)) {
                     return `<div class="jqsfield">${tooltip}</div>`;
                 } else {
                     return tooltip;
                 }
             }
-            if (options.get('tooltipChartTitle')) {
-                header += '<div class="jqs jqstitle">' + options.get('tooltipChartTitle') + '</div>\n';
+            if (this.options.get('tooltipChartTitle')) {
+                header += '<div class="jqs jqstitle">' + this.options.get('tooltipChartTitle') + '</div>\n';
             }
-            formats = this.options.get('tooltipFormat');
+            let formats = this.options.get('tooltipFormat');
             if (!formats) {
                 return '';
             }
@@ -1022,34 +1017,35 @@ sauce.propDefined('jQuery', function($) {
             if (!$.isArray(fields)) {
                 fields = [fields];
             }
-            showFields = this.options.get('tooltipFormatFieldlist');
-            showFieldsKey = this.options.get('tooltipFormatFieldlistKey');
+            const showFields = this.options.get('tooltipFormatFieldlist');
+            const showFieldsKey = this.options.get('tooltipFormatFieldlistKey');
             if (showFields && showFieldsKey) {
                 // user-selected ordering of fields
-                newFields = [];
-                for (i = fields.length; i--;) {
-                    fv = fields[i][showFieldsKey];
-                    if ((j = $.inArray(fv, showFields)) != -1) {
+                const newFields = [];
+                for (let i = fields.length; i--;) {
+                    const fv = fields[i][showFieldsKey];
+                    const j = $.inArray(fv, showFields);
+                    debugger;
+                    if (j !== -1) {
                         newFields[j] = fields[i];
                     }
                 }
                 fields = newFields;
             }
-            formatlen = formats.length;
-            fieldlen = fields.length;
-            for (i = 0; i < formatlen; i++) {
-                format = formats[i];
+            for (let i = 0; i < formats.length; i++) {
+                let format = formats[i];
                 if (typeof format === 'string') {
                     format = new SPFormat(format);
                 }
-                fclass = format.fclass || 'jqsfield';
-                for (j = 0; j < fieldlen; j++) {
-                    if (!fields[j].isNull || !options.get('tooltipSkipNull')) {
+                const fclass = format.fclass || 'jqsfield';
+                for (let j = 0; j < fields.length; j++) {
+                    if (!fields[j].isNull || !this.options.get('tooltipSkipNull')) {
                         $.extend(fields[j], {
-                            prefix: options.get('tooltipPrefix'),
-                            suffix: options.get('tooltipSuffix')
+                            prefix: this.options.get('tooltipPrefix'),
+                            suffix: this.options.get('tooltipSuffix')
                         });
-                        text = format.render(fields[j], options.get('tooltipValueLookups'), options);
+                        const text = format.render(fields[j],
+                            this.options.get('tooltipValueLookups'), this.options);
                         entries.push('<div class="' + fclass + '">' + text + '</div>');
                     }
                 }
@@ -1063,19 +1059,19 @@ sauce.propDefined('jQuery', function($) {
         getCurrentRegionFields: function() {},
 
         calcHighlightColor: function(color, options) {
-            var highlightColor = options.get('highlightColor'),
-                lighten = options.get('highlightLighten'),
-                parse, mult, rgbnew, i;
+            const highlightColor = options.get('highlightColor');
             if (highlightColor) {
                 return highlightColor;
             }
+            const lighten = options.get('highlightLighten');
             if (lighten) {
                 // extract RGB values
-                parse = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(color) || /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(color);
+                const parse = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(color) ||
+                    /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(color);
                 if (parse) {
-                    rgbnew = [];
-                    mult = color.length === 4 ? 16 : 1;
-                    for (i = 0; i < 3; i++) {
+                    const rgbnew = [];
+                    const mult = color.length === 4 ? 16 : 1;
+                    for (let i = 0; i < 3; i++) {
                         rgbnew[i] = clipval(Math.round(parseInt(parse[i + 1], 16) * mult * lighten), 0, 255);
                     }
                     return 'rgb(' + rgbnew.join(',') + ')';
@@ -1086,54 +1082,45 @@ sauce.propDefined('jQuery', function($) {
         }
     });
 
-    barHighlightMixin = {
+    const barHighlightMixin = {
         changeHighlight: function(highlight) {
-            var currentRegion = this.currentRegion,
-                target = this.target,
-                shapeids = this.regionShapes[currentRegion],
-                newShapes;
+            const shapeids = this.regionShapes[this.currentRegion];
             // will be null if the region value was null
             if (shapeids) {
-                newShapes = this.renderRegion(currentRegion, highlight);
+                const newShapes = this.renderRegion(this.currentRegion, highlight);
                 if ($.isArray(newShapes) || $.isArray(shapeids)) {
-                    target.replaceWithShapes(shapeids, newShapes);
-                    this.regionShapes[currentRegion] = $.map(newShapes, x => x.id);
+                    this.target.replaceWithShapes(shapeids, newShapes);
+                    this.regionShapes[this.currentRegion] = $.map(newShapes, x => x.id);
                 } else {
-                    target.replaceWithShape(shapeids, newShapes);
-                    this.regionShapes[currentRegion] = newShapes.id;
+                    this.target.replaceWithShape(shapeids, newShapes);
+                    this.regionShapes[this.currentRegion] = newShapes.id;
                 }
             }
         },
 
         render: function() {
-            var values = this.values,
-                target = this.target,
-                regionShapes = this.regionShapes,
-                shapes, ids, i, j;
-
             if (!this.cls._super.render.call(this)) {
                 return;
             }
-            for (i = values.length; i--;) {
-                shapes = this.renderRegion(i);
+            for (let i = this.values.length; i--;) {
+                const shapes = this.renderRegion(i);
                 if (shapes) {
                     if ($.isArray(shapes)) {
-                        ids = [];
-                        for (j = shapes.length; j--;) {
+                        const ids = [];
+                        for (let j = shapes.length; j--;) {
                             shapes[j].append();
                             ids.push(shapes[j].id);
                         }
-                        regionShapes[i] = ids;
+                        this.regionShapes[i] = ids;
                     } else {
                         shapes.append();
-                        regionShapes[i] = shapes.id; // store just the shapeid
+                        this.regionShapes[i] = shapes.id;
                     }
                 } else {
-                    // null value
-                    regionShapes[i] = null;
+                    this.regionShapes[i] = null;
                 }
             }
-            target.render();
+            this.target.render();
         }
     };
 
@@ -1153,220 +1140,204 @@ sauce.propDefined('jQuery', function($) {
         },
 
         getRegion: function(el, x, y) {
-            var i,
-                regionMap = this.regionMap; // maps regions to value positions
-            for (i = regionMap.length; i--;) {
-                if (regionMap[i] !== null && x >= regionMap[i][0] && x <= regionMap[i][1]) {
-                    return regionMap[i][2];
+            for (let i = this.regionMap.length; i--;) {
+                if (this.regionMap[i] !== null &&
+                    x >= this.regionMap[i][0] &&
+                    x <= this.regionMap[i][1]) {
+                    return this.regionMap[i][2];
                 }
             }
             return undefined;
         },
 
         getCurrentRegionFields: function() {
-            var currentRegion = this.currentRegion;
             return {
-                isNull: this.yvalues[currentRegion] === null,
-                x: this.xvalues[currentRegion],
-                y: this.yvalues[currentRegion],
+                isNull: this.yvalues[this.currentRegion] === null,
+                x: this.xvalues[this.currentRegion],
+                y: this.yvalues[this.currentRegion],
                 color: this.options.get('lineColor'),
                 fillColor: this.options.get('fillColor'),
-                offset: currentRegion
+                offset: this.currentRegion
             };
         },
 
         renderHighlight: function() {
-            var currentRegion = this.currentRegion,
-                target = this.target,
-                vertex = this.vertices[currentRegion],
-                options = this.options,
-                spotRadius = options.get('spotRadius'),
-                highlightSpotColor = options.get('highlightSpotColor'),
-                highlightLineColor = options.get('highlightLineColor'),
-                highlightSpot, highlightLine;
+            const vertex = this.vertices[this.currentRegion];
             if (!vertex) {
                 return;
             }
+            const spotRadius = this.options.get('spotRadius');
+            const highlightSpotColor = this.options.get('highlightSpotColor');
             if (spotRadius && highlightSpotColor) {
-                highlightSpot = target.drawCircle(vertex[0], vertex[1],
+                const highlightSpot = this.target.drawCircle(vertex[0], vertex[1],
                     spotRadius, undefined, highlightSpotColor);
                 this.highlightSpotId = highlightSpot.id;
-                target.insertAfterShape(this.lastShapeId, highlightSpot);
+                this.target.insertAfterShape(this.lastShapeId, highlightSpot);
             }
+            const highlightLineColor = this.options.get('highlightLineColor');
             if (highlightLineColor) {
-                highlightLine = target.drawLine(vertex[0], this.canvasTop, vertex[0],
+                const highlightLine = this.target.drawLine(vertex[0], this.canvasTop, vertex[0],
                     this.canvasTop + this.canvasHeight, highlightLineColor);
                 this.highlightLineId = highlightLine.id;
-                target.insertAfterShape(this.lastShapeId, highlightLine);
+                this.target.insertAfterShape(this.lastShapeId, highlightLine);
             }
         },
 
         removeHighlight: function() {
-            var target = this.target;
             if (this.highlightSpotId) {
-                target.removeShapeId(this.highlightSpotId);
+                this.target.removeShapeId(this.highlightSpotId);
                 this.highlightSpotId = null;
             }
             if (this.highlightLineId) {
-                target.removeShapeId(this.highlightLineId);
+                this.target.removeShapeId(this.highlightLineId);
                 this.highlightLineId = null;
             }
         },
 
         scanValues: function() {
-            var values = this.values,
-                valcount = values.length,
-                xvalues = this.xvalues,
-                yvalues = this.yvalues,
-                yminmax = this.yminmax,
-                i, val, isStr, isArray, sp;
-            for (i = 0; i < valcount; i++) {
-                val = values[i];
-                isStr = typeof(values[i]) === 'string';
-                isArray = typeof(values[i]) === 'object' && values[i] instanceof Array;
-                sp = isStr && values[i].split(':');
+            for (let i = 0; i < this.values.length; i++) {
+                const val = this.values[i];
+                const isStr = typeof(this.values[i]) === 'string';
+                const isArray = typeof(this.values[i]) === 'object' && this.values[i] instanceof Array;
+                const sp = isStr && this.values[i].split(':');
                 if (isStr && sp.length === 2) { // x:y
-                    xvalues.push(Number(sp[0]));
-                    yvalues.push(Number(sp[1]));
-                    yminmax.push(Number(sp[1]));
+                    this.xvalues.push(Number(sp[0]));
+                    this.yvalues.push(Number(sp[1]));
+                    this.yminmax.push(Number(sp[1]));
                 } else if (isArray) {
-                    xvalues.push(val[0]);
-                    yvalues.push(val[1]);
-                    yminmax.push(val[1]);
+                    this.xvalues.push(val[0]);
+                    this.yvalues.push(val[1]);
+                    this.yminmax.push(val[1]);
                 } else {
-                    xvalues.push(i);
-                    if (values[i] === null || values[i] === 'null') {
-                        yvalues.push(null);
+                    this.xvalues.push(i);
+                    if (this.values[i] === null || this.values[i] === 'null') {
+                        this.yvalues.push(null);
                     } else {
-                        yvalues.push(Number(val));
-                        yminmax.push(Number(val));
+                        this.yvalues.push(Number(val));
+                        this.yminmax.push(Number(val));
                     }
                 }
             }
             if (this.options.get('xvalues')) {
-                xvalues = this.options.get('xvalues');
+                this.xvalues = this.options.get('xvalues');
             }
-            this.maxy = this.maxyorg = sauce.data.max(yminmax);
-            this.miny = this.minyorg = sauce.data.min(yminmax);
-            this.maxx = sauce.data.max(xvalues);
-            this.minx = sauce.data.min(xvalues);
-            this.xvalues = xvalues;
-            this.yvalues = yvalues;
-            this.yminmax = yminmax;
+            this.maxy = this.maxyorg = sauce.data.max(this.yminmax);
+            this.miny = this.minyorg = sauce.data.min(this.yminmax);
+            this.maxx = sauce.data.max(this.xvalues);
+            this.minx = sauce.data.min(this.xvalues);
         },
 
         processRangeOptions: function() {
-            var options = this.options,
-                normalRangeMin = options.get('normalRangeMin'),
-                normalRangeMax = options.get('normalRangeMax');
+            const normalRangeMin = this.options.get('normalRangeMin');
             if (normalRangeMin !== undefined) {
                 if (normalRangeMin < this.miny) {
                     this.miny = normalRangeMin;
                 }
+                const normalRangeMax = this.options.get('normalRangeMax');
                 if (normalRangeMax > this.maxy) {
                     this.maxy = normalRangeMax;
                 }
             }
-            if (options.get('chartRangeMin') !== undefined && (options.get('chartRangeClip') || options.get('chartRangeMin') < this.miny)) {
-                this.miny = options.get('chartRangeMin');
+            if (this.options.get('chartRangeMin') !== undefined &&
+                (this.options.get('chartRangeClip') || this.options.get('chartRangeMin') < this.miny)) {
+                this.miny = this.options.get('chartRangeMin');
             }
-            if (options.get('chartRangeMax') !== undefined && (options.get('chartRangeClip') || options.get('chartRangeMax') > this.maxy)) {
-                this.maxy = options.get('chartRangeMax');
+            if (this.options.get('chartRangeMax') !== undefined &&
+                (this.options.get('chartRangeClip') || this.options.get('chartRangeMax') > this.maxy)) {
+                this.maxy = this.options.get('chartRangeMax');
             }
-            if (options.get('chartRangeMinX') !== undefined && (options.get('chartRangeClipX') || options.get('chartRangeMinX') < this.minx)) {
-                this.minx = options.get('chartRangeMinX');
+            if (this.options.get('chartRangeMinX') !== undefined &&
+                (this.options.get('chartRangeClipX') || this.options.get('chartRangeMinX') < this.minx)) {
+                this.minx = this.options.get('chartRangeMinX');
             }
-            if (options.get('chartRangeMaxX') !== undefined && (options.get('chartRangeClipX') || options.get('chartRangeMaxX') > this.maxx)) {
-                this.maxx = options.get('chartRangeMaxX');
+            if (this.options.get('chartRangeMaxX') !== undefined &&
+                (this.options.get('chartRangeClipX') || this.options.get('chartRangeMaxX') > this.maxx)) {
+                this.maxx = this.options.get('chartRangeMaxX');
             }
-
         },
 
         drawNormalRange: function(canvasLeft, canvasTop, canvasHeight, canvasWidth, rangey) {
-            var normalRangeMin = this.options.get('normalRangeMin'),
-                normalRangeMax = this.options.get('normalRangeMax'),
-                ytop = canvasTop + Math.round(canvasHeight - (canvasHeight * ((normalRangeMax - this.miny) / rangey))),
-                height = Math.round((canvasHeight * (normalRangeMax - normalRangeMin)) / rangey);
-            this.target.drawRect(canvasLeft, ytop, canvasWidth, height, undefined, this.options.get('normalRangeColor')).append();
+            const normalRangeMin = this.options.get('normalRangeMin');
+            const normalRangeMax = this.options.get('normalRangeMax');
+            const ytop = canvasTop + Math.round(canvasHeight -
+                (canvasHeight * ((normalRangeMax - this.miny) / rangey)));
+            const height = Math.round((canvasHeight * (normalRangeMax - normalRangeMin)) / rangey);
+            this.target.drawRect(canvasLeft, ytop, canvasWidth, height, undefined,
+                this.options.get('normalRangeColor')).append();
         },
 
         render: function() {
-            var options = this.options,
-                target = this.target,
-                canvasWidth = this.canvasWidth,
-                canvasHeight = this.canvasHeight,
-                vertices = this.vertices,
-                spotRadius = options.get('spotRadius'),
-                regionMap = this.regionMap,
-                rangex, rangey, yvallast,
-                canvasTop, canvasLeft,
-                vertex, path, paths, x, y, xnext, xpos, xposnext,
-                last, next, yvalcount, lineShapes, fillShapes, plen,
-                valueSpots, hlSpotsEnabled, color, xvalues, yvalues, i;
+            let canvasWidth = this.canvasWidth;
+            let canvasHeight = this.canvasHeight;
+            let spotRadius = this.options.get('spotRadius');
             if (!line._super.render.call(this)) {
                 return;
             }
             this.scanValues();
             this.processRangeOptions();
             this.target.setMinMax(this.miny, this.maxy);
-            xvalues = this.xvalues;
-            yvalues = this.yvalues;
             if (!this.yminmax.length || this.yvalues.length < 2) {
                 // empty or all null valuess
                 return;
             }
-            canvasTop = canvasLeft = 0;
-            rangex = this.maxx - this.minx === 0 ? 1 : this.maxx - this.minx;
-            rangey = this.maxy - this.miny === 0 ? 1 : this.maxy - this.miny;
-            yvallast = this.yvalues.length - 1;
+            let canvasTop = 0;
+            let canvasLeft = 0;
+            const rangex = this.maxx - this.minx === 0 ? 1 : this.maxx - this.minx;
+            const rangey = this.maxy - this.miny === 0 ? 1 : this.maxy - this.miny;
+            const yvallast = this.yvalues.length - 1;
             if (spotRadius && (canvasWidth < (spotRadius * 4) || canvasHeight < (spotRadius * 4))) {
                 spotRadius = 0;
             }
             if (spotRadius) {
                 // adjust the canvas size as required so that spots will fit
-                hlSpotsEnabled = options.get('highlightSpotColor') &&  !options.get('disableInteraction');
-                if (hlSpotsEnabled || options.get('minSpotColor') || (options.get('spotColor') && yvalues[yvallast] === this.miny)) {
+                const hlSpotsEnabled = this.options.get('highlightSpotColor') &&
+                    !this.options.get('disableInteraction');
+                if (hlSpotsEnabled || this.options.get('minSpotColor') ||
+                    (this.options.get('spotColor') && this.yvalues[yvallast] === this.miny)) {
                     canvasHeight -= Math.ceil(spotRadius);
                 }
-                if (hlSpotsEnabled || options.get('maxSpotColor') || (options.get('spotColor') && yvalues[yvallast] === this.maxy)) {
+                if (hlSpotsEnabled || this.options.get('maxSpotColor') ||
+                    (this.options.get('spotColor') && this.yvalues[yvallast] === this.maxy)) {
                     canvasHeight -= Math.ceil(spotRadius);
                     canvasTop += Math.ceil(spotRadius);
                 }
                 if (hlSpotsEnabled ||
-                     ((options.get('minSpotColor') || options.get('maxSpotColor')) && (yvalues[0] === this.miny || yvalues[0] === this.maxy))) {
+                     ((this.options.get('minSpotColor') || this.options.get('maxSpotColor')) &&
+                      (this.yvalues[0] === this.miny || this.yvalues[0] === this.maxy))) {
                     canvasLeft += Math.ceil(spotRadius);
                     canvasWidth -= Math.ceil(spotRadius);
                 }
-                if (hlSpotsEnabled || options.get('spotColor') ||
-                    (options.get('minSpotColor') || options.get('maxSpotColor') &&
-                        (yvalues[yvallast] === this.miny || yvalues[yvallast] === this.maxy))) {
+                if (hlSpotsEnabled || this.options.get('spotColor') ||
+                    (this.options.get('minSpotColor') || this.options.get('maxSpotColor') &&
+                        (this.yvalues[yvallast] === this.miny || this.yvalues[yvallast] === this.maxy))) {
                     canvasWidth -= Math.ceil(spotRadius);
                 }
             }
             canvasHeight--;
-            if (options.get('normalRangeMin') !== undefined && !options.get('drawNormalOnTop')) {
+            if (this.options.get('normalRangeMin') !== undefined && !this.options.get('drawNormalOnTop')) {
                 this.drawNormalRange(canvasLeft, canvasTop, canvasHeight, canvasWidth, rangey);
             }
-            path = [];
-            paths = [path];
-            last = next = null;
-            yvalcount = yvalues.length;
-            for (i = 0; i < yvalcount; i++) {
-                x = xvalues[i];
-                xnext = xvalues[i + 1];
-                y = yvalues[i];
-                xpos = canvasLeft + Math.round((x - this.minx) * (canvasWidth / rangex));
-                xposnext = i < yvalcount - 1 ? canvasLeft + Math.round((xnext - this.minx) * (canvasWidth / rangex)) : canvasWidth;
-                next = xpos + ((xposnext - xpos) / 2);
-                regionMap[i] = [last || 0, next, i];
+            let path = [];
+            const paths = [path];
+            let last = null;
+            for (let i = 0; i < this.yvalues.length; i++) {
+                const x = this.xvalues[i];
+                const xnext = this.xvalues[i + 1];
+                let y = this.yvalues[i];
+                const xpos = canvasLeft + Math.round((x - this.minx) * (canvasWidth / rangex));
+                const xposnext = i < this.yvalues.length - 1 ?
+                    canvasLeft + Math.round((xnext - this.minx) * (canvasWidth / rangex)) :
+                    canvasWidth;
+                const next = xpos + ((xposnext - xpos) / 2);
+                this.regionMap[i] = [last || 0, next, i];
                 last = next;
                 if (y === null) {
                     if (i) {
-                        if (yvalues[i - 1] !== null) {
+                        if (this.yvalues[i - 1] !== null) {
                             path = [];
                             paths.push(path);
                         }
-                        vertices.push(null);
+                        this.vertices.push(null);
                     }
                 } else {
                     if (y < this.miny) {
@@ -1379,18 +1350,20 @@ sauce.propDefined('jQuery', function($) {
                         // previous value was null
                         path.push([xpos, canvasTop + canvasHeight]);
                     }
-                    vertex = [xpos, canvasTop + Math.round(canvasHeight - (canvasHeight * ((y - this.miny) / rangey)))];
+                    const vertex = [
+                        xpos,
+                        canvasTop + Math.round(canvasHeight - (canvasHeight * ((y - this.miny) / rangey)))
+                    ];
                     path.push(vertex);
-                    vertices.push(vertex);
+                    this.vertices.push(vertex);
                 }
             }
-            lineShapes = [];
-            fillShapes = [];
-            plen = paths.length;
-            for (i = 0; i < plen; i++) {
-                path = paths[i];
+            const lineShapes = [];
+            const fillShapes = [];
+            for (let i = 0; i < paths.length; i++) {
+                const path = paths[i];
                 if (path.length) {
-                    if (options.get('fillColor')) {
+                    if (this.options.get('fillColor')) {
                         path.push([path[path.length - 1][0], (canvasTop + canvasHeight)]);
                         fillShapes.push(path.slice(0));
                         path.pop();
@@ -1405,58 +1378,65 @@ sauce.propDefined('jQuery', function($) {
                 }
             }
             // draw the fill first, then optionally the normal range, then the line on top of that
-            plen = fillShapes.length;
-            for (i = 0; i < plen; i++) {
-                target.drawShape(fillShapes[i], undefined, options.get('fillColor')).append();
+            for (let i = 0; i < fillShapes.length; i++) {
+                this.target.drawShape(fillShapes[i], undefined, this.options.get('fillColor')).append();
             }
-            if (options.get('normalRangeMin') !== undefined && options.get('drawNormalOnTop')) {
+            if (this.options.get('normalRangeMin') !== undefined && this.options.get('drawNormalOnTop')) {
                 this.drawNormalRange(canvasLeft, canvasTop, canvasHeight, canvasWidth, rangey);
             }
-            plen = lineShapes.length;
-            for (i = 0; i < plen; i++) {
-                target.drawShape(lineShapes[i], options.get('lineColor'), undefined,
-                    options.get('lineWidth')).append();
+            for (let i = 0; i < lineShapes.length; i++) {
+                this.target.drawShape(lineShapes[i], this.options.get('lineColor'), undefined,
+                    this.options.get('lineWidth')).append();
             }
-            if (spotRadius && options.get('valueSpots')) {
-                valueSpots = options.get('valueSpots');
+            if (spotRadius && this.options.get('valueSpots')) {
+                let valueSpots = this.options.get('valueSpots');
                 if (valueSpots.get === undefined) {
                     valueSpots = new RangeMap(valueSpots);
                 }
-                for (i = 0; i < yvalcount; i++) {
-                    color = valueSpots.get(yvalues[i]);
+                for (let i = 0; i < this.yvalues.length; i++) {
+                    const color = valueSpots.get(this.yvalues[i]);
                     if (color) {
-                        target.drawCircle(canvasLeft + Math.round((xvalues[i] - this.minx) * (canvasWidth / rangex)),
-                            canvasTop + Math.round(canvasHeight - (canvasHeight * ((yvalues[i] - this.miny) / rangey))),
+                        this.target.drawCircle(
+                            canvasLeft + Math.round((this.xvalues[i] - this.minx) * (canvasWidth / rangex)),
+                            canvasTop + Math.round(canvasHeight -
+                                (canvasHeight * ((this.yvalues[i] - this.miny) / rangey))),
                             spotRadius, undefined,
                             color).append();
                     }
                 }
             }
-            if (spotRadius && options.get('spotColor') && yvalues[yvallast] !== null) {
-                target.drawCircle(canvasLeft + Math.round((xvalues[xvalues.length - 1] - this.minx) * (canvasWidth / rangex)),
-                    canvasTop + Math.round(canvasHeight - (canvasHeight * ((yvalues[yvallast] - this.miny) / rangey))),
+            if (spotRadius && this.options.get('spotColor') && this.yvalues[yvallast] !== null) {
+                this.target.drawCircle(
+                    canvasLeft + Math.round((this.xvalues[this.xvalues.length - 1] - this.minx) *
+                        (canvasWidth / rangex)),
+                    canvasTop + Math.round(canvasHeight -
+                        (canvasHeight * ((this.yvalues[yvallast] - this.miny) / rangey))),
                     spotRadius, undefined,
-                    options.get('spotColor')).append();
+                    this.options.get('spotColor')).append();
             }
             if (this.maxy !== this.minyorg) {
-                if (spotRadius && options.get('minSpotColor')) {
-                    x = xvalues[$.inArray(this.minyorg, yvalues)];
-                    target.drawCircle(canvasLeft + Math.round((x - this.minx) * (canvasWidth / rangex)),
-                        canvasTop + Math.round(canvasHeight - (canvasHeight * ((this.minyorg - this.miny) / rangey))),
+                if (spotRadius && this.options.get('minSpotColor')) {
+                    const x = this.xvalues[$.inArray(this.minyorg, this.yvalues)];
+                    this.target.drawCircle(
+                        canvasLeft + Math.round((x - this.minx) * (canvasWidth / rangex)),
+                        canvasTop + Math.round(canvasHeight -
+                            (canvasHeight * ((this.minyorg - this.miny) / rangey))),
                         spotRadius, undefined,
-                        options.get('minSpotColor')).append();
+                        this.options.get('minSpotColor')).append();
                 }
-                if (spotRadius && options.get('maxSpotColor')) {
-                    x = xvalues[$.inArray(this.maxyorg, yvalues)];
-                    target.drawCircle(canvasLeft + Math.round((x - this.minx) * (canvasWidth / rangex)),
-                        canvasTop + Math.round(canvasHeight - (canvasHeight * ((this.maxyorg - this.miny) / rangey))),
+                if (spotRadius && this.options.get('maxSpotColor')) {
+                    const x = this.xvalues[$.inArray(this.maxyorg, this.yvalues)];
+                    this.target.drawCircle(
+                        canvasLeft + Math.round((x - this.minx) * (canvasWidth / rangex)),
+                        canvasTop + Math.round(canvasHeight -
+                            (canvasHeight * ((this.maxyorg - this.miny) / rangey))),
                         spotRadius, undefined,
-                        options.get('maxSpotColor')).append();
+                        this.options.get('maxSpotColor')).append();
                 }
             }
-            this.lastShapeId = target.getLastShapeId();
+            this.lastShapeId = this.target.getLastShapeId();
             this.canvasTop = canvasTop;
-            target.render();
+            this.target.render();
         }
     });
 
@@ -1464,20 +1444,22 @@ sauce.propDefined('jQuery', function($) {
         type: 'bar',
 
         init: function(el, values, options, width, height) {
-            var barWidth = parseInt(options.get('barWidth'), 10),
+            const barWidth = parseInt(options.get('barWidth'), 10),
                 barSpacing = parseInt(options.get('barSpacing'), 10),
                 chartRangeMin = options.get('chartRangeMin'),
                 chartRangeMax = options.get('chartRangeMax'),
-                chartRangeClip = options.get('chartRangeClip'),
-                stackMin = Infinity,
+                chartRangeClip = options.get('chartRangeClip');
+            let stackMin = Infinity,
                 stackMax = -Infinity,
-                isStackString, groupMin, groupMax, stackRanges,
-                numValues, i, vlen, range, zeroAxis, min, max, clipMin, clipMax,
-                stacked, vlist, j, slen, svals, val, yMaxCalc;
+                isStackString, groupMin, groupMax,
+                min, max, clipMin, clipMax,
+                stacked, vlist, svals, val, yMaxCalc;
             bar._super.init.call(this, el, values, options, width, height);
             // scan values to determine whether to stack bars
-            for (i = 0, vlen = values.length; i < vlen; i++) {
+            this.barWidths = [];
+            for (let i = 0; i < values.length; i++) {
                 val = values[i];
+                this.barWidths.push(barWidth);
                 isStackString = typeof(val) === 'string' && val.indexOf(':') > -1;
                 if (isStackString || $.isArray(val)) {
                     stacked = true;
@@ -1493,30 +1475,35 @@ sauce.propDefined('jQuery', function($) {
                     if (groupMax > stackMax) {
                         stackMax = groupMax;
                     }
+                } else if (typeof val === 'object') {
+                    if (val.width != null) {
+                        this.barWidths[i] = Math.round(val.width);
+                    }
+                    values[i] = val.value;
                 }
             }
             this.stacked = stacked;
             this.regionShapes = {};
             this.barWidth = barWidth;
             this.barSpacing = barSpacing;
-            this.totalBarWidth = barWidth + barSpacing;
-            this.width = width = (values.length * barWidth) + ((values.length - 1) * barSpacing);
+            this.width = width = this.barWidths.reduce((agg, x) => agg + x) +
+                ((values.length - 1) * barSpacing);
             this.initTarget();
             if (chartRangeClip) {
                 clipMin = chartRangeMin === undefined ? -Infinity : chartRangeMin;
                 clipMax = chartRangeMax === undefined ? Infinity : chartRangeMax;
             }
-            numValues = [];
-            stackRanges = stacked ? [] : numValues;
-            var stackTotals = [];
-            var stackRangesNeg = [];
-            for (i = 0, vlen = values.length; i < vlen; i++) {
+            const numValues = [];
+            const stackRanges = stacked ? [] : numValues;
+            const stackTotals = [];
+            const stackRangesNeg = [];
+            for (let i = 0; i < values.length; i++) {
                 if (stacked) {
                     vlist = values[i];
                     values[i] = svals = [];
                     stackTotals[i] = 0;
                     stackRanges[i] = stackRangesNeg[i] = 0;
-                    for (j = 0, slen = vlist.length; j < slen; j++) {
+                    for (let j = 0; j < vlist.length; j++) {
                         val = svals[j] = chartRangeClip ? clipval(vlist[j], clipMin, clipMax) : vlist[j];
                         if (val !== null) {
                             if (val > 0) {
@@ -1546,23 +1533,26 @@ sauce.propDefined('jQuery', function($) {
             this.min = min = sauce.data.min(numValues);
             this.stackMax = stackMax = stacked ? sauce.data.max(stackTotals) : max;
             this.stackMin = stackMin = min;
-            if (options.get('chartRangeMin') !== undefined && (options.get('chartRangeClip') || options.get('chartRangeMin') < min)) {
+            if (options.get('chartRangeMin') !== undefined &&
+                (options.get('chartRangeClip') || options.get('chartRangeMin') < min)) {
                 min = options.get('chartRangeMin');
             }
-            if (options.get('chartRangeMax') !== undefined && (options.get('chartRangeClip') || options.get('chartRangeMax') > max)) {
+            if (options.get('chartRangeMax') !== undefined &&
+                (options.get('chartRangeClip') || options.get('chartRangeMax') > max)) {
                 max = options.get('chartRangeMax');
             }
-            zeroAxis = options.get('zeroAxis', true);
+            const zeroAxis = options.get('zeroAxis', true);
             if (min <= 0 && max >= 0 && zeroAxis) {
                 this.xaxisOffset = 0;
             } else if (zeroAxis == false) {
+                debugger;
                 this.xaxisOffset = min;
             } else if (min > 0) {
                 this.xaxisOffset = min;
             } else {
                 this.xaxisOffset = max;
             }
-            range = stacked ? sauce.data.max(stackRanges) + sauce.data.max(stackRangesNeg) : max - min;
+            const range = stacked ? sauce.data.max(stackRanges) + sauce.data.max(stackRangesNeg) : max - min;
             // as we plot zero/min values a single pixel line, we add a pixel to all other
             // values - Reduce the effective canvas size to suit
             this.canvasHeightEf = (zeroAxis && min < 0) ? this.canvasHeight - 2 : this.canvasHeight - 1;
@@ -1590,44 +1580,49 @@ sauce.propDefined('jQuery', function($) {
         },
 
         getRegion: function(el, x, y) {
-            var result = Math.floor(x / this.totalBarWidth);
-            return (result < 0 || result >= this.values.length) ? undefined : result;
+            let idx;
+            let end = 0;
+            console.log(x);
+            for (idx = 0; idx < this.barWidths.length; idx++) {
+                end += this.barWidths[idx] + (this.barSpacing / 2);
+                if (x < end) {
+                    break;
+                }
+                end += this.barSpacing / 2;
+            }
+            return idx;
         },
 
         getCurrentRegionFields: function() {
-            var currentRegion = this.currentRegion,
-                values = ensureArray(this.values[currentRegion]),
-                result = [],
-                value, i;
-            for (i = values.length; i--;) {
-                value = values[i];
+            const values = ensureArray(this.values[this.currentRegion]);
+            const result = [];
+            for (let i = values.length; i--;) {
+                const value = values[i];
                 result.push({
                     isNull: value === null,
                     value: value,
-                    color: this.calcColor(i, value, currentRegion),
-                    offset: currentRegion
+                    color: this.calcColor(i, value, this.currentRegion),
+                    offset: this.currentRegion
                 });
             }
             return result;
         },
 
         calcColor: function(stacknum, value, idx) {
-            var colorMapByIndex = this.colorMapByIndex,
-                colorMapByValue = this.colorMapByValue,
-                options = this.options,
-                color, newColor;
+            let color;
             if (this.stacked) {
-                color = options.get('stackedBarColor');
+                color = this.options.get('stackedBarColor');
             } else {
-                color = (value < 0) ? options.get('negBarColor') : options.get('barColor');
+                color = (value < 0) ? this.options.get('negBarColor') : this.options.get('barColor');
             }
-            if (value === 0 && options.get('zeroColor') !== undefined) {
-                color = options.get('zeroColor');
+            if (value === 0 && this.options.get('zeroColor') !== undefined) {
+                color = this.options.get('zeroColor');
             }
-            if (colorMapByValue && (newColor = colorMapByValue.get(value))) {
+            let newColor;
+            if (this.colorMapByValue && (newColor = this.colorMapByValue.get(value))) {
                 color = newColor;
-            } else if (colorMapByIndex && colorMapByIndex.length > idx) {
-                color = colorMapByIndex[idx];
+            } else if (this.colorMapByIndex && this.colorMapByIndex.length > idx) {
+                color = this.colorMapByIndex[idx];
             }
             return $.isArray(color) ? color[stacknum % color.length] : color;
         },
@@ -1636,59 +1631,55 @@ sauce.propDefined('jQuery', function($) {
          * Render bar(s) for a region
          */
         renderRegion: function(idx, highlight) {
-            var vals = this.values[idx],
-                options = this.options,
-                xaxisOffset = this.xaxisOffset,
-                result = [],
-                range = this.range,
-                stacked = this.stacked,
-                target = this.target,
-                x = idx * this.totalBarWidth,
-                canvasHeightEf = this.canvasHeightEf,
-                yoffset = this.yoffset,
-                y, height, color, isNull, yoffsetNeg, i, valcount, val, minPlotted, allMin;
-
+            let vals = this.values[idx];
             vals = $.isArray(vals) ? vals : [vals];
-            valcount = vals.length;
-            val = vals[0];
-            isNull = all(null, vals);
-            allMin = all(xaxisOffset, vals, true);
+            let val = vals[0];
+            const result = [];
+            let y;
+            const x = this.barWidths.slice(0, idx).reduce((agg, x) => agg + x + this.barSpacing, 0);
+            let yoffset = this.yoffset;
+            const isNull = all(null, vals);
+            const allMin = all(this.xaxisOffset, vals, true);
             if (isNull) {
-                if (options.get('nullColor')) {
-                    color = highlight ? options.get('nullColor') : this.calcHighlightColor(options.get('nullColor'), options);
+                if (this.options.get('nullColor')) {
+                    const color = highlight ?
+                        this.options.get('nullColor') :
+                        this.calcHighlightColor(this.options.get('nullColor'), this.options);
                     y = (yoffset > 0) ? yoffset - 1 : yoffset;
-                    return target.drawRect(x, y, this.barWidth - 1, 0, color, color);
+                    return this.target.drawRect(x, y, this.barWidths[idx] - 1, 0, color, color);
                 } else {
                     return undefined;
                 }
             }
-            yoffsetNeg = yoffset;
-            for (i = 0; i < valcount; i++) {
+            let yoffsetNeg = yoffset;
+            let minPlotted;
+            for (let i = 0; i < vals.length; i++) {
                 val = vals[i];
-
-                if (stacked && val === xaxisOffset) {
+                if (this.stacked && val === this.xaxisOffset) {
                     if (!allMin || minPlotted) {
                         continue;
                     }
                     minPlotted = true;
                 }
-                if (range > 0) {
-                    height = Math.floor(canvasHeightEf * ((Math.abs(val - xaxisOffset) / range))) + 1;
+                let height;
+                if (this.range > 0) {
+                    height = Math.floor(this.canvasHeightEf *
+                        ((Math.abs(val - this.xaxisOffset) / this.range))) + 1;
                 } else {
                     height = 1;
                 }
-                if (val < xaxisOffset || (val === xaxisOffset && yoffset === 0)) {
+                if (val < this.xaxisOffset || (val === this.xaxisOffset && yoffset === 0)) {
                     y = yoffsetNeg;
                     yoffsetNeg += height;
                 } else {
                     y = yoffset - height;
                     yoffset -= height;
                 }
-                color = this.calcColor(i, val, idx);
+                let color = this.calcColor(i, val, idx);
                 if (highlight) {
-                    color = this.calcHighlightColor(color, options);
+                    color = this.calcHighlightColor(color, this.options);
                 }
-                result.push(target.drawRect(x, y, this.barWidth - 1, height - 1, color, color));
+                result.push(this.target.drawRect(x, y, this.barWidths[idx] - 1, height - 1, color, color));
             }
             if (result.length === 1) {
                 return result[0];
@@ -1747,6 +1738,7 @@ sauce.propDefined('jQuery', function($) {
             if (min <= 0 && max >= 0 && zeroAxis) {
                 this.xaxisOffset = 0;
             } else if (zeroAxis == false) {
+                debugger;
                 this.xaxisOffset = min;
             } else if (min > 0) {
                 this.xaxisOffset = min;
@@ -1785,70 +1777,62 @@ sauce.propDefined('jQuery', function($) {
         },
 
         getCurrentRegionFields: function() {
-            var currentRegion = this.currentRegion,
-                values = ensureArray(this.values[currentRegion]),
-                result = [],
-                value, i;
-            for (i = values.length; i--;) {
-                value = values[i];
+            const values = ensureArray(this.values[this.currentRegion]);
+            const result = [];
+            for (let i = values.length; i--;) {
+                const value = values[i];
                 result.push({
                     isNull: value === null,
-                    value: value,
-                    color: this.calcColor(i, value, currentRegion),
-                    offset: currentRegion
+                    value,
+                    color: this.calcColor(i, value, this.currentRegion),
+                    offset: this.currentRegion
                 });
             }
             return result;
         },
 
         calcColor: function(stacknum, value, idx) {
-            var colorMapByIndex = this.colorMapByIndex,
-                colorMapByValue = this.colorMapByValue,
-                options = this.options,
-                newColor;
-            let color = (value < 0) ? options.get('negBarColor') : options.get('barColor');
-            if (value === 0 && options.get('zeroColor') !== undefined) {
-                color = options.get('zeroColor');
+            let color = (value < 0) ? this.options.get('negBarColor') : this.options.get('barColor');
+            if (value === 0 && this.options.get('zeroColor') !== undefined) {
+                color = this.options.get('zeroColor');
             }
-            if (colorMapByValue && (newColor = colorMapByValue.get(value))) {
+            let newColor;
+            if (this.colorMapByValue && (newColor = this.colorMapByValue.get(value))) {
                 color = newColor;
-            } else if (colorMapByIndex && colorMapByIndex.length > idx) {
-                color = colorMapByIndex[idx];
+            } else if (this.colorMapByIndex && this.colorMapByIndex.length > idx) {
+                color = this.colorMapByIndex[idx];
             }
             return $.isArray(color) ? color[stacknum % color.length] : color;
         },
 
         renderRegion: function(idx, highlight) {
-            var vals = this.values[idx],
-                options = this.options,
-                xaxisOffset = this.xaxisOffset,
-                result = [],
-                range = this.range,
-                target = this.target,
-                x = idx * this.barWidth,
-                canvasHeightEf = this.canvasHeightEf,
-                yoffset = this.yoffset,
-                y, height, yoffsetNeg;
+            let vals = this.values[idx];
             vals = $.isArray(vals) ? vals : [vals];
+            const result = [];
+            const x = idx * this.barWidth;
+            let yoffset = this.yoffset;
             if (all(null, vals)) {
-                if (options.get('nullColor')) {
-                    const color = highlight ? options.get('nullColor') :
-                        this.calcHighlightColor(options.get('nullColor'), options);
-                    y = (yoffset > 0) ? yoffset - 1 : yoffset;
-                    return target.drawRect(x, y, this.barWidth, 0, color, color);
+                if (this.options.get('nullColor')) {
+                    const color = highlight ? this.options.get('nullColor') :
+                        this.calcHighlightColor(this.options.get('nullColor'), this.options);
+                    const y = (yoffset > 0) ? yoffset - 1 : yoffset;
+                    return this.target.drawRect(x, y, this.barWidth, 0, color, color);
                 } else {
                     return;
                 }
             }
-            yoffsetNeg = yoffset;
+            let yoffsetNeg = yoffset;
             for (let i = 0; i < vals.length; i++) {
                 const val = vals[i];
-                if (range > 0) {
-                    height = Math.floor(canvasHeightEf * ((Math.abs(val - xaxisOffset) / range))) + 1;
+                let height;
+                if (this.range > 0) {
+                    height = Math.floor(this.canvasHeightEf *
+                        ((Math.abs(val - this.xaxisOffset) / this.range))) + 1;
                 } else {
                     height = 1;
                 }
-                if (val < xaxisOffset || (val === xaxisOffset && yoffset === 0)) {
+                let y;
+                if (val < this.xaxisOffset || (val === this.xaxisOffset && yoffset === 0)) {
                     y = yoffsetNeg;
                     yoffsetNeg += height;
                 } else {
@@ -1857,9 +1841,9 @@ sauce.propDefined('jQuery', function($) {
                 }
                 let color = this.calcColor(i, val, idx);
                 if (highlight) {
-                    color = this.calcHighlightColor(color, options);
+                    color = this.calcHighlightColor(color, this.options);
                 }
-                result.push(target.drawRect(x, y, this.barWidth, height - 1, undefined, color));
+                result.push(this.target.drawRect(x, y, this.barWidth, height - 1, undefined, color));
             }
             if (result.length === 1) {
                 return result[0];
@@ -1872,8 +1856,8 @@ sauce.propDefined('jQuery', function($) {
         type: 'tristate',
 
         init: function(el, values, options, width, height) {
-            var barWidth = parseInt(options.get('barWidth'), 10),
-                barSpacing = parseInt(options.get('barSpacing'), 10);
+            const barWidth = parseInt(options.get('barWidth'), 10);
+            const barSpacing = parseInt(options.get('barSpacing'), 10);
             tristate._super.init.call(this, el, values, options, width, height);
 
             this.regionShapes = {};
@@ -1901,62 +1885,52 @@ sauce.propDefined('jQuery', function($) {
         },
 
         getCurrentRegionFields: function() {
-            var currentRegion = this.currentRegion;
             return {
-                isNull: this.values[currentRegion] === undefined,
-                value: this.values[currentRegion],
-                color: this.calcColor(this.values[currentRegion], currentRegion),
-                offset: currentRegion
+                isNull: this.values[this.currentRegion] === undefined,
+                value: this.values[this.currentRegion],
+                color: this.calcColor(this.values[this.currentRegion], this.currentRegion),
+                offset: this.currentRegion
             };
         },
 
         calcColor: function(value, idx) {
-            var values = this.values,
-                options = this.options,
-                colorMapByIndex = this.colorMapByIndex,
-                colorMapByValue = this.colorMapByValue,
-                color, newColor;
-            if (colorMapByValue && (newColor = colorMapByValue.get(value))) {
+            let color, newColor;
+            if (this.colorMapByValue && (newColor = this.colorMapByValue.get(value))) {
                 color = newColor;
-            } else if (colorMapByIndex && colorMapByIndex.length > idx) {
-                color = colorMapByIndex[idx];
-            } else if (values[idx] < 0) {
-                color = options.get('negBarColor');
-            } else if (values[idx] > 0) {
-                color = options.get('posBarColor');
+            } else if (this.colorMapByIndex && this.colorMapByIndex.length > idx) {
+                color = this.colorMapByIndex[idx];
+            } else if (this.values[idx] < 0) {
+                color = this.options.get('negBarColor');
+            } else if (this.values[idx] > 0) {
+                color = this.options.get('posBarColor');
             } else {
-                color = options.get('zeroBarColor');
+                color = this.options.get('zeroBarColor');
             }
             return color;
         },
 
         renderRegion: function(idx, highlight) {
-            var values = this.values,
-                options = this.options,
-                target = this.target,
-                canvasHeight, height, halfHeight,
-                x, y, color;
-            canvasHeight = target.pixelHeight;
-            halfHeight = Math.round(canvasHeight / 2);
-            x = idx * this.totalBarWidth;
-            if (values[idx] < 0) {
+            let height, y;
+            const halfHeight = Math.round(this.target.pixelHeight / 2);
+            const x = idx * this.totalBarWidth;
+            if (this.values[idx] < 0) {
                 y = halfHeight;
                 height = halfHeight - 1;
-            } else if (values[idx] > 0) {
+            } else if (this.values[idx] > 0) {
                 y = 0;
                 height = halfHeight - 1;
             } else {
                 y = halfHeight - 1;
                 height = 2;
             }
-            color = this.calcColor(values[idx], idx);
+            let color = this.calcColor(this.values[idx], idx);
             if (color === null) {
                 return;
             }
             if (highlight) {
-                color = this.calcHighlightColor(color, options);
+                color = this.calcHighlightColor(color, this.options);
             }
-            return target.drawRect(x, y, this.barWidth - 1, height - 1, color, color);
+            return this.target.drawRect(x, y, this.barWidth - 1, height - 1, color, color);
         }
     });
 
@@ -1974,15 +1948,18 @@ sauce.propDefined('jQuery', function($) {
             this.width = width = options.get('width') === 'auto' ? values.length * 2 : this.width;
             this.interval = Math.floor(width / values.length);
             this.itemWidth = width / values.length;
-            if (options.get('chartRangeMin') !== undefined && (options.get('chartRangeClip') || options.get('chartRangeMin') < this.min)) {
+            if (options.get('chartRangeMin') !== undefined &&
+                (options.get('chartRangeClip') || options.get('chartRangeMin') < this.min)) {
                 this.min = options.get('chartRangeMin');
             }
-            if (options.get('chartRangeMax') !== undefined && (options.get('chartRangeClip') || options.get('chartRangeMax') > this.max)) {
+            if (options.get('chartRangeMax') !== undefined &&
+                (options.get('chartRangeClip') || options.get('chartRangeMax') > this.max)) {
                 this.max = options.get('chartRangeMax');
             }
             this.initTarget();
             if (this.target) {
-                this.lineHeight = options.get('lineHeight') === 'auto' ? Math.round(this.canvasHeight * 0.3) : options.get('lineHeight');
+                this.lineHeight = options.get('lineHeight') === 'auto' ?
+                    Math.round(this.canvasHeight * 0.3) : options.get('lineHeight');
             }
         },
 
@@ -1991,34 +1968,24 @@ sauce.propDefined('jQuery', function($) {
         },
 
         getCurrentRegionFields: function() {
-            var currentRegion = this.currentRegion;
             return {
-                isNull: this.values[currentRegion] === undefined,
-                value: this.values[currentRegion],
-                offset: currentRegion
+                isNull: this.values[this.currentRegion] === undefined,
+                value: this.values[this.currentRegion],
+                offset: this.currentRegion
             };
         },
 
         renderRegion: function(idx, highlight) {
-            var values = this.values,
-                options = this.options,
-                min = this.min,
-                max = this.max,
-                range = this.range,
-                interval = this.interval,
-                target = this.target,
-                canvasHeight = this.canvasHeight,
-                lineHeight = this.lineHeight,
-                pheight = canvasHeight - lineHeight,
-                ytop, val, color, x;
-            val = clipval(values[idx], min, max);
-            x = idx * interval;
-            ytop = Math.round(pheight - pheight * ((val - min) / range));
-            color = (options.get('thresholdColor') && val < options.get('thresholdValue')) ? options.get('thresholdColor') : options.get('lineColor');
+            const pHeight = this.canvasHeight - this.lineHeight;
+            const val = clipval(this.values[idx], this.min, this.max);
+            const x = idx * this.interval;
+            const ytop = Math.round(pHeight - pHeight * ((val - this.min) / this.range));
+            let color = (this.options.get('thresholdColor') && val < this.options.get('thresholdValue')) ?
+                this.options.get('thresholdColor') : this.options.get('lineColor');
             if (highlight) {
-                color = this.calcHighlightColor(color, options);
+                color = this.calcHighlightColor(color, this.options);
             }
-            return target.drawLine(x, ytop, x, ytop + lineHeight, color);
+            return this.target.drawLine(x, ytop, x, ytop + this.lineHeight, color);
         }
     });
 
@@ -2026,16 +1993,15 @@ sauce.propDefined('jQuery', function($) {
         type: 'bullet',
 
         init: function(el, values, options, width, height) {
-            var min, max, vals;
             bullet._super.init.call(this, el, values, options, width, height);
             // values: target, performance, range1, range2, range3
             this.values = values = normalizeValues(values);
             // target or performance could be null
-            vals = values.slice();
+            const vals = values.slice();
             vals[0] = vals[0] === null ? vals[2] : vals[0];
             vals[1] = values[1] === null ? vals[2] : vals[1];
-            min = sauce.data.min(values);
-            max = sauce.data.max(values);
+            let min = sauce.data.min(values);
+            const max = sauce.data.max(values);
             if (options.get('base') === undefined) {
                 min = min < 0 ? min : 0;
             } else {
@@ -2056,27 +2022,26 @@ sauce.propDefined('jQuery', function($) {
         },
 
         getRegion: function(el, x, y) {
-            var shapeid = this.target.getShapeAt(el, x, y);
-            return (shapeid !== undefined && this.shapes[shapeid] !== undefined) ? this.shapes[shapeid] : undefined;
+            const shapeid = this.target.getShapeAt(el, x, y);
+            return (shapeid !== undefined && this.shapes[shapeid] !== undefined) ?
+                this.shapes[shapeid] : undefined;
         },
 
         getCurrentRegionFields: function() {
-            var currentRegion = this.currentRegion;
             return {
-                fieldkey: currentRegion.substr(0, 1),
-                value: this.values[currentRegion.substr(1)],
-                region: currentRegion
+                fieldkey: this.currentRegion.substr(0, 1),
+                value: this.values[this.currentRegion.substr(1)],
+                region: this.currentRegion
             };
         },
 
         changeHighlight: function(highlight) {
-            var currentRegion = this.currentRegion,
-                shapeid = this.valueShapes[currentRegion],
-                shape;
+            const shapeid = this.valueShapes[this.currentRegion];
+            let shape;
             delete this.shapes[shapeid];
-            switch (currentRegion.substr(0, 1)) {
+            switch (this.currentRegion.substr(0, 1)) {
             case 'r':
-                shape = this.renderRange(currentRegion.substr(1), highlight);
+                shape = this.renderRange(this.currentRegion.substr(1), highlight);
                 break;
             case 'p':
                 shape = this.renderPerformance(highlight);
@@ -2085,15 +2050,15 @@ sauce.propDefined('jQuery', function($) {
                 shape = this.renderTarget(highlight);
                 break;
             }
-            this.valueShapes[currentRegion] = shape.id;
-            this.shapes[shape.id] = currentRegion;
+            this.valueShapes[this.currentRegion] = shape.id;
+            this.shapes[shape.id] = this.currentRegion;
             this.target.replaceWithShape(shapeid, shape);
         },
 
         renderRange: function(rn, highlight) {
-            var rangeval = this.values[rn],
-                rangewidth = Math.round(this.canvasWidth * ((rangeval - this.min) / this.range)),
-                color = this.options.get('rangeColors')[rn - 2];
+            const rangeval = this.values[rn];
+            const rangewidth = Math.round(this.canvasWidth * ((rangeval - this.min) / this.range));
+            let color = this.options.get('rangeColors')[rn - 2];
             if (highlight) {
                 color = this.calcHighlightColor(color, this.options);
             }
@@ -2101,9 +2066,9 @@ sauce.propDefined('jQuery', function($) {
         },
 
         renderPerformance: function(highlight) {
-            var perfval = this.values[1],
-                perfwidth = Math.round(this.canvasWidth * ((perfval - this.min) / this.range)),
-                color = this.options.get('performanceColor');
+            const perfval = this.values[1];
+            const perfwidth = Math.round(this.canvasWidth * ((perfval - this.min) / this.range));
+            let color = this.options.get('performanceColor');
             if (highlight) {
                 color = this.calcHighlightColor(color, this.options);
             }
@@ -2112,25 +2077,25 @@ sauce.propDefined('jQuery', function($) {
         },
 
         renderTarget: function(highlight) {
-            var targetval = this.values[0],
-                x = Math.round(this.canvasWidth * ((targetval - this.min) / this.range) - (this.options.get('targetWidth') / 2)),
-                targettop = Math.round(this.canvasHeight * 0.10),
-                targetheight = this.canvasHeight - (targettop * 2),
-                color = this.options.get('targetColor');
+            const targetval = this.values[0];
+            const x = Math.round(this.canvasWidth *
+                ((targetval - this.min) / this.range) - (this.options.get('targetWidth') / 2));
+            const targettop = Math.round(this.canvasHeight * 0.10);
+            const targetheight = this.canvasHeight - (targettop * 2);
+            let color = this.options.get('targetColor');
             if (highlight) {
                 color = this.calcHighlightColor(color, this.options);
             }
-            return this.target.drawRect(x, targettop, this.options.get('targetWidth') - 1, targetheight - 1, color, color);
+            return this.target.drawRect(x, targettop, this.options.get('targetWidth') - 1, targetheight - 1,
+                color, color);
         },
 
         render: function() {
-            var vlen = this.values.length,
-                target = this.target,
-                i, shape;
+            let shape;
             if (!bullet._super.render.call(this)) {
                 return;
             }
-            for (i = 2; i < vlen; i++) {
+            for (let i = 2; i < this.values.length; i++) {
                 shape = this.renderRange(i).append();
                 this.shapes[shape.id] = 'r' + i;
                 this.valueShapes['r' + i] = shape.id;
@@ -2145,7 +2110,7 @@ sauce.propDefined('jQuery', function($) {
                 this.shapes[shape.id] = 't0';
                 this.valueShapes.t0 = shape.id;
             }
-            target.render();
+            this.target.render();
         }
     });
 
@@ -2153,7 +2118,7 @@ sauce.propDefined('jQuery', function($) {
         type: 'pie',
 
         init: function(el, values, options, width, height) {
-            var total = 0, i;
+            let total = 0;
             pie._super.init.call(this, el, values, options, width, height);
             this.shapes = {}; // map shape ids to value offsets
             this.valueShapes = {}; // maps value offsets to shape ids
@@ -2162,7 +2127,7 @@ sauce.propDefined('jQuery', function($) {
                 this.width = this.height;
             }
             if (values.length > 0) {
-                for (i = values.length; i--;) {
+                for (let i = values.length; i--;) {
                     total += values[i];
                 }
             }
@@ -2172,84 +2137,70 @@ sauce.propDefined('jQuery', function($) {
         },
 
         getRegion: function(el, x, y) {
-            var shapeid = this.target.getShapeAt(el, x, y);
-            return (shapeid !== undefined && this.shapes[shapeid] !== undefined) ? this.shapes[shapeid] : undefined;
+            const shapeid = this.target.getShapeAt(el, x, y);
+            return (shapeid !== undefined && this.shapes[shapeid] !== undefined) ?
+                this.shapes[shapeid] : undefined;
         },
 
         getCurrentRegionFields: function() {
-            var currentRegion = this.currentRegion;
+            const sliceColors = this.options.get('sliceColors');
             return {
-                isNull: this.values[currentRegion] === undefined,
-                value: this.values[currentRegion],
-                percent: this.values[currentRegion] / this.total * 100,
-                color: this.options.get('sliceColors')[currentRegion % this.options.get('sliceColors').length],
-                offset: currentRegion
+                isNull: this.values[this.currentRegion] === undefined,
+                value: this.values[this.currentRegion],
+                percent: this.values[this.currentRegion] / this.total * 100,
+                color: sliceColors[this.currentRegion % sliceColors.length],
+                offset: this.currentRegion
             };
         },
 
         changeHighlight: function(highlight) {
-            var currentRegion = this.currentRegion,
-                newslice = this.renderSlice(currentRegion, highlight),
-                shapeid = this.valueShapes[currentRegion];
+            const newslice = this.renderSlice(this.currentRegion, highlight);
+            const shapeid = this.valueShapes[this.currentRegion];
             delete this.shapes[shapeid];
             this.target.replaceWithShape(shapeid, newslice);
-            this.valueShapes[currentRegion] = newslice.id;
-            this.shapes[newslice.id] = currentRegion;
+            this.valueShapes[this.currentRegion] = newslice.id;
+            this.shapes[newslice.id] = this.currentRegion;
         },
 
         renderSlice: function(idx, highlight) {
-            var target = this.target,
-                options = this.options,
-                radius = this.radius,
-                borderWidth = options.get('borderWidth'),
-                offset = options.get('offset'),
-                circle = 2 * Math.PI,
-                values = this.values,
-                total = this.total,
-                next = offset ? (2*Math.PI)*(offset/360) : 0,
-                start, end, i, vlen, color;
-
-            vlen = values.length;
-            for (i = 0; i < vlen; i++) {
-                start = next;
-                end = next;
-                if (total > 0) {  // avoid divide by zero
-                    end = next + (circle * (values[i] / total));
+            const offset = this.options.get('offset');
+            let next = offset ? (2 * Math.PI) * (offset / 360) : 0;
+            for (let i = 0; i < this.values.length; i++) {
+                const start = next;
+                let end = next;
+                if (this.total > 0) {  // avoid divide by zero
+                    end = next + ((2 * Math.PI) * (this.values[i] / this.total));
                 }
                 if (idx === i) {
-                    color = options.get('sliceColors')[i % options.get('sliceColors').length];
+                    let color = this.options.get('sliceColors')[i % this.options.get('sliceColors').length];
                     if (highlight) {
-                        color = this.calcHighlightColor(color, options);
+                        color = this.calcHighlightColor(color, this.options);
                     }
-
-                    return target.drawPieSlice(radius, radius, radius - borderWidth, start, end, undefined, color);
+                    const borderWidth = this.options.get('borderWidth');
+                    return this.target.drawPieSlice(this.radius, this.radius, this.radius - borderWidth,
+                        start, end, undefined, color);
                 }
                 next = end;
             }
         },
 
         render: function() {
-            var target = this.target,
-                values = this.values,
-                options = this.options,
-                radius = this.radius,
-                borderWidth = options.get('borderWidth'),
-                shape, i;
             if (!pie._super.render.call(this)) {
                 return;
             }
+            const borderWidth = this.options.get('borderWidth');
             if (borderWidth) {
-                target.drawCircle(radius, radius, Math.floor(radius - (borderWidth / 2)),
-                    options.get('borderColor'), undefined, borderWidth).append();
+                this.target.drawCircle(this.radius, this.radius, Math.floor(this.radius - (borderWidth / 2)),
+                    this.options.get('borderColor'), undefined, borderWidth).append();
             }
-            for (i = values.length; i--;) {
-                if (values[i]) { // don't render zero values
-                    shape = this.renderSlice(i).append();
+            for (let i = this.values.length; i--;) {
+                if (this.values[i]) { // don't render zero values
+                    const shape = this.renderSlice(i).append();
                     this.valueShapes[i] = shape.id; // store just the shapeid
                     this.shapes[shape.id] = i;
                 }
             }
-            target.render();
+            this.target.render();
         }
     });
 
@@ -2271,7 +2222,7 @@ sauce.propDefined('jQuery', function($) {
         },
 
         getCurrentRegionFields: function() {
-            var result = [
+            const result = [
                 { field: 'lq', value: this.quartiles[0] },
                 { field: 'med', value: this.quartiles[1] },
                 { field: 'uq', value: this.quartiles[2] }
@@ -2292,57 +2243,53 @@ sauce.propDefined('jQuery', function($) {
         },
 
         render: function() {
-            var target = this.target,
-                values = this.values,
-                vlen = values.length,
-                options = this.options,
-                canvasWidth = this.canvasWidth,
-                canvasHeight = this.canvasHeight,
-                minValue = options.get('chartRangeMin') === undefined ? sauce.data.min(values) : options.get('chartRangeMin'),
-                maxValue = options.get('chartRangeMax') === undefined ? sauce.data.max(values) : options.get('chartRangeMax'),
-                canvasLeft = 0,
-                lwhisker, loutlier, iqr, q1, q2, q3, rwhisker, routlier, i,
-                size, unitSize;
+            const minValue = this.options.get('chartRangeMin') === undefined ?
+                sauce.data.min(this.values) : this.options.get('chartRangeMin');
+            const maxValue = this.options.get('chartRangeMax') === undefined ?
+                sauce.data.max(this.values) : this.options.get('chartRangeMax');
+            let canvasLeft = 0;
+            let lwhisker, loutlier, iqr, q1, q2, q3, rwhisker, routlier, size, unitSize;
             if (!box._super.render.call(this)) {
                 return;
             }
-            if (options.get('raw')) {
-                if (options.get('showOutliers') && values.length > 5) {
-                    loutlier = values[0];
-                    lwhisker = values[1];
-                    q1 = values[2];
-                    q2 = values[3];
-                    q3 = values[4];
-                    rwhisker = values[5];
-                    routlier = values[6];
+            if (this.options.get('raw')) {
+                if (this.options.get('showOutliers') && this.values.length > 5) {
+                    loutlier = this.values[0];
+                    lwhisker = this.values[1];
+                    q1 = this.values[2];
+                    q2 = this.values[3];
+                    q3 = this.values[4];
+                    rwhisker = this.values[5];
+                    routlier = this.values[6];
                 } else {
-                    lwhisker = values[0];
-                    q1 = values[1];
-                    q2 = values[2];
-                    q3 = values[3];
-                    rwhisker = values[4];
+                    lwhisker = this.values[0];
+                    q1 = this.values[1];
+                    q2 = this.values[2];
+                    q3 = this.values[3];
+                    rwhisker = this.values[4];
                 }
             } else {
-                values.sort((a, b) => a - b);
-                q1 = quartile(values, 1);
-                q2 = quartile(values, 2);
-                q3 = quartile(values, 3);
+                this.values.sort((a, b) => a - b);
+                q1 = quartile(this.values, 1);
+                q2 = quartile(this.values, 2);
+                q3 = quartile(this.values, 3);
                 iqr = q3 - q1;
-                if (options.get('showOutliers')) {
+                if (this.options.get('showOutliers')) {
                     lwhisker = rwhisker = undefined;
-                    for (i = 0; i < vlen; i++) {
-                        if (lwhisker === undefined && values[i] > q1 - (iqr * options.get('outlierIQR'))) {
-                            lwhisker = values[i];
+                    for (let i = 0; i < this.values.length; i++) {
+                        if (lwhisker === undefined &&
+                            this.values[i] > q1 - (iqr * this.options.get('outlierIQR'))) {
+                            lwhisker = this.values[i];
                         }
-                        if (values[i] < q3 + (iqr * options.get('outlierIQR'))) {
-                            rwhisker = values[i];
+                        if (this.values[i] < q3 + (iqr * this.options.get('outlierIQR'))) {
+                            rwhisker = this.values[i];
                         }
                     }
-                    loutlier = values[0];
-                    routlier = values[vlen - 1];
+                    loutlier = this.values[0];
+                    routlier = this.values[this.values.length - 1];
                 } else {
-                    lwhisker = values[0];
-                    rwhisker = values[vlen - 1];
+                    lwhisker = this.values[0];
+                    rwhisker = this.values[this.values.length - 1];
                 }
             }
             this.quartiles = [q1, q2, q3];
@@ -2350,88 +2297,88 @@ sauce.propDefined('jQuery', function($) {
             this.rwhisker = rwhisker;
             this.loutlier = loutlier;
             this.routlier = routlier;
-            unitSize = canvasWidth / (maxValue - minValue + 1);
-            if (options.get('showOutliers')) {
-                canvasLeft = Math.ceil(options.get('spotRadius'));
-                canvasWidth -= 2 * Math.ceil(options.get('spotRadius'));
-                unitSize = canvasWidth / (maxValue - minValue + 1);
+            unitSize = this.canvasWidth / (maxValue - minValue + 1);
+            if (this.options.get('showOutliers')) {
+                canvasLeft = Math.ceil(this.options.get('spotRadius'));
+                this.canvasWidth -= 2 * Math.ceil(this.options.get('spotRadius'));
+                unitSize = this.canvasWidth / (maxValue - minValue + 1);
                 if (loutlier < lwhisker) {
-                    target.drawCircle((loutlier - minValue) * unitSize + canvasLeft,
-                        canvasHeight / 2,
-                        options.get('spotRadius'),
-                        options.get('outlierLineColor'),
-                        options.get('outlierFillColor')).append();
+                    this.target.drawCircle((loutlier - minValue) * unitSize + canvasLeft,
+                        this.canvasHeight / 2,
+                        this.options.get('spotRadius'),
+                        this.options.get('outlierLineColor'),
+                        this.options.get('outlierFillColor')).append();
                 }
                 if (routlier > rwhisker) {
-                    target.drawCircle((routlier - minValue) * unitSize + canvasLeft,
-                        canvasHeight / 2,
-                        options.get('spotRadius'),
-                        options.get('outlierLineColor'),
-                        options.get('outlierFillColor')).append();
+                    this.target.drawCircle((routlier - minValue) * unitSize + canvasLeft,
+                        this.canvasHeight / 2,
+                        this.options.get('spotRadius'),
+                        this.options.get('outlierLineColor'),
+                        this.options.get('outlierFillColor')).append();
                 }
             }
             // box
-            target.drawRect(
+            this.target.drawRect(
                 Math.round((q1 - minValue) * unitSize + canvasLeft),
-                Math.round(canvasHeight * 0.1),
+                Math.round(this.canvasHeight * 0.1),
                 Math.round((q3 - q1) * unitSize),
-                Math.round(canvasHeight * 0.8),
-                options.get('boxLineColor'),
-                options.get('boxFillColor')).append();
+                Math.round(this.canvasHeight * 0.8),
+                this.options.get('boxLineColor'),
+                this.options.get('boxFillColor')).append();
             // left whisker
-            target.drawLine(
+            this.target.drawLine(
                 Math.round((lwhisker - minValue) * unitSize + canvasLeft),
-                Math.round(canvasHeight / 2),
+                Math.round(this.canvasHeight / 2),
                 Math.round((q1 - minValue) * unitSize + canvasLeft),
-                Math.round(canvasHeight / 2),
-                options.get('lineColor')).append();
-            target.drawLine(
+                Math.round(this.canvasHeight / 2),
+                this.options.get('lineColor')).append();
+            this.target.drawLine(
                 Math.round((lwhisker - minValue) * unitSize + canvasLeft),
-                Math.round(canvasHeight / 4),
+                Math.round(this.canvasHeight / 4),
                 Math.round((lwhisker - minValue) * unitSize + canvasLeft),
-                Math.round(canvasHeight - canvasHeight / 4),
-                options.get('whiskerColor')).append();
+                Math.round(this.canvasHeight - this.canvasHeight / 4),
+                this.options.get('whiskerColor')).append();
             // right whisker
-            target.drawLine(Math.round((rwhisker - minValue) * unitSize + canvasLeft),
-                Math.round(canvasHeight / 2),
+            this.target.drawLine(Math.round((rwhisker - minValue) * unitSize + canvasLeft),
+                Math.round(this.canvasHeight / 2),
                 Math.round((q3 - minValue) * unitSize + canvasLeft),
-                Math.round(canvasHeight / 2),
-                options.get('lineColor')).append();
-            target.drawLine(
+                Math.round(this.canvasHeight / 2),
+                this.options.get('lineColor')).append();
+            this.target.drawLine(
                 Math.round((rwhisker - minValue) * unitSize + canvasLeft),
-                Math.round(canvasHeight / 4),
+                Math.round(this.canvasHeight / 4),
                 Math.round((rwhisker - minValue) * unitSize + canvasLeft),
-                Math.round(canvasHeight - canvasHeight / 4),
-                options.get('whiskerColor')).append();
+                Math.round(this.canvasHeight - this.canvasHeight / 4),
+                this.options.get('whiskerColor')).append();
             // median line
-            target.drawLine(
+            this.target.drawLine(
                 Math.round((q2 - minValue) * unitSize + canvasLeft),
-                Math.round(canvasHeight * 0.1),
+                Math.round(this.canvasHeight * 0.1),
                 Math.round((q2 - minValue) * unitSize + canvasLeft),
-                Math.round(canvasHeight * 0.9),
-                options.get('medianColor')).append();
-            if (options.get('target')) {
-                size = Math.ceil(options.get('spotRadius'));
-                target.drawLine(
-                    Math.round((options.get('target') - minValue) * unitSize + canvasLeft),
-                    Math.round((canvasHeight / 2) - size),
-                    Math.round((options.get('target') - minValue) * unitSize + canvasLeft),
-                    Math.round((canvasHeight / 2) + size),
-                    options.get('targetColor')).append();
-                target.drawLine(
-                    Math.round((options.get('target') - minValue) * unitSize + canvasLeft - size),
-                    Math.round(canvasHeight / 2),
-                    Math.round((options.get('target') - minValue) * unitSize + canvasLeft + size),
-                    Math.round(canvasHeight / 2),
-                    options.get('targetColor')).append();
+                Math.round(this.canvasHeight * 0.9),
+                this.options.get('medianColor')).append();
+            if (this.options.get('target')) {
+                size = Math.ceil(this.options.get('spotRadius'));
+                this.target.drawLine(
+                    Math.round((this.options.get('target') - minValue) * unitSize + canvasLeft),
+                    Math.round((this.canvasHeight / 2) - size),
+                    Math.round((this.options.get('target') - minValue) * unitSize + canvasLeft),
+                    Math.round((this.canvasHeight / 2) + size),
+                    this.options.get('targetColor')).append();
+                this.target.drawLine(
+                    Math.round((this.options.get('target') - minValue) * unitSize + canvasLeft - size),
+                    Math.round(this.canvasHeight / 2),
+                    Math.round((this.options.get('target') - minValue) * unitSize + canvasLeft + size),
+                    Math.round(this.canvasHeight / 2),
+                    this.options.get('targetColor')).append();
             }
-            target.render();
+            this.target.render();
         }
     });
 
     // Setup a very simple "virtual canvas" to make drawing the few shapes we need easier
     // This is accessible as $(foo).simpledraw()
-    VShape = createClass({
+    const VShape = createClass({
         init: function(target, id, type, args) {
             this.target = target;
             this.id = id;
@@ -2445,7 +2392,7 @@ sauce.propDefined('jQuery', function($) {
         }
     });
 
-    VCanvas_base = createClass({
+    const VCanvas_base = createClass({
         _pxregex: /(\d+)(px)?\s*$/i,
 
         init: function(width, height, target) {
@@ -2509,7 +2456,7 @@ sauce.propDefined('jQuery', function($) {
         },
 
         _genShape: function(shapetype, shapeargs) {
-            var id = shapeCount++;
+            const id = shapeCount++;
             shapeargs.unshift(id);
             return new VShape(this, id, shapetype, shapeargs);
         },
@@ -2539,7 +2486,7 @@ sauce.propDefined('jQuery', function($) {
         }
     });
 
-    VCanvas_canvas = createClass(VCanvas_base, {
+    const VCanvas_canvas = createClass(VCanvas_base, {
         init: function(width, height, target, interact) {
             VCanvas_canvas._super.init.call(this, width, height, target);
             this.canvas = document.createElement('canvas');
@@ -2547,7 +2494,12 @@ sauce.propDefined('jQuery', function($) {
                 target = target[0];
             }
             $.data(target, '_jqs_vcanvas', this);
-            $(this.canvas).css({ display: 'inline-block', width: width, height: height, verticalAlign: 'top' });
+            $(this.canvas).css({
+                display: 'inline-block',
+                width,
+                height,
+                verticalAlign: 'top'
+            });
             this._insert(this.canvas, target);
             this._calculatePixelDims(width, height, this.canvas);
             this.canvas.width = this.pixelWidth;
@@ -2622,7 +2574,7 @@ sauce.propDefined('jQuery', function($) {
         },
 
         reset: function() {
-            var context = this._getContext();
+            const context = this._getContext();
             context.clearRect(0, 0, this.pixelWidth, this.pixelHeight);
             this.shapes = {};
             this.shapeseq = [];
@@ -2630,10 +2582,10 @@ sauce.propDefined('jQuery', function($) {
         },
 
         _drawShape: function(shapeid, path, lineColor, fillColor, lineWidth) {
-            var context = this._getContext(lineColor, fillColor, lineWidth), i, plen;
+            const context = this._getContext(lineColor, fillColor, lineWidth);
             context.beginPath();
             context.moveTo(path[0][0], path[0][1]);
-            for (i = 1, plen = path.length; i < plen; i++) {
+            for (let i = 1; i < path.length; i++) {
                 context.lineTo(path[i][0], path[i][1]);
             }
             if (lineColor !== undefined) {
@@ -2649,7 +2601,7 @@ sauce.propDefined('jQuery', function($) {
         },
 
         _drawCircle: function(shapeid, x, y, radius, lineColor, fillColor, lineWidth) {
-            var context = this._getContext(lineColor, fillColor, lineWidth);
+            const context = this._getContext(lineColor, fillColor, lineWidth);
             context.beginPath();
             context.arc(x, y, radius, 0, 2 * Math.PI, false);
             if (this.targetX !== undefined && this.targetY !== undefined &&
@@ -2665,7 +2617,7 @@ sauce.propDefined('jQuery', function($) {
         },
 
         _drawPieSlice: function(shapeid, x, y, radius, startAngle, endAngle, lineColor, fillColor) {
-            var context = this._getContext(lineColor, fillColor);
+            const context = this._getContext(lineColor, fillColor);
             context.beginPath();
             context.moveTo(x, y);
             context.arc(x, y, radius, startAngle, endAngle, false);
@@ -2684,7 +2636,9 @@ sauce.propDefined('jQuery', function($) {
         },
 
         _drawRect: function(shapeid, x, y, width, height, lineColor, fillColor) {
-            return this._drawShape(shapeid, [[x, y], [x + width, y], [x + width, y + height], [x, y + height], [x, y]], lineColor, fillColor);
+            return this._drawShape(shapeid,
+                [[x, y], [x + width, y], [x + width, y + height], [x, y + height], [x, y]],
+                lineColor, fillColor);
         },
 
         appendShape: function(shape) {
@@ -2697,6 +2651,7 @@ sauce.propDefined('jQuery', function($) {
         replaceWithShape: function(shapeid, shape) {
             this.shapes[shape.id] = shape;
             for (let i = this.shapeseq.length; i--;) {
+                debugger;
                 if (this.shapeseq[i] == shapeid) {
                     this.shapeseq[i] = shape.id;
                 }
@@ -2770,4 +2725,4 @@ sauce.propDefined('jQuery', function($) {
             this._maxValue = max;
         }
     });
-}, {once: true});
+});
