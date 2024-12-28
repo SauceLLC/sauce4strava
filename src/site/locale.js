@@ -139,8 +139,8 @@ sauce.ns('locale', ns => {
             return;
         }
         await Promise.all([
-            sauce.propDefined('Strava.I18n.ElevationFormatter', {once: true}),
-            sauce.propDefined('Strava.I18n.DoubledStepCadenceFormatter', {once: true}),
+            sauce.propDefined('Strava.I18n.ElevationFormatter'),
+            sauce.propDefined('Strava.I18n.DoubledStepCadenceFormatter'),
         ]); // XXX find something just after all the locale stuff.
         ns.elevationFormatter = new Strava.I18n.ElevationFormatter();
         ns.hrFormatter = new Strava.I18n.HeartRateFormatter();

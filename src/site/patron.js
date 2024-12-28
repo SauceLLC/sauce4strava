@@ -6,7 +6,7 @@ sauce.ns('patron', async ns => {
     const L = sauce.locale;
 
     await L.init();
-    await sauce.propDefined('Backbone', {once: true});
+    await sauce.propDefined('Backbone');
     await sauce.proxy.connected;
     const view = await import(sauce.getURL('/src/site/view.mjs'));
 

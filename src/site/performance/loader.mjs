@@ -75,5 +75,5 @@ async function load({athletes, router, pageLoad}) {
 if (self.Backbone) {
     init();
 } else {
-    sauce.propDefined('Backbone', init, {once: true});
+    sauce.propDefined('Backbone', init);
 }

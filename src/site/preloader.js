@@ -11,7 +11,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
     const maybeRequestIdleCallback = self.requestIdleCallback || (fn => fn());  // Safari
     const booted = document.documentElement.classList.contains('sauce-booted') ?
         Promise.resolve() :
-        new Promise(resolve => document.addEventListener('sauceBooted', resolve, {once: true}));
+        new Promise(resolve => document.addEventListener('sauceBooted', resolve));
 
 
     sauce.propDefined('pageView', view => {
@@ -81,7 +81,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                 };
             }
         }
-    }, {once: true});
+    });
 
 
     sauce.propDefined('Strava.Charts.Activities.BasicAnalysisElevation', Klass => {
@@ -97,7 +97,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
             }
             return saveFn.apply(this, arguments);
         };
-    }, {once: true});
+    });
 
 
     sauce.propDefined('Strava.Charts.Activities.LabelBox', Klass => {
@@ -129,7 +129,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
             this.container._labelBox = this;
             return saveBuildFn.apply(this, arguments);
         };
-    }, {once: true});
+    });
 
 
     sauce.propDefined('Strava.Charts.Activities.BasicAnalysisStacked', Klass => {
@@ -333,7 +333,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
             this.setEventDispatcher();
             return this.deferred.resolve();
         };
-    }, {once: true});
+    });
 
 
     sauce.propDefined('Strava.Labs.Activities.BasicAnalysisView', Klass => {
@@ -358,7 +358,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
             }
             return $el;
         };
-    }, {once: true});
+    });
 
 
     /* Patch dragging bug when scrolled in this old jquery ui code.
@@ -366,7 +366,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
      * draggable widget isn't fully baked when it's first defined.  The
      * promise resolution won't execute until the assignment is completed.
      */
-    sauce.propDefined('jQuery.ui.draggable', {once: true}).then(draggable => {
+    sauce.propDefined('jQuery.ui.draggable').then(draggable => {
         const $ = jQuery;
         jQuery.widget('ui.draggable', draggable, {
             _convertPositionTo: function(d, pos) {
@@ -476,7 +476,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
 
 
     // Allow html titles and icons for dialogs.
-    sauce.propDefined('jQuery.ui.dialog', {once: true}).then(dialog => {
+    sauce.propDefined('jQuery.ui.dialog').then(dialog => {
         jQuery.widget('ui.dialog', dialog, {
             _title: function(title) {
                 if (!this.options.title) {
@@ -505,7 +505,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
             View.apply(this, arguments);
         });
         NewView.prototype = View.prototype;
-    }, {once: true});
+    });
 
 
     sauce.propDefined('Strava.Labs.Activities.SegmentsView', View => {
@@ -550,7 +550,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
             }
             return this;
         };
-    }, {once: true});
+    });
 
 
     // Provide race-free detection of pending requests.
@@ -568,7 +568,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
             }
             return ret;
         };
-    });
+    }, {multiple: true});
 
 
     sauce.propDefined('Strava.Labs.Activities.MenuRouter', Klass => {
@@ -587,7 +587,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                 return changeMenuToSave.apply(this, arguments);
             }
         };
-    }, {once: true});
+    });
 
 
     sauce.propDefined('Strava.ExternalPhotos.Views.PhotoLightboxView', Klass => {
@@ -610,7 +610,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                 return ret;
             };
         }, 0);
-    }, {once: true});
+    });
 
 
     sauce.propDefined('Strava.Labs.Activities.SegmentEffortDetailView', Klass => {
@@ -652,7 +652,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
             document.documentElement.dispatchEvent(new Event('sauceResetPageMonitor'));
             return ret;
         };
-    }, {once: true});
+    });
 
 
     async function fetchLikeXHR(url, query) {
@@ -785,7 +785,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
             return streamsObj;
         }
         Klass.prototype.fetch = interceptModelFetch(Klass.prototype.fetch, getStreams);
-    });
+    }, {multiple: true});
 
 
     let _segmentEffortCache;
@@ -849,10 +849,10 @@ self.saucePreloaderInit = function saucePreloaderInit() {
         document.documentElement.dataset.sauceCurrentUser = athlete.id || '';
         document.documentElement.dispatchEvent(new Event('sauceCurrentUserUpdate'));
         document.documentElement.classList.toggle('sauce-non-premium-user', !athlete.isPremium());
-    }, {once: true});
+    });
 
 
-    sauce.propDefined('StravaSentry', x => x.enabled = false, {once: true});
+    sauce.propDefined('StravaSentry', x => x.enabled = false);
     window.__SENTRY_TRACING__ = false;
 
 
@@ -864,7 +864,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                 value: this.format(value, this.precision)
             });
         };
-    }, {once: true});
+    });
 
 
     sauce.propDefined('Strava.I18n.ScalarFormatter', Klass => {
@@ -874,5 +874,19 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                 value: this.format(value, this.precision)
             });
         };
-    }, {once: true});
+    });
+
+
+    // remoteEntry.js drives me crazy; silence the logorrehea..
+    const cWarn = console.warn;
+    Object.defineProperty(console, 'warn', {
+        get: () => {
+            const caller = new Error().stack.split('\n', 3)[2];
+            if (caller.match(/remoteEntry\.js/)) {
+                return () => undefined;
+            } else {
+                return cWarn;
+            }
+        }
+    });
 };

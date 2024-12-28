@@ -531,7 +531,7 @@ sauce.ns('dashboard', function(ns) {
             getKudoRateLimiter(),
             sauce.template.getTemplate('kudo-all.html', 'dashboard'),
             sauce.proxy.connected,
-            sauce.propDefined('jQuery.prototype.dropdown', {once: true, ignoreDefinedParents: true}),
+            sauce.propDefined('jQuery.prototype.dropdown', {ignoreDefinedParents: true}),
         ]);
         const filters = new Set((await sauce.storage.getPref('kudoAllFilters') || []));
         const suspended = rl.willSuspendFor();
