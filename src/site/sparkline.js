@@ -342,8 +342,7 @@ sauce.propDefined('jQuery', function($) {
             break;
         default:
             nf = parseFloat(val);
-            debugger;
-            if (val == nf) {
+            if (val.toString() === nf.toString()) {
                 val = nf;
             }
         }
@@ -1582,7 +1581,6 @@ sauce.propDefined('jQuery', function($) {
         getRegion: function(el, x, y) {
             let idx;
             let end = 0;
-            console.log(x);
             for (idx = 0; idx < this.barWidths.length; idx++) {
                 end += this.barWidths[idx] + (this.barSpacing / 2);
                 if (x < end) {
@@ -2651,8 +2649,7 @@ sauce.propDefined('jQuery', function($) {
         replaceWithShape: function(shapeid, shape) {
             this.shapes[shape.id] = shape;
             for (let i = this.shapeseq.length; i--;) {
-                debugger;
-                if (this.shapeseq[i] == shapeid) {
+                if (this.shapeseq[i] === shapeid) {
                     this.shapeseq[i] = shape.id;
                 }
             }
