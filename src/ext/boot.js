@@ -305,7 +305,6 @@ function setCustomFont(options) {
     }, {
         name: 'Dashboard',
         pathMatch: /^\/dashboard(\/.*|\b)/,
-        stylesheets: ['site/dashboard.css'],
         scripts: [
             'src/common/proxy.js',
             'src/site/proxy.js',

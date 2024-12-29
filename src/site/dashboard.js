@@ -1,4 +1,4 @@
-/* global Strava sauce, jQuery */
+/* global Strava sauce */
 
 sauce.ns('dashboard', function(ns) {
 
@@ -482,7 +482,6 @@ sauce.ns('dashboard', function(ns) {
             }
             if (seenCards.size > beforeSize) {
                 filterFeed(cards);
-                resetKudoButton();
             }
         });
         // Take note this page updates in unexpected ways.
@@ -493,141 +492,6 @@ sauce.ns('dashboard', function(ns) {
         mo.observe(feedEl, {childList: true, subtree: true});
         if (seenCards.size) {
             filterFeed(Array.from(seenCards));
-        }
-    }
-
-
-    let _kudoRateLimiter;
-    async function getKudoRateLimiter() {
-        if (!_kudoRateLimiter) {
-            const jobs = await import(sauce.getURL('/src/common/jscoop/jobs.mjs'));
-
-            class KudoRateLimiter extends jobs.RateLimiter {
-                async getState() {
-                    const storeKey = `kudo-rate-limiter-${this.label}`;
-                    return await sauce.storage.get(storeKey);
-                }
-
-                async setState(state) {
-                    const storeKey = `kudo-rate-limiter-${this.label}`;
-                    await sauce.storage.set(storeKey, state);
-                }
-            }
-
-            const g = new jobs.RateLimiterGroup();
-            g.push(new KudoRateLimiter('hour', {period: 3600 * 1000, limit: 90}));
-            await g.initialized();
-            _kudoRateLimiter = g;
-        }
-        return _kudoRateLimiter;
-    }
-
-
-    async function loadKudoAll(el) {
-        // Strava kinda has bootstrap dropdowns, but most of the style is missing or broken.
-        // I think it still is worth it to reuse the basics though (for now)  A lot of css
-        // is required to fix this up though.
-        const [rl, tpl] = await Promise.all([
-            getKudoRateLimiter(),
-            sauce.template.getTemplate('kudo-all.html', 'dashboard'),
-            sauce.proxy.connected,
-            sauce.propDefined('jQuery.prototype.dropdown', {ignoreDefinedParents: true}),
-        ]);
-        const filters = new Set((await sauce.storage.getPref('kudoAllFilters') || []));
-        const suspended = rl.willSuspendFor();
-        const $kudoAll = jQuery(await tpl({
-            filters,
-            rateLimited: !!suspended,
-        }));
-        if (suspended) {
-            rl.wait().then(() => void $kudoAll.removeClass('limit-reached'));
-        }
-        jQuery(el).append($kudoAll);
-        $kudoAll.find('dropdown-toggle').dropdown();
-        $kudoAll.on('click', 'label.filter', ev => void ev.stopPropagation()); // prevent menu close
-        $kudoAll.on('input', 'label.filter input[type="checkbox"]', async ev => {
-            const id = ev.currentTarget.name;
-            if (ev.currentTarget.checked) {
-                filters.add(id);
-            } else {
-                filters.delete(id);
-            }
-            await sauce.storage.setPref('kudoAllFilters', Array.from(filters));
-            resetKudoButton();
-        });
-        $kudoAll.on('click', 'button.sauce-invoke', async ev => {
-            const cards = document.querySelectorAll(cardSelector + ':not(.hidden-by-sauce)');
-            const kudoButtons = [];
-            const ignore = new Set(['FancyPromo', 'SimplePromo', 'Challenge', 'Club', 'SuggestedRoutes']);
-            for (const card of cards) {
-                card._sauceKudoSeen = true;
-                const props = getCardProps(card);
-                if (!props) {
-                    continue;
-                }
-                if ((filters.has('commutes') && isCommute(props)) ||
-                    (filters.has('virtual') && isVirtual(props))) {
-                    continue;
-                }
-                if (props.entity === 'Activity') {
-                    if (props.activity.kudosAndComments.canKudo) {
-                        kudoButtons.push(card.querySelector('button[data-testid="kudos_button"]'));
-                    }
-                } else if (props.entity === 'GroupActivity') {
-                    for (const [kcId, kcSpec] of Object.entries(props.kudosAndComments)) {
-                        if (kcSpec.canKudo) {
-                            // kudosAndComments are unordered and we need to cross ref the rowData index
-                            // with the DOM rendering of the activities withing the group to select the
-                            // correct kudo btn.
-                            const index = props.rowData.activities
-                                .findIndex(x => ('' + x.activity_id) === kcId);
-                            const btn = card.querySelectorAll('button[data-testid="kudos_button"]')[index];
-                            if (btn) {
-                                kudoButtons.push(btn);
-                            }
-                        }
-                    }
-                } else if (props.entity === 'Post') {
-                    if (props.post.can_kudo) {
-                        kudoButtons.push(card.querySelector('button[data-testid="kudos_button"]'));
-                    }
-                } else if (!ignore.has(props.entity)) {
-                    console.warn("Unhandled card type:", props.entity);
-                }
-            }
-            const toKudo = Array.from(kudoButtons).filter(x =>
-                x.querySelector(':scope > svg[data-testid="unfilled_kudos"]'));
-            if (!toKudo.length) {
-                $kudoAll.addClass('complete');
-                return;
-            }
-            const $status = $kudoAll.find('.status');
-            $status.text(`0 / ${toKudo.length}`);
-            $kudoAll.addClass('active');
-            try {
-                for (const [i, x] of toKudo.entries()) {
-                    // Rate limiter wait and anti-bot sleep.
-                    const impendingSuspend = rl.willSuspendFor();
-                    if (impendingSuspend > 10000) {
-                        $kudoAll.removeClass('active').addClass('limit-reached');
-                    }
-                    await rl.wait();
-                    await sauce.sleep(150 + Math.random() ** 10 * 8000);  // low weighted jitter
-                    $kudoAll.removeClass('limit-reached').addClass('active');
-                    x.click();
-                    $status.text(`${i + 1} / ${toKudo.length}`);
-                }
-            } finally {
-                $kudoAll.removeClass('active').addClass('complete');
-            }
-        });
-    }
-
-
-    function resetKudoButton() {
-        const el = document.querySelector('#sauce-kudo-all');
-        if (el) {
-            el.classList.remove('complete');
         }
     }
 
@@ -648,27 +512,6 @@ sauce.ns('dashboard', function(ns) {
         } else {
             // Unlikely...
             monitorFeed(feedEl);
-        }
-        if (!sauce.options['dashboard-disable-kudoall']) {
-            const feedHeaderSelector = [
-                'main form[class*="-FeedFilterSelect-"]', // >= 2024 (preferred, unestablished)
-                'main [class*="_feedCol-"] > form', // >= 2024 (safe fallback, established)
-            ].join(', ');
-            const feedHeaderEl = document.querySelector(feedHeaderSelector);
-            if (!feedHeaderEl) {
-                const mo = new MutationObserver(() => {
-                    const feedHeaderEl = document.querySelector(feedHeaderSelector);
-                    if (feedHeaderEl) {
-                        mo.disconnect();
-                        // Chrome devtools bug workaround...
-                        setTimeout(() => loadKudoAll(feedHeaderEl), 0);
-                    }
-                });
-                mo.observe(document.documentElement, {childList: true, subtree: true});
-            } else {
-                // Unlikely...
-                loadKudoAll(feedHeaderEl);
-            }
         }
         if (sauce.options['activity-hide-media']) {
             document.documentElement.classList.add('sauce-hide-dashboard-media');
