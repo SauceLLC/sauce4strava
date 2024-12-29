@@ -1,7 +1,6 @@
 @use 'color';
 @use 'perf_predictor';
 @use 'live_segment';
-@use 'trailforks';
 @use 'peaks_settings';
 @use 'data_views';
 @use 'sync';
@@ -388,7 +387,6 @@ html .ui-dialog {
 
     @include perf_predictor.dialog;
     @include live_segment.dialog;
-    @include trailforks.dialog;
     @include sync.dialog;
     @include peaks_settings.dialog;
 

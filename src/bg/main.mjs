@@ -9,7 +9,6 @@ import "../common/lib.js";
 import "../common/storage.js";
 import "./migrate.js";
 import "./menu.js";
-import "./trailforks.js";
 import "./hist/db.js";
 
 import * as patron from './patron.mjs';

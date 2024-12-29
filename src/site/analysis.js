@@ -12,7 +12,6 @@ sauce.ns('analysis', ns => {
         };
     });
 
-    const tplUrl = sauce.getURL('templates');
     const L = sauce.locale;
     const H = sauce.locale.human;
     const LM = m => L.getMessage(m[0] === '/' ? m.substr(1) : `analysis_${m}`);
@@ -246,16 +245,6 @@ sauce.ns('analysis', ns => {
             $input.css('width', `calc(${padding}px + ${$input.data('width')})`);
             $input.focus();
         });
-    }
-
-
-    function createPolylineMap(latlngStream, $el) {
-        const bounds = sauce.geo.boundingBox(latlngStream);
-        const mbr = [[bounds.swc[0], bounds.swc[1]], [bounds.nec[0], bounds.nec[1]]];
-        const context = new Strava.Maps.MapContext();
-        context.activityId(pageView.activityId());
-        context.latlngStream(new Strava.Maps.LatLngStream(latlngStream));
-        return new Strava.Maps.Mapbox.Construction.MapFactory(context, $el, null, mbr);
     }
 
 
@@ -542,63 +531,6 @@ sauce.ns('analysis', ns => {
     }
 
 
-    async function assignTrailforksToSegments() {
-        if (!sauce.options['analysis-trailforks']) {
-            return;
-        }
-        const latlngStream = await fetchStream('latlng');
-        const distStream = await fetchStream('distance');
-        if (!latlngStream || !latlngStream.length || !distStream || !distStream.length) {
-            return;
-        }
-        //const intersections = await sauce.trailforks.intersections(latlngStream, distStream); // DEBUG
-        const intersections = await sauce.trailforks.intersections(latlngStream, distStream);
-        const segmentTrailDescs = new Map();
-        for (const intersect of intersections) {
-            for (const match of intersect.matches) {
-                for (const x of getOverlappingSegments(match.streamStart, match.streamEnd)) {
-                    let descs = segmentTrailDescs.get(x.segment);
-                    if (!descs) {
-                        descs = new Map();
-                        segmentTrailDescs.set(x.segment, descs);
-                    }
-                    let desc = descs.get(intersect);
-                    if (!desc) {
-                        desc = {
-                            trail: intersect.trail,
-                            segmentCorrelation: 0,
-                            _trailIndexes: new Set()
-                        };
-                        descs.set(intersect, desc);
-                    }
-                    const [segStart, segEnd] = pageView.chartContext()
-                        .convertStreamIndices(x.segment.indices());
-                    for (let i = segStart; i <= segEnd; i++) {
-                        const trailIndex = match.streamPathMap[i];
-                        if (trailIndex != null) {
-                            desc._trailIndexes.add(trailIndex);
-                        }
-                    }
-                    desc.trailCorrelation = desc._trailIndexes.size / intersect.path.length;
-                    desc.segmentCorrelation += x.correlation;
-                }
-            }
-        }
-        for (const [segment, descsMap] of segmentTrailDescs.entries()) {
-            const descs = [];
-            for (const x of descsMap.values()) {
-                if (x.trailCorrelation > 0.10) {
-                    descs.push(x);
-                }
-                delete x._trailIndexes;
-            }
-            if (descs.length) {
-                segment.set('tfDescs', descs);
-            }
-        }
-    }
-
-
     // XXX Transition to using our Athlete record for this.
     const _hrZonesCache = new sauce.cache.TTLCache('hr-zones', 1 * 86400 * 1000);
     async function getHRZones() {
@@ -837,7 +769,6 @@ sauce.ns('analysis', ns => {
             tss = localTrimpTss;
             tssType = 'trimp';
         }
-        assignTrailforksToSegments().catch(console.error);
         const localeWeight = ns.weight ? L.weightFormatter.convert(ns.weight) : undefined;
         renderTertiaryStats({
             weight: localeWeight && Number(localeWeight.toFixed(2)),
@@ -2075,286 +2006,6 @@ sauce.ns('analysis', ns => {
                 console.error('Add segment score error:', e);
             }
         }
-    }
-
-
-    function addTrailforksOverlay() {
-        if (!document.querySelector('table.segments thead th.sauce-tf-col')) {
-            const th = document.createElement('th');
-            th.classList.add('sauce-tf-col');
-            th.setAttribute('colspan', '2');
-            const suffix = (document.documentElement.classList.contains('sauce-theme-dark')) ?
-                '_darkmode.svg' : '.svg';
-            sauce.ui.getImage(`trailforks_logo_horiz${suffix}`).then(x => jQuery(th).html(x));
-            const nameCol = document.querySelector('table.segments thead th.name-col');
-            if (!nameCol) {
-                return;  // Unsupported activity type such as (https://www.strava.com/activities/4381573410)
-            }
-            nameCol.setAttribute('colspan', '1');
-            nameCol.insertAdjacentElement('afterend', th);
-        }
-        const rows = Array.from(document.querySelectorAll(
-            'table.segments > tbody > tr[data-segment-effort-id]'));
-        for (const row of rows) {
-            addTrailforksRow(row).catch(console.error);
-        }
-    }
-
-
-    async function addTrailforksRow(row) {
-        let tfCol = row.querySelector('td.sauce-tf-col');
-        if (!tfCol) {
-            tfCol = document.createElement('td');
-            tfCol.classList.add('sauce-tf-col');
-            const nameCol = row.querySelector('td.name-col');
-            nameCol.insertAdjacentElement('afterend', tfCol);
-        } else if (tfCol.dataset.done) {
-            return;
-        }
-        const segment = pageView.segmentEfforts().getEffort(row.dataset.segmentEffortId);
-        if (!segment) {
-            console.warn('Segment data not found for:', row.dataset.segmentEffortId);
-            return;
-        }
-        const descs = segment.get('tfDescs');
-        if (!descs || !descs.length) {
-            return;
-        }
-        tfCol.dataset.done = true;
-        const tpl = await getTemplate('tf-segment-col.html');
-        // Extract aggregate mappings of icons we will add so they can be sorted and stacked.
-        // Otherwise the visual clutter is very bad for segments matching many trails.
-        const aggDifMap = new Map();
-        const aggCondMap = new Map();
-        const aggStatusMap = new Map();
-        for (const x of descs) {
-            const t = x.trail;
-            const tt = [`${t.title}`];
-            if (t.expanded.difficulty) {
-                aggDifMap.set(t.difficulty, [t.difficulty, t.expanded.difficulty]);
-                tt.push(`   Difficulty: ${x.trail.expanded.difficulty.title}`);
-            }
-            if (t.expanded.condition) {
-                aggCondMap.set(t.condition, [t.condition, t.expanded.condition]);
-                tt.push(`   Condition: ${x.trail.expanded.condition.title}`);
-            }
-            if (t.expanded.status && t.expanded.status.class !== 'clear') {
-                aggStatusMap.set(t.status, [t.status, t.expanded.status]);
-                tt.push(`   Status: ${x.trail.expanded.status.title}`);
-            }
-            x.tooltip = tt.join('\n');
-        }
-        // Sort by prio and reduce to just the pretty values.
-        const aggDif = Array.from(aggDifMap.values()).sort(([a], [b]) => b - a).map(x => x[1]);
-        const aggCond = Array.from(aggCondMap.values()).sort(([a], [b]) => b - a).map(x => x[1]);
-        const aggStatus = Array.from(aggStatusMap.values()).sort(([a], [b]) => a - b).map(x => x[1]);
-        const $tf = jQuery(await tpl({
-            mostDifficult: aggDif[0],
-            worstCondition: aggCond[0],
-            worstStatus: aggStatus[0],
-            descs,
-        }));
-        $tf.on('click', async ev => {
-            ev.stopPropagation();
-            await showTrailforksModal(descs);
-        });
-        jQuery(tfCol).append($tf);
-    }
-
-
-    async function showTrailforksModal(descs) {
-        const extUrlIcon = await sauce.ui.getImage('fa/external-link-duotone.svg');
-        let tabs = undefined;
-        function selectedTab() {
-            for (const t of tabs) {
-                if (t.selected) {
-                    return t;
-                }
-            }
-            throw new Error("No Selected Tab");
-        }
-        const $tfModal = sauce.ui.modal({
-            title: `Trailforks Overviews`,
-            dialogClass: 'trailforks-overviews no-pad',
-            icon: `<img src="${sauce.getURL('images/trailforks-250x250.png')}"/>`,
-            body: `
-                <ul class="tabs">
-                    ${descs.map(x => `
-                        <li class="trail-${x.trail.id}">
-                            <a class="tab">${x.trail.title}</a>
-                        </li>
-                    `).join('')}
-                </ul>
-                <div class="tf-overview"></div>
-            `,
-            width: 'min(80vw, 70em)',
-            height: 600,
-            flex: true,
-            closeOnMobileBack: ns.isMobile,
-            extraButtons: [{
-                text: 'Refresh',
-                click: () => selectedTab().renderer.refresh(),
-            }, {
-                html: `Add Trail Report ${extUrlIcon}`,
-                click: () => {
-                    const id = selectedTab().trailId;
-                    window.open(`https://www.trailforks.com/contribute/report/?trailid=${id}`, '_blank');
-                }
-            }]
-        });
-        tabs = descs.map((desc, i) => ({
-            selector: `li.trail-${desc.trail.id}`,
-            trailId: desc.trail.id,
-            renderer: new (self.Backbone.View.extend({
-                select: () => void 0,
-                unselect: () => void 0,
-                show: async function(options) {
-                    this.$el.children().detach();
-                    if (!this.$reportEl) {
-                        this.$reportEl = await this.asyncRender(options);
-                    } else {
-                        this.$el.append(this.$reportEl);
-                    }
-                },
-                refresh: async function() {
-                    const $old = this.$reportEl;
-                    this.$reportEl = null;
-                    await this.show({noCache: true});
-                    $old.remove();
-                },
-                asyncRender: async function(options) {
-                    const docClasses = document.documentElement.classList;
-                    docClasses.add('sauce-loading');
-                    try {
-                        return await renderTFDetailedReport(desc.trail.id, this.$el, options);
-                    } finally {
-                        docClasses.remove('sauce-loading');
-                    }
-                }
-            }))({el: $tfModal.find('.tf-overview')}),
-            selected: i === 0
-        }));
-        const tc = new Strava.Ui.TabController(tabs, $tfModal.find('ul.tabs'), '.tf-overview');
-        tc.render();
-    }
-
-
-    async function renderTFDetailedReport(id, $into, options) {
-        const [trail, photos, videos, reports] = await Promise.all([
-            sauce.trailforks.trail(id, options),
-            sauce.trailforks.photos(id, Object.assign({maxCount: 20}, options)),
-            sauce.trailforks.videos(id, Object.assign({maxCount: 20}, options)),
-            sauce.trailforks.reports(id, Object.assign({maxAge: 182.5 * 86400 * 1000, maxCount: 6}, options))
-        ]);
-        const template = await getTemplate('tf-detailed-report.html', 'trailforks');
-        const $el = jQuery(await template({
-            trail,
-            photos,
-            videos,
-            reports,
-            distanceUnit: L.distanceFormatter.shortUnitKey(),
-        }));
-        $into.html($el);
-        const altStream = trail.track.altitude.split(',').map(Number);
-        const distStream = trail.track.distance.split(',').map(Number);
-        const lats = trail.track.latitude.split(',');
-        const lngs = trail.track.longitude.split(',');
-        const latlngStream = lats.map((x, i) => [Number(x), Number(lngs[i])]);
-        const map = createPolylineMap(latlngStream, $el.find('.map'));
-        map.showGpxDownload(false);
-        map.showCreateRoute(false);
-        map.showPrivacyToggle(false);
-        map.showFullScreenToggle(false);
-        map.initializeMap();
-        $el.on('dialogresize', () => void map.map.resize());
-        $el.find('.elevation.sparkline').sparkline(altStream.map((x, i) => [distStream[i], x]), {
-            type: 'line',
-            width: '100%',
-            height: '5em',
-            lineColor: '#EA400DA0',
-            fillColor: {
-                type: 'gradient',
-                opacity: 0.8,
-                steps: hslValueGradientSteps([0, 3000],
-                    {hStart: 120, hEnd: 160, sStart: 40, sEnd: 100, lStart: 60, lEnd: 20})
-            },
-            tooltipFormatter: (_, __, data) => {
-                const [lat, lng] = latlngStream[data.offset];
-                map.map.getRabbit(lat, lng);
-                return [
-                    // XXX localize
-                    `Altitude: ${H.elevation(data.y, {suffix: true})}`,
-                    `Distance: ${H.distance(data.x, {precision: 2})} ${L.distanceFormatter.shortUnitKey()}`
-                ].join('<br/>');
-            }
-        });
-        $el.on('click', 'a.tf-media.video', ev => {
-            const id = ev.currentTarget.dataset.id;
-            function videoModal({title, body}) {
-                return sauce.ui.modal({
-                    title,
-                    body,
-                    dialogClass: 'no-pad',
-                    flex: true,
-                    width: '80vw', // occlude cur dialog
-                    height: 600,   // occlude cur dialog
-                    autoDestroy: true  // Be sure to stop video playback.
-                });
-            }
-            for (const v of videos) {
-                if (v.id === id) {
-                    if (v.video_type === 'pb') {
-                        const sources = Object.entries(v.media).map(([res, url]) =>
-                            `<source src="${url}"/>`);
-                        videoModal({
-                            title: v.title || trail.title,
-                            body: `<video style="width: 100%; height: 100%;"
-                                          controls>${sources.join('')}</video>`,
-                        });
-                    } else if (v.source === 'youtube') {
-                        videoModal({
-                            title: v.title || trail.title,
-                            body: `
-                                <iframe frameborder="0" allow="fullscreen" width="100%" height="100%"
-                                        src="https://www.youtube.com/embed/${v.source_id}"></iframe>
-                            `,
-                        });
-                    } else {
-                        throw new TypeError('unsupported video type: ' + v.video_type);
-                    }
-                }
-            }
-        });
-        let photosCollection;
-        $el.on('click', 'a.tf-media.photo', async ev => {
-            const id = ev.currentTarget.dataset.id;
-            if (!photosCollection) {
-                photosCollection = new Strava.Models.Photos(photos.map((x, i) => ({
-                    caption_escaped: `${trail.title} (${i + 1}/${photos.length})`,
-                    large: x.thumbs.l,
-                    thumbnail: x.thumbs.s,
-                    photo_id: x.id,
-                    viewing_athlete_id: -1  // makes caption uneditable
-                })));
-            }
-            if (!self.JST['#photo-lightbox-template']) {
-                // Workaround for missing templates when activity doesn't have photos of its own.
-                const tplResp = await sauce.fetch(`${tplUrl}/photo-lightbox-template-backup.html`);
-                self.JST['#photo-lightbox-template'] = self._.template(await tplResp.text());
-                self.JST['#reporting-modal-template'] =
-                    self._.template('<div style="display: none;" id="reporting-modal"><form/></div>');
-            }
-            let selected;
-            for (const photo of photosCollection.models) {
-                if (photo.id === id) {
-                    selected = photo;
-                    break;
-                }
-            }
-            const photoView = Strava.ExternalPhotos.Views.PhotoLightboxView.show(selected);
-            photoView.$el.addClass('sauce-over-modal');
-        });
-        return $el;
     }
 
 
@@ -3653,9 +3304,6 @@ sauce.ns('analysis', ns => {
             }
             if (!sauce.options['analysis-disable-segment-score']) {
                 addSegmentScores();
-            }
-            if (sauce.options['analysis-trailforks']) {
-                addTrailforksOverlay();
             }
         }
         if (sauce.options['responsive']) {

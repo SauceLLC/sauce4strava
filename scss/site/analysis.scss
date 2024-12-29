@@ -3,7 +3,6 @@
 @use 'analysis_stats';
 @use 'peakinfo';
 @use 'color';
-@use 'trailforks';
 @use 'animations';
 @use 'data_views';
 @use 'sync';
@@ -19,8 +18,6 @@ html.sauce-enabled {
             cursor: progress !important;
         }
     }
-
-    @include trailforks.enums;
 }
 
 .pagenav.sauce-error {
@@ -274,75 +271,6 @@ abbr.unit {
 
 table.segments,
 table.hidden-segments {
-    th.sauce-tf-col svg {
-        height: 0.7em;
-    }
-
-    .sauce-tf-col {
-        .title {
-            color: color.shade(fg, 30%);
-            font-variant: all-small-caps;
-            font-weight: bold;
-            margin-right: 0.3em;
-        }
-
-        img.tf-difficulty {
-            max-width: 1.3em;
-            max-height: 1.3em;
-            object-fit: contain;
-        }
-
-        svg[data-icon] {
-            height: 1em;
-        }
-
-        a {
-            transition: opacity 200ms, box-shadow 200ms, background-color;
-            border-radius: 0.2em;
-
-            &:hover {
-                box-shadow: 1px 1px 2px 0 color.shade(fg, 20%, 0.3);
-                background-color: color.shade(bg, 10%, 0.5);
-            }
-            &:active {
-                box-shadow: inset 0 0 3px 0 color.shade(fg, 20%, 0.3);
-                background-color: color.shade(bg, 10%, 0.5);
-            }
-        }
-
-        .report {
-            display: inline-flex;
-            align-items: center;
-            padding: 0.2em 0.33em;
-        }
-
-        .tf-icon-stack {
-            display: grid;
-            //z-index: 1; // Allows negative z-indexes for children without whole div going below parent.
-
-            &:not(:last-child) {
-                margin-right: 0.3em;
-            }
-
-            > * {
-                filter: drop-shadow(0.5px 0.5px 0.5px #000a);
-                grid-column-end: span 2;
-                grid-row-end: span 2;
-                font-size: 1em;
-            }
-
-            // Deprecate (needs testing to fully remove)
-            @for $i from 1 to 12 {
-                > :nth-child(#{$i}) {
-                    grid-column-start: #{$i};
-                    grid-row-start: #{$i};
-                    //z-index: -$i;
-                    opacity: 1 - (($i - 1) * 0.28);
-                }
-            }
-        }
-    }
-
     .sauce-rank-holder {
         display: flex;
         align-items: center;
