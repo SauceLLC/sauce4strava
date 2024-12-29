@@ -717,6 +717,72 @@ sauce.ns('analysis', ns => {
     }
 
 
+    function renderEffortsChart(efforts) {
+        let types = [{
+            attr: 'avg_watts',
+            label: 'Power', // XXX locale
+            format: H.power,
+            color: 'purple',
+        }, {
+            attr: 'avg_moving_speed',
+            label: 'Pace', // XXX locale
+            format: H.pace,
+            color: 'green',
+        }, {
+            attr: 'avg_hr',
+            label: 'HR', // XXX locale
+            format: H.hr,
+            color: 'red',
+        }];
+        types = types.filter(x => efforts.models.some(xx => xx.get(x.attr) != null));
+        let type = types[0].attr;
+        const $anchor = jQuery('#efforts-table');
+        if (!$anchor.length) {
+            console.warn("no laps view");
+            return;
+        }
+        $anchor.siblings('.sauce-efforts-chart').remove();
+        $anchor.before(`
+            <div class="sauce-efforts-chart">
+                <header>
+                    ${types.map((x, i) =>`<label>${x.label}
+                        <input type="radio" value="${x.attr}" ${!i ? 'selected' : ''} name="type"/>
+                    </label>`)}
+                </header>
+                <div style="width: 400px;" class="chart-holder"></div>
+            </div>
+        `);
+        const $efforts = $anchor.siblings('.sauce-efforts-chart');
+        const renderChart = () => {
+            const data = efforts.models.map((x, i) => ({
+                value: x.get(type),
+                width: Math.random() * 100,
+            }));
+            $efforts.find('.chart-holder').sparkline(data, {
+                type: 'bar',
+                barSpacing: 1,
+                height: '5em',
+                lineColor: '#EA400DA0',
+                fillColor: {
+                    type: 'gradient',
+                    opacity: 0.8,
+                    steps: hslValueGradientSteps([0, 3000],
+                        {hStart: 120, hEnd: 160, sStart: 40, sEnd: 100, lStart: 60, lEnd: 20})
+                },
+                tooltipFormatter: (_, __, data) => {
+                    console.log(_, __, data);
+                    return data[0].value;
+                }
+            });
+        };
+        $efforts.on('input', 'input[name="type"]', ev => {
+            type = ev.currentTarget.value;
+            renderChart();
+        });
+        renderChart();
+    }
+
+
     async function startActivity() {
         const realWattsStream = await fetchStream('watts');
         const isWattEstimate = !realWattsStream;
@@ -788,6 +854,17 @@ sauce.ns('analysis', ns => {
             power,
             isSyncAthlete: !!ns.syncAthlete,
         }).catch(console.error);
+        if (sauce.options['analysis-lap-efforts-chart'] || 'XXX') {
+            const lapEfforts = pageView.lapEfforts();
+            if (lapEfforts.length) {
+                renderEffortsChart(lapEfforts);
+            }
+            let to;
+            lapEfforts.on('change', () => {
+                clearTimeout(to);
+                to = setTimeout(() => renderEffortsChart(lapEfforts), 1);
+            });
+        }
         if (sauce.options['analysis-cp-chart']) {
             const menu = [/*locale keys*/];
             if (wattsStream) {
@@ -1060,7 +1137,7 @@ sauce.ns('analysis', ns => {
                 },
             }]
         });
-        $dialog.find('.start_time_link').on('click',() => {
+        $dialog.find('.start_time_link').on('click', () => {
             $dialog.dialog('close');
             changeToAnalysisView(options.start, options.end);
         });
@@ -3737,7 +3814,7 @@ sauce.ns('analysis', ns => {
 
 
     async function load() {
-        await sauce.propDefined('pageView', {once: true});
+        await sauce.propDefined('pageView');
         if (sauce.options['responsive']) {
             attachMobileMenuExpander().catch(console.error);
             pageView.unbindScrollListener();
