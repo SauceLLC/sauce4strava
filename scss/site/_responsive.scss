@@ -4,6 +4,9 @@
 
 html.sauce-responsive,
 .sauce-responsive body {
+    font-size: 14px;
+    line-height: normal;
+
     @media only screen and (min-width: 488px) and (max-width: 768px) {
         font-size: 18px;
     }
@@ -22,8 +25,6 @@ html.sauce-responsive,
     @media only screen and (max-width: 370px) {
         font-size: 14px;
     }
-    font-size: 14px;
-    line-height: normal;
 }
 
 // XXX workaround a Strava bug in the CSS which affects various lists (mostly navigation)..
