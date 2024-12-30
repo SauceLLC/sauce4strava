@@ -649,7 +649,21 @@ sauce.ns('analysis', ns => {
     }
 
 
-    function renderEffortsChart(efforts) {
+    function initLapsAddon() {
+        document.addEventListener('lap-efforts-table-view-render', ev => {
+            renderEffortsChart();
+        });
+        renderEffortsChart();
+    }
+
+
+    function renderEffortsChart() {
+        const $anchor = jQuery('#efforts-table');
+        if (!$anchor.length) {
+            console.warn("no laps view");
+            return;
+        }
+        $anchor.siblings('.sauce-efforts-chart').remove();
         let types = [{
             attr: 'avg_watts',
             label: 'Power', // XXX locale
@@ -666,14 +680,12 @@ sauce.ns('analysis', ns => {
             format: H.hr,
             color: 'red',
         }];
+        const efforts = pageView.lapEfforts();
         types = types.filter(x => efforts.models.some(xx => xx.get(x.attr) != null));
-        let type = types[0].attr;
-        const $anchor = jQuery('#efforts-table');
-        if (!$anchor.length) {
-            console.warn("no laps view");
+        if (!types.length) {
             return;
         }
-        $anchor.siblings('.sauce-efforts-chart').remove();
+        let type = types[0].attr;
         $anchor.before(`
             <div class="sauce-efforts-chart">
                 <header>
@@ -786,15 +798,7 @@ sauce.ns('analysis', ns => {
             isSyncAthlete: !!ns.syncAthlete,
         }).catch(console.error);
         if (sauce.options['analysis-lap-efforts-chart'] || 'XXX') {
-            const lapEfforts = pageView.lapEfforts();
-            if (lapEfforts.length) {
-                renderEffortsChart(lapEfforts);
-            }
-            let to;
-            lapEfforts.on('change', () => {
-                clearTimeout(to);
-                to = setTimeout(() => renderEffortsChart(lapEfforts), 1);
-            });
+            initLapsAddon();
         }
         if (sauce.options['analysis-cp-chart']) {
             const menu = [/*locale keys*/];
@@ -3077,7 +3081,7 @@ sauce.ns('analysis', ns => {
                     } finally {
                         if (v) {
                             pf.page = setget;
-                            resolve();
+                            queueMicrotask(resolve);
                         }
                     }
                 };

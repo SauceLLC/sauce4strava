@@ -340,6 +340,9 @@ self.saucePreloaderInit = function saucePreloaderInit() {
         const NewKlass = (Strava.Labs.Activities.BasicAnalysisView = function() {
             sauce.basicAnalysisView = this;
             Klass.apply(this, arguments);
+            const event = new Event('basic-analysis-view-ready');
+            event.view = this;
+            document.dispatchEvent(event);
         });
         NewKlass.prototype = Klass.prototype;
 
@@ -357,6 +360,18 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                 $chart.attr('tabindex', '0');  // make focus-able for keyboard events
             }
             return $el;
+        };
+    });
+
+
+    sauce.propDefined('Strava.Labs.Activities.LapEffortsTableView', View => {
+        const saveRender = View.prototype.render;
+        View.prototype.render = function() {
+            const r = saveRender.apply(this, arguments);
+            const event = new Event('lap-efforts-table-view-render');
+            event.view = this;
+            document.dispatchEvent(event);
+            return r;
         };
     });
 
