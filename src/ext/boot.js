@@ -117,7 +117,7 @@ function setCustomFont(options) {
             /^\/.+?\/heatmaps\/(\/.*|\b|$)/,
             /^\/$/,
         ],
-        stylesheets: ['site/theme.css'],
+        stylesheets: ['theme.css'],
         callbacks: [
             handleAttributionDialog,
             config => {
@@ -167,7 +167,7 @@ function setCustomFont(options) {
         name: 'Analysis',
         pathMatch: /^\/activities\/.*/,
         pathExclude: /^\/activities\/.*?\/truncate/,
-        stylesheets: ['site/analysis.css'],
+        stylesheets: ['analysis.css'],
         cssClass: 'sauce-analysis',
         scripts: [
             'src/common/proxy.js',
@@ -214,7 +214,7 @@ function setCustomFont(options) {
     }, {
         name: 'Sauce Performance - Common',
         pathMatch: /^\/sauce\/performance\/.+/,
-        stylesheets: ['site/performance.css'],
+        stylesheets: ['performance.css'],
         cssClass: ['sauce-performance'],
         scripts: [
             'src/site/sync.js',
@@ -248,7 +248,7 @@ function setCustomFont(options) {
     }, {
         name: 'Sauce Patron',
         pathMatch: /^\/sauce\/patron\b/,
-        stylesheets: ['site/patron.css'],
+        stylesheets: ['patron.css'],
         cssClass: ['sauce-patron', 'sauce-responsive'],
         scripts: [
             'src/site/patron.js',
@@ -256,7 +256,7 @@ function setCustomFont(options) {
     }, {
         name: 'Profile',
         pathMatch: /^\/(athletes|pros)\/[0-9]+\/?$/,
-        stylesheets: ['site/profile.css'],
+        stylesheets: ['profile.css'],
         cssClass: 'sauce-profile',
         scripts: [
             'src/common/proxy.js',

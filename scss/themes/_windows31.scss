@@ -3,7 +3,7 @@
 
 @mixin windows-border {
     border-style: solid;
-    border-image-source: url(../../images/win31-border.svg);
+    border-image-source: url(../images/win31-border.svg);
     border-image-slice: 5%;
     border-image-outset: 5px;
     border-image-width: 10px;

@@ -27,7 +27,7 @@ html.sauce-responsive,
     }
 }
 
-// XXX workaround a Strava bug in the CSS which affects various lists (mostly navigation)..
+/* XXX workaround a Strava bug in the CSS which affects various lists (mostly navigation).. */
 @media (max-width: 992px) {
     html ul {
         padding-left: unset;
@@ -125,7 +125,7 @@ html.sauce-responsive,
         }
     }
     &:not(.responsive) {
-        // Style for pages like analysis only (one's Strava claims are not responsive)...
+        /* Style for pages like analysis only (one's Strava claims are not responsive)... */
         header#global-header {
             nav.nav-bar {
                 &:not(.search-mode) {
@@ -152,7 +152,7 @@ html.sauce-responsive,
         }
     }
     &.responsive {
-        // Pages like the dashboard and our performance page (i.e. error pages)...
+        /* Pages like the dashboard and our performance page (i.e. error pages)... */
         @media only screen and (max-width: 991px) {
             &:not(.mobile-menu-open) {
                 #container-nav {
@@ -225,7 +225,7 @@ html.sauce-responsive,
     }
 
     .ui-dialog .ui-dialog-titlebar button.ui-dialog-titlebar-close.ui-button {
-        // Reset our button styling that has higher prio back to dialog based close btn..
+        /* Reset our button styling that has higher prio back to dialog based close btn.. */
         min-height: 0;
         background-color: initial;
         border: none;
@@ -438,7 +438,7 @@ html.sauce-responsive,
 
         // Sadly this is only for run overview but there is not better selector;
         > section:not([id]) > .row.no-margins:first-child {
-            // We try to be super minimal here..
+            /* We try to be super minimal here.. */
             display: flex;
             flex-wrap: wrap;
             margin: 0;

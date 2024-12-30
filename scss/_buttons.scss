@@ -112,11 +112,11 @@
             }
 
             &:not(.btn-icon-right)::before {
-                content: url(../../images/fa/spinner-third-duotone.svg);
+                content: url(../images/fa/spinner-third-duotone.svg);
                 margin-left: 0;
             }
             &.btn-icon-right::after {
-                content: url(../../images/fa/spinner-third-duotone.svg);
+                content: url(../images/fa/spinner-third-duotone.svg);
                 margin-right: 0;
             }
         }

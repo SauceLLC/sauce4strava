@@ -13,7 +13,7 @@
 
 
 body {
-    // Add material icons to default fonts (updated 10-30-2024)...
+    /* Add material icons to default fonts (updated 10-30-2024)... */
     font-family: "Boathouse", "Segoe UI", "Helvetica Neue", -apple-system, system-ui, BlinkMacSystemFont, Roboto, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Material Icons";
 }
 
@@ -26,7 +26,7 @@ body {
     animation: pulse-highlight 300ms 2 linear;
 }
 
-// Use px for media query compat..
+/* Use px for media query compat.. */
 $nav-width: 260px;
 $main-width: 600px;
 $aside-width: 280px;
@@ -34,17 +34,17 @@ $scrollbar-safety: 25px;
 
 
 .jqstooltip {
-    width: auto !important;  // XXX Not sure why, but I need this to prevent clipping.
-    height: auto !important;  // XXX Not sure why, but I need this to prevent clipping.
+    width: auto !important;  /* XXX Not sure why, but I need this to prevent clipping. */
+    height: auto !important;  /* XXX Not sure why, but I need this to prevent clipping. */
 }
 
 ul, ol {
-    margin-bottom: initial; // Reset Strava CSS
+    margin-bottom: initial; /* Reset Strava CSS */
 }
 
 input[type="range"] {
-    width: revert; // Reset Strava CSS for 404 page
-    display: revert; // Reset Strava CSS for 404 page
+    width: revert; /* Reset Strava CSS for 404 page */
+    display: revert; /* Reset Strava CSS for 404 page */
 }
 
 input {
@@ -110,7 +110,7 @@ html.sauce-performance {
                 margin: 0 2.5vw 0 calc(2.5vw + 2em);
 
                 &::before {
-                    background-image: url(../../images/logo_vert_48x128.png);
+                    background-image: url(../images/logo_vert_48x128.png);
                     background-repeat: no-repeat;
                     background-position: center;
                     background-size: contain;
@@ -339,7 +339,7 @@ table.activity-table {
         top: calc(50% - var(--size) / 2);
         left: calc(50% - var(--size) / 2);
         line-height: 0;
-        content: url(../../images/fa/spinner-third-duotone.svg);
+        content: url(../images/fa/spinner-third-duotone.svg);
     }
     &::after {
         top: 0;
@@ -414,7 +414,7 @@ table.activity-table {
         appearance: none;
         border-radius: 0.25em;
         padding: 0.3em 1.5em 0.3em 0.8em;
-        background-image: url(../../images/fa/chevron-down-duotone.svg);
+        background-image: url(../images/fa/chevron-down-duotone.svg);
         background-position: right 0.6em center;
         background-repeat: no-repeat;
         background-size: auto 50%;
@@ -1506,7 +1506,7 @@ table.activity-table {
                         padding-left: 1rem;
                     }
 
-                    // Tuned carefully for caret alignment...
+                    /* Tuned carefully for caret alignment... */
                     $border-color: color.shade(accent4, 0%, 0.8);
                     $border-width: 2px;
                     margin: 0 0 1em 0 !important;
@@ -1517,7 +1517,7 @@ table.activity-table {
                     border-image-width: 0 0 $border-width 0;
                     border-bottom: $border-width solid;
 
-                    // Caret...
+                    /* Caret... */
                     &::after {
                         $size: 1em;
                         content: '';
@@ -1653,7 +1653,7 @@ table.activity-table {
 
                 .chart,
                 &.chart {
-                    // Eventually use clamp (it works better in tests, but compat..)
+                    /* Eventually use clamp (it works better in tests, but compat..) */
                     min-height: max(10em, calc(22vw * var(--height-factor)));
                     height: calc(22vh * var(--height-factor));
                     max-height: calc(24em * var(--height-factor));

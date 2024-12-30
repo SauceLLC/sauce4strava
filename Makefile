@@ -31,7 +31,7 @@ $(BUILD): $(SRC) $(MANIFEST) $(PACKAGES) Makefile .git/index
 
 sass:
 	$(TOOLPATH)/sassrender
-	cp -a scss/site/fonts css/site/
+	cp -a scss/fonts css/
 
 deps:
 	rm -rf src/common/jscoop src/common/jsfit src/site/saucecharts css/saucecharts
@@ -41,6 +41,16 @@ deps:
 	cp -r $(NODE_MODULES)/saucecharts/css css/saucecharts
 	cp $(NODE_MODULES)/fflate/esm/browser.js src/common/fflate.mjs
 	cp $(NODE_MODULES)/sauce-chartjs/dist/Chart.pretty.js src/site/chartjs/Chart.js
+
+deps-crossdev:
+	rm -rf src/site/saucecharts css/saucecharts
+	mkdir -p src/site/saucecharts css/saucecharts
+	for x in ../saucecharts/src/*; do \
+		ln $$x src/site/saucecharts/ ; \
+	done
+	for x in ../saucecharts/css/*; do \
+		ln $$x css/saucecharts/ ; \
+	done
 
 clean:
 	rm -rf $(PACKAGES) builds css

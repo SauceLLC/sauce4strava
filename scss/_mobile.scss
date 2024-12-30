@@ -681,7 +681,7 @@
         }
     }
 
-    // Edit page..
+    /* Edit page.. */
     body > .container.mb-xl > .row {
         flex-direction: column;
 
@@ -731,7 +731,7 @@
             $left-pad: 0.5rem;
 
             thead.vh {
-                // Resets...
+                /* Resets... */
                 position: initial !important;
                 clip: initial;
                 width: initial !important;
