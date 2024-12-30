@@ -6,8 +6,8 @@ PACKAGES := node_modules/.packages.build
 BUILD := build.json
 MANIFEST := manifest.json
 
-MODS := $(shell pwd)/node_modules
-NPATH := $(MODS)/.bin
+NODE_MODULES := $(shell pwd)/node_modules
+NPATH := $(NODE_MODULES)/.bin
 TOOLPATH := $(shell pwd)/tools/bin
 SRC := $(shell find src scss pages templates images -type f 2>/dev/null)
 
@@ -18,12 +18,12 @@ SRC := $(shell find src scss pages templates images -type f 2>/dev/null)
 
 $(PACKAGES): package.json
 	npm install
-	$(MAKE) -C $(MODS)/sauce-chartjs
+	$(MAKE) -C $(NODE_MODULES)/sauce-chartjs
 	touch $@
 
 $(BUILD): $(SRC) $(MANIFEST) $(PACKAGES) Makefile .git/index
 	$(MAKE) sass
-	$(MAKE) mods
+	$(MAKE) deps
 	echo '{"git_commit": "$(shell git rev-parse HEAD 2>/dev/null || echo 0)"}' > $@
 
 # Needed when mozilla store QA runs a build in a zip bundle
@@ -33,12 +33,14 @@ sass:
 	$(TOOLPATH)/sassrender
 	cp -a scss/site/fonts css/site/
 
-mods:
-	rm -rf src/common/jscoop src/common/jsfit
-	cp -r $(MODS)/jscoop/src src/common/jscoop
-	cp -r $(MODS)/jsfit/src src/common/jsfit
-	cp $(MODS)/fflate/esm/browser.js src/common/fflate.mjs
-	cp $(MODS)/sauce-chartjs/dist/Chart.pretty.js src/site/chartjs/Chart.js
+deps:
+	rm -rf src/common/jscoop src/common/jsfit src/site/saucecharts css/saucecharts
+	cp -r $(NODE_MODULES)/jscoop/src src/common/jscoop
+	cp -r $(NODE_MODULES)/jsfit/src src/common/jsfit
+	cp -r $(NODE_MODULES)/saucecharts/src src/site/saucecharts
+	cp -r $(NODE_MODULES)/saucecharts/css css/saucecharts
+	cp $(NODE_MODULES)/fflate/esm/browser.js src/common/fflate.mjs
+	cp $(NODE_MODULES)/sauce-chartjs/dist/Chart.pretty.js src/site/chartjs/Chart.js
 
 clean:
 	rm -rf $(PACKAGES) builds css
@@ -93,4 +95,4 @@ lint-watch:
 	$(TOOLPATH)/lintwatch
 
 
-.PHONY: lint sass clean realclean packages manifest build mods
+.PHONY: lint sass clean realclean packages manifest build deps

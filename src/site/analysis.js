@@ -649,15 +649,16 @@ sauce.ns('analysis', ns => {
     }
 
 
-    function initLapsAddon() {
+    async function initLapsAddon() {
+        const sc = await import('./saucecharts/index.mjs');
         document.addEventListener('lap-efforts-table-view-render', ev => {
-            renderEffortsChart();
+            renderEffortsChart(sc);
         });
-        renderEffortsChart();
+        renderEffortsChart(sc);
     }
 
 
-    function renderEffortsChart() {
+    function renderEffortsChart(sc) {
         const $anchor = jQuery('#efforts-table');
         if (!$anchor.length) {
             console.warn("no laps view");
@@ -693,7 +694,8 @@ sauce.ns('analysis', ns => {
                         <input type="radio" value="${x.attr}" ${!i ? 'selected' : ''} name="type"/>
                     </label>`)}
                 </header>
-                <div style="width: 400px;" class="chart-holder"></div>
+                <div style="width: 100%; height: 4em;" class="chart-holder"></div>
+                <div style="width: 100%; height: 4em;" class="saucecharts-holder"></div>
             </div>
         `);
         const $efforts = $anchor.siblings('.sauce-efforts-chart');
@@ -702,6 +704,10 @@ sauce.ns('analysis', ns => {
                 value: x.get(type),
                 width: Math.random() * 100,
             }));
+            const chart = new sc.LineChart({
+                el: $efforts.find('.saucecharts-holder')[0],
+            });
+            chart.setData(data);
             $efforts.find('.chart-holder').sparkline(data, {
                 type: 'bar',
                 barSpacing: 1,
