@@ -2,26 +2,13 @@
   "name": "sauce-builder",
   "version": "0.0.0",
   "description": "Build tools for sauce browser ext",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/SauceLLC/sauce4strava.git"
-  },
-  "author": "",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/SacueLLC/sauce4strava/issues"
-  },
-  "homepage": "https://github.com/SauceLLC/sauce4strava#readme",
   "devDependencies": {
-    "eslint": "8.57.0",
-    "fflate": "0.7.3",
+    "eslint": "8.57.1",
+    "fflate": "0.8.2",
     "jscoop": "https://github.com/mayfield/jscoop.git#f9649be95db7830190a9a4511bce9709a1c0999a",
-    "jsfit": "https://github.com/mayfield/jsfit.git#6fffb00fcf887a726d4ef662714054c0ae8921e7",
-    "sass": "1.74.1",
+    "jsfit": "https://github.com/mayfield/jsfit.git#c55550a6ad28bff30942eafca3be18cc48f5e304",
+    "saucecharts": "https://github.com/SauceLLC/saucecharts.git",
+    "sass": "1.83.0",
     "sauce-chartjs": "https://github.com/SauceLLC/Chart.js.git#79a3f8ed1b1581c35bbae61626f0a453273d0734",
     "sauce-terser": "https://github.com/mayfield/terser.git#35dbaf580ac94e1b899314acb9df47b69159c84a",
     "webextension-locale-translator": "0.0.0"
