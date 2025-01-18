@@ -14,26 +14,10 @@
         "quotes": "off",
         "no-console": "off",
         "no-debugger": "off",
-        "linebreak-style": [
-            "error",
-            "unix"
-        ],
-        "semi": [
-            "warn",
-            "always"
-        ],
-        "no-unused-vars": [
-            "warn",
-            {
-                "args": "none"
-            }
-        ],
-        "no-constant-condition": [
-            "error",
-            {
-                "checkLoops": false
-            }
-        ],
+        "linebreak-style": ["error", "unix"],
+        "semi": ["warn", "always"],
+        "no-unused-vars": ["warn", {"args": "none"}],
+        "no-constant-condition": ["error", {"checkLoops": false}],
         "no-constant-binary-expression": "warn",
         "no-constructor-return": "error",
         "no-new-native-nonconstructor": "error",
@@ -57,7 +41,10 @@
         "no-var": "error",
         "no-unreachable": "warn",
         "no-warning-comments": "off",
-        "prefer-const": ["warn", {"destructuring": "all"}],
+        "prefer-const": ["warn", {
+            "destructuring": "all",
+            "ignoreReadBeforeAssign": true
+        }],
         "require-await": "warn",
         "func-call-spacing": "warn",
         "indent": ["warn", 4, {
