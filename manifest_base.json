@@ -77,13 +77,13 @@
         "run_at": "document_start",
         "matches": ["https://www.strava.com/*"],
         "css": [
-            "css/site/common.css"
+            "css/common.css"
         ]
     }, {
         "run_at": "document_start",
         "matches": ["https://www.strava.com/sauce/*"],
         "css": [
-            "css/site/repurpose.css"
+            "css/repurpose.css"
         ]
     }],
 
