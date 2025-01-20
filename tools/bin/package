@@ -30,7 +30,7 @@ rsync -a \
     ./* $TMPDIR
 
 node_modules/.bin/sass scss:$TMPDIR/css --no-source-map
-cp -a scss/site/fonts $TMPDIR/css/site/
+cp -a scss/fonts $TMPDIR/css/
 
 $(dirname $0)/mergejson "./manifest_base.json" "./manifest_${KIND}.json" > $TMPDIR/manifest.json
 
