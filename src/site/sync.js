@@ -209,17 +209,13 @@ sauce.ns('sync', ns => {
 
 
     async function exportAthleteActivityFiles(athlete, progressFn, type) {
-        let page = 1;
         const date = (new Date()).toISOString().replace(/[-T:]/g, '_').split('.')[0];
-        const dataEx = new sauce.hist.DataExchange(athlete.id);
-        dataEx.addEventListener('url', ev => {
-            sauce.downloadExtBlobURL(ev.data, `${safeName(athlete.name)}-${date}-${page++}.zip`);
-        });
+        const dataEx = new sauce.hist.DataExchange(athlete.id, {name: `${safeName(athlete.name)}-${date}`});
         dataEx.addEventListener('progress', ev => {
             if (progressFn) {
-                progressFn(page, ev.data);
+                progressFn(ev.data);
             } else {
-                console.debug(page, ev.data);
+                console.debug(ev.data);
             }
         });
         await dataEx.exportActivityFiles();
@@ -318,8 +314,8 @@ sauce.ns('sync', ns => {
                     const origText = btn.textContent;
                     btn.classList.add('sauce-loading', 'disabled');
                     try {
-                        await exportActivityFiles(athlete, (page, size) =>
-                            btn.textContent = `Creating ZIP file ${page}: ${H.number(size / MB)}MB`);
+                        await exportActivityFiles(athlete, size =>
+                            btn.textContent = `Creating ZIP file(s): ${H.number(size / MB)}MB`);
                     } finally {
                         btn.textContent = origText;
                         btn.classList.remove('sauce-loading', 'disabled');

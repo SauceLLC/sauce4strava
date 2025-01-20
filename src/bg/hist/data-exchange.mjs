@@ -66,12 +66,13 @@ class SauceZip extends fflate.Zip {
 
 
 export class DataExchange extends sauce.proxy.Eventing {
-    constructor(athleteId) {
+    constructor(athleteId, {name}={}) {
         super();
+        this.name = name;
+        this.fileNum = 1;
         this.athleteId = athleteId;
         this.importing = {};
         this.importedAthletes = new Set();
-        this.blobURLs = new Set();
     }
 
     async export() {
@@ -183,9 +184,6 @@ export class DataExchange extends sauce.proxy.Eventing {
 
     async finish() {
         this._finishing = true;
-        for (const url of this.blobURLs) {
-            URL.revokeObjectURL(url);
-        }
         if (hist.syncManager) {
             if (hist.syncManager.stopped) {
                 hist.syncManager.start();
@@ -196,15 +194,12 @@ export class DataExchange extends sauce.proxy.Eventing {
         }
     }
 
-    dispatchBlobURL(blob) {
-        const url = URL.createObjectURL(blob);
-        this.blobURLs.add(url);
-        const ev = new Event('url');
-        ev.data = url;
-        this.dispatchEvent(ev);
+    async downloadBlob(blob) {
+        const name = `${this.name}-${this.fileNum++}.zip`;
+        await sauce.downloadBlob(blob, {name});
     }
 
-    async exportActivityFiles(type='fit') {
+    async exportActivityFiles({type='fit'}={}) {
         const s = Date.now();
         const Serializer = {
             fit: FITSerializer,
@@ -246,7 +241,7 @@ export class DataExchange extends sauce.proxy.Eventing {
                 const file = serializer.toFile();
                 // file.size is uncompressed but we don't want to go over..
                 if (zip.size + file.size > maxSize) {
-                    this.dispatchBlobURL(zip.getBlob());
+                    await this.downloadBlob(zip.getBlob());
                     zip = new SauceZip();
                 }
                 zip.addFile(`${dir}/${act.id}.${type}`,
@@ -257,14 +252,9 @@ export class DataExchange extends sauce.proxy.Eventing {
             }
         }
         if (zip.size) {
-            this.dispatchBlobURL(zip.getBlob());
+            await this.downloadBlob(zip.getBlob());
         }
         console.info("FIT export completed in", Math.round((Date.now() - s) / 1000), 'seconds');
-    }
-
-    revokeObjectURL(url) {
-        URL.revokeObjectURL(url);
-        this.blobURLs.delete(url);
     }
 
     delete() {
