@@ -22,7 +22,10 @@
         "no-constructor-return": "error",
         "no-new-native-nonconstructor": "error",
         "no-unreachable-loop": "error",
-        "no-use-before-define": ["warn", "nofunc"],
+        "no-use-before-define": ["warn", {
+            "functions": false,
+            "classes": false
+        }],
         "complexity": ["warn", 100],
         "max-len": ["warn", {
             "code": 110,
