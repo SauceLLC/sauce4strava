@@ -115,18 +115,6 @@ sauce.suspendSafeSleep = function(ms) {
 };
 
 
-sauce.downloadBlob = async function(blob, {name}={}) {
-    const id = crypto.randomUUID();
-    if (!name) {
-        name = blob.name || 'generated-by-sauce';
-    }
-    const transferCache = new sauce.cache.TTLCache('transfer-cache', 900 * 1000);
-    await transferCache.set(id, {blob, name});
-    const q = new URLSearchParams({id});
-    await browser.tabs.create({url: `/pages/download.html?${q}`});
-};
-
-
 // Required for alarms API to actually wake us up.
 // Actual work commences without instigation.
 browser.alarms.onAlarm.addListener(() => undefined);

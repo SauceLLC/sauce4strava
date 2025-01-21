@@ -73,6 +73,7 @@ export class DataExchange extends sauce.proxy.Eventing {
         this.athleteId = athleteId;
         this.importing = {};
         this.importedAthletes = new Set();
+        this.fileCache = new sauce.cache.TTLCache('file-cache', 900 * 1000);
     }
 
     async export() {
@@ -194,9 +195,13 @@ export class DataExchange extends sauce.proxy.Eventing {
         }
     }
 
-    async downloadBlob(blob) {
+    async dispatchBlob(blob) {
         const name = `${this.name}-${this.fileNum++}.zip`;
-        await sauce.downloadBlob(blob, {name});
+        const id = crypto.randomUUID();
+        await this.fileCache.set(id, {blob, name});
+        const ev = new Event('file');
+        ev.data = {id, name};
+        this.dispatchEvent(ev);
     }
 
     async exportActivityFiles({type='fit'}={}) {
@@ -241,7 +246,7 @@ export class DataExchange extends sauce.proxy.Eventing {
                 const file = serializer.toFile();
                 // file.size is uncompressed but we don't want to go over..
                 if (zip.size + file.size > maxSize) {
-                    await this.downloadBlob(zip.getBlob());
+                    await this.dispatchBlob(zip.getBlob());
                     zip = new SauceZip();
                 }
                 zip.addFile(`${dir}/${act.id}.${type}`,
@@ -252,7 +257,7 @@ export class DataExchange extends sauce.proxy.Eventing {
             }
         }
         if (zip.size) {
-            await this.downloadBlob(zip.getBlob());
+            await this.dispatchBlob(zip.getBlob());
         }
         console.info("FIT export completed in", Math.round((Date.now() - s) / 1000), 'seconds');
     }

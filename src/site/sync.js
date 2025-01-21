@@ -10,6 +10,41 @@ sauce.ns('sync', ns => {
     const GB = 1024 * MB;
 
 
+    let _downloadProxyPromise;
+    function initDownloadProxy() {
+        if (_downloadProxyPromise) {
+            return _downloadProxyPromise;
+        }
+        // See: https://issues.chromium.org/issues/40774955?pli=1
+        //
+        // With the advent of manifest v3 we have to play games to move large files/arrays
+        // around.  The best way is to use an iframe in the same origin as the service worker
+        // that can transfer a file through indexeddb (faster than you might think).
+        //
+        // If nothing changes with the above chromium issue (likely) we might move to using
+        // this method for more things as it does avoid having to shuffle data through
+        // the very limited ext onMessage/sendMessage IPC that is bound by string size
+        // limits (very slow).
+        _downloadProxyPromise = new Promise((resolve, reject) => {
+            const frame = document.createElement('iframe');
+            frame.style.setProperty('width', 0);
+            frame.style.setProperty('height', 0);
+            frame.style.setProperty('opacity', 0);
+            frame.style.setProperty('visibility', 'hidden');
+            frame.addEventListener('load', ev => {
+                resolve({
+                    download(options) {
+                        frame.contentWindow.postMessage({op: 'download', options}, '*');
+                    }
+                });
+            });
+            frame.src = sauce.getURL(`/pages/_download_proxy.html`);
+            document.body.append(frame);
+        });
+        return _downloadProxyPromise;
+    }
+
+
     function setupSyncController($btn, id) {
         let statusTimeout;
         let syncError;
@@ -79,8 +114,6 @@ sauce.ns('sync', ns => {
                 fileNum++;
                 if (progressFn) {
                     progressFn('reading', fileNum, files.length, 0);
-                } else {
-                    console.debug('reading', fileNum, files.length, 0);
                 }
                 const stride = 250;  // ~10MB
                 let pendingBuf;
@@ -89,8 +122,6 @@ sauce.ns('sync', ns => {
                     bytesRead += ab.byteLength;
                     if (progressFn) {
                         progressFn('reading', fileNum, files.length, bytesRead / f.size);
-                    } else {
-                        console.debug('reading', fileNum, files.length, bytesRead / f.size);
                     }
                     let buf;
                     if (f.name.endsWith('.sbinz')) {
@@ -118,8 +149,6 @@ sauce.ns('sync', ns => {
                     const progress = Math.min(i++ * stride, totalBundles);
                     if (progressFn) {
                         progressFn('importing', fileNum, files.length, progress / totalBundles);
-                    } else {
-                        console.debug('importing', fileNum, files.length, progress / totalBundles);
                     }
                 }
             }
@@ -179,9 +208,6 @@ sauce.ns('sync', ns => {
                 gzip.push(sauce.encodeBundle(ev.data));
                 if (progressFn) {
                     progressFn(page, compressedBundles.length);
-                } else {
-                    console.debug(`Building backup file ${page}:`,
-                        (compressedBundles.byteLength / 1024 / 1024).toFixed(1) + ' MB');
                 }
                 if (compressedBundles.byteLength >= Math.min(mem * 0.25, 1) * GB) {
                     gzip.push(new Uint8Array(), true);
@@ -211,11 +237,15 @@ sauce.ns('sync', ns => {
     async function exportAthleteActivityFiles(athlete, progressFn, type) {
         const date = (new Date()).toISOString().replace(/[-T:]/g, '_').split('.')[0];
         const dataEx = new sauce.hist.DataExchange(athlete.id, {name: `${safeName(athlete.name)}-${date}`});
+        const downloadProxy = await initDownloadProxy();
+        let fileNum = 1;
+        dataEx.addEventListener('file', ev => {
+            downloadProxy.download(ev.data);
+            fileNum++;
+        });
         dataEx.addEventListener('progress', ev => {
             if (progressFn) {
-                progressFn(ev.data);
-            } else {
-                console.debug(ev.data);
+                progressFn(fileNum, ev.data);
             }
         });
         await dataEx.exportActivityFiles();
@@ -314,8 +344,8 @@ sauce.ns('sync', ns => {
                     const origText = btn.textContent;
                     btn.classList.add('sauce-loading', 'disabled');
                     try {
-                        await exportActivityFiles(athlete, size =>
-                            btn.textContent = `Creating ZIP file(s): ${H.number(size / MB)}MB`);
+                        await exportActivityFiles(athlete, (fileNum, size) =>
+                            btn.textContent = `Creating ZIP file ${fileNum}: ${H.number(size / MB)}MB`);
                     } finally {
                         btn.textContent = origText;
                         btn.classList.remove('sauce-loading', 'disabled');
