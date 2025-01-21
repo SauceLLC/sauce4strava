@@ -19,7 +19,7 @@ function downloadBlob(blob, name) {
 async function download({id}) {
     const fileCache = new sauce.cache.TTLCache('file-cache', 900 * 1000);
     const {blob, name} = await fileCache.get(id);
-    document.body.innerHTML = `Downloading: ${name}`;
+    document.body.textContent = `Downloading: ${name}`;
     downloadBlob(blob, name);
     await fileCache.delete(id);
 }
