@@ -803,9 +803,9 @@ sauce.ns('analysis', ns => {
             power,
             isSyncAthlete: !!ns.syncAthlete,
         }).catch(console.error);
-        if (sauce.options['analysis-lap-efforts-chart'] || 'XXX') {
+        /*if (sauce.options['analysis-lap-efforts-chart'] || 'XXX') {
             initLapsAddon();
-        }
+        }*/
         if (sauce.options['analysis-cp-chart']) {
             const menu = [/*locale keys*/];
             if (wattsStream) {
