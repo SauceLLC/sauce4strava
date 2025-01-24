@@ -8,6 +8,17 @@ sauce.ns('ui', ns => {
     const H = L.human;
 
 
+    ns.zoneColors = [
+        {h: 200, s: 0,   l: 40},
+        {h: 230, s: 73,  l: 50},
+        {h: 120, s: 43,  l: 53},
+        {h: 60,  s: 71,  l: 53},
+        {h: 40,  s: 100, l: 50},
+        {h: 0,   s: 70,  l: 43},
+        {h: 295, s: 100, l: 37},
+    ];
+
+
     ns.throttledAnimationFrame = function() {
         let nextFrame;
         return function(callback) {
@@ -241,7 +252,7 @@ sauce.ns('ui', ns => {
                     data: sauce.geo.createVAMStream(streams.time, streams.altitude).slice(1),
                     formatter: x => `VAM: ${H.number(x)} <abbr class="unit short">Vm/h</abbr>`,
                     colorSteps: ns.hslValueGradientSteps([-500, 500, 1000, 2000],
-                        {hStart: 260, sStart: 65, sEnd: 100, lStart: 75, lend: 50}),
+                        {hStart: 261, sStart: 65, sEnd: 100, lStart: 75, lend: 50}),
                 });
             } else if (g === 'elevation') {
                 const unit = L.elevationFormatter.shortUnitKey();

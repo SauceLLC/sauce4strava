@@ -294,15 +294,7 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
             'z6': {label: 'Z6', z: 6},
             'z7': {label: 'Z7', z: 7},
         };
-        this.zoneColors = {
-            1: {h: 0, s: 0, l: 40},
-            2: {h: 230, s: 73, l: 50},
-            3: {h: 120, s: 43, l: 53},
-            4: {h: 60, s: 71, l: 53},
-            5: {h: 40, s: 100, l: 50},
-            6: {h: 0, s: 70, l: 43},
-            7: {h: 295, s: 100, l: 37},
-        };
+        this.zoneColors = Object.fromEntries(sauce.ui.zoneColors.map((x, i) => [i + 1, x]));
         this.setChartConfig({
             type: 'bar',
             options: {
