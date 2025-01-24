@@ -295,13 +295,13 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
             'z7': {label: 'Z7', z: 7},
         };
         this.zoneColors = {
-            1: {h: 180, s: 10, l: 70},
-            2: {h: 100, s: 65, l: 60},
-            3: {h: 60, s: 70, l: 60},
-            4: {h: 0, s: 70, l: 60},
-            5: {h: 320, s: 70, l: 50},
-            6: {h: 300, s: 70, l: 40},
-            7: {h: 280, s: 70, l: 20},
+            1: {h: 0, s: 0, l: 40},
+            2: {h: 230, s: 73, l: 50},
+            3: {h: 120, s: 43, l: 53},
+            4: {h: 60, s: 71, l: 53},
+            5: {h: 40, s: 100, l: 50},
+            6: {h: 0, s: 70, l: 43},
+            7: {h: 295, s: 100, l: 37},
         };
         this.setChartConfig({
             type: 'bar',
@@ -395,7 +395,7 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
         }, {
             group: 'hr',
             zones: hrZones.filter(x => !disabled[x.id]),
-            lightShift: -20,
+            lightShift: 15,
         }].filter(x => !disabledGroups[x.group]);
         const datasets = [];
         const metricLen = this.metricData.length;
@@ -405,8 +405,8 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
                 datasets.push({
                     id: zone.id,
                     label: (spec.group === 'power' || this.specs.length === 1) ? zone.label : false,
-                    backgroundColor: this.getZoneColor(zone.z, 0, -3, 2 + spec.lightShift, 0.8),
-                    hoverBackgroundColor: this.getZoneColor(zone.z, 0, 3, -2 + spec.lightShift, 0.9),
+                    backgroundColor: this.getZoneColor(zone.z, 0, 0, 10 + spec.lightShift, 0.8),
+                    hoverBackgroundColor: this.getZoneColor(zone.z, 0, 0, -10 + spec.lightShift, 0.9),
                     borderColor: this.getZoneColor(zone.z, 0, -3, -10 + spec.lightShift, 0.9),
                     hoverBorderColor: this.getZoneColor(zone.z, 0, 3, -20 + spec.lightShift, 0.9),
                     borderWidth: 1,
