@@ -585,6 +585,18 @@ sauce.ns('locale', ns => {
     }
 
 
+    function humanHR(value, options={}) {
+        const suffix = options.suffix ? ns.hrFormatter.shortUnitKey() : false;
+        return humanNumber(value, {...options, suffix});
+    }
+
+
+    function humanPower(value, options={}) {
+        const suffix = options.suffix ? 'w' : false;
+        return humanNumber(value, {...options, suffix});
+    }
+
+
     function humanElevation(meters, options={}) {
         assertInit();
         if (meters == null || meters === '') {
@@ -673,6 +685,8 @@ sauce.ns('locale', ns => {
             datetime: humanDateTime,
             time: humanTime,
             stride: humanStride,
+            hr: humanHR,
+            power: humanPower,
         },
         templateHelpers: {
             humanDuration,
@@ -692,6 +706,8 @@ sauce.ns('locale', ns => {
             humanDateTime,
             humanTime,
             humanStride,
+            humanHR,
+            humanPower,
         },
     };
 });
