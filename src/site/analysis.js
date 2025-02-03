@@ -752,7 +752,7 @@ sauce.ns('analysis', ns => {
                         const {h, s, l} = sauce.ui.zoneColors[i];
                         return {color: `hsl(${h}deg ${s}% ${l}%)`, high: x};
                     });
-                    yMax = Math.max(yMax, zones.z6 * 1.25);
+                    yMax = Math.max(yMax, zones.z6);
                 } else {
                     colors = [{color: '#e33', high: Infinity}];
                     yMax = Math.max(yMax, 800);
