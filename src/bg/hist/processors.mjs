@@ -277,9 +277,8 @@ export async function athleteSettingsProcessor({manifest, activities, athlete}) 
 
 
 export async function extraStreamsProcessor({manifest, activities, athlete}) {
-    const actStreams = await getActivitiesStreams(activities,
-        ['time', 'moving', 'active', 'cadence', 'watts', 'watts_calc', 'distance',
-         'grade_adjusted_distance']);
+    const actStreams = await getActivitiesStreams(activities, [
+        'time', 'moving', 'active', 'cadence', 'watts', 'watts_calc', 'distance', 'grade_adjusted_distance']);
     const upStreams = [];
     const disableRunWatts = athlete.get('disableRunWatts');
     const createEstRunWatts = athlete.get('estRunWatts');
@@ -348,8 +347,8 @@ export async function runPowerProcessor({manifest, activities, athlete}) {
     const disableRunWatts = athlete.get('disableRunWatts');
     const createEstWatts = athlete.get('estRunWatts');
     const createEstPeaks = createEstWatts && athlete.get('estRunPeaks');
-    const actStreams = await getActivitiesStreams(activities,
-        ['time', 'active', 'watts', 'watts_calc', 'grade_adjusted_distance']);
+    const actStreams = await getActivitiesStreams(activities, [
+        'time', 'active', 'watts', 'watts_calc', 'grade_adjusted_distance']);
     const periods = (await sauce.peaks.getRanges('periods')).map(x => x.value);
     const upStreams = [];
     const upPeaks = [];
@@ -389,10 +388,10 @@ export async function runPowerProcessor({manifest, activities, athlete}) {
             try {
                 for (const period of periods.filter(x => !!streams.watts || x >= minEstPeakPowerPeriod)) {
                     const rp = sauce.power.peakPower(period, streams.time, watts,
-                        {activeStream: streams.active});
+                                                     {activeStream: streams.active});
                     if (rp) {
                         const entry = sauce.peaks.createStoreEntry('power', period, rp.avg(),
-                            rp, streams.time, activity, {estimate});
+                                                                   rp, streams.time, activity, {estimate});
                         if (entry) {
                             upPeaks.push(entry);
                         }
@@ -412,8 +411,8 @@ export async function runPowerProcessor({manifest, activities, athlete}) {
 
 
 export async function activityStatsProcessor({manifest, activities, athlete}) {
-    const actStreams = await getActivitiesStreams(activities,
-        ['time', 'heartrate', 'active', 'watts', 'watts_calc', 'altitude', 'distance']);
+    const actStreams = await getActivitiesStreams(activities, [
+        'time', 'heartrate', 'active', 'watts', 'watts_calc', 'altitude', 'distance']);
     const hrZones = athlete.get('hrZones');
     const ltHR = hrZones && (hrZones.z4 + hrZones.z3) / 2;
     const maxHR = hrZones && sauce.perf.estimateMaxHR(hrZones);
@@ -437,7 +436,7 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
                 try {
                     const restingHR = ftp ? sauce.perf.estimateRestingHR(ftp) : 60;
                     stats.tTss = sauce.perf.tTSS(streams.heartrate, streams.time, streams.active,
-                        ltHR, restingHR, maxHR, athlete.get('gender'));
+                                                 ltHR, restingHR, maxHR, athlete.get('gender'));
                     const zones = {...hrZones, z5: Infinity}; // Z5 was always just implied.
                     stats.hrZonesTime = Object.keys(zones).map(() => 0);
                     let prevT;
@@ -492,7 +491,7 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
             if (watts) {
                 try {
                     const corrected = sauce.power.correctedPower(streams.time, watts,
-                        {activeStream: streams.active});
+                                                                 {activeStream: streams.active});
                     if (!corrected) {
                         continue;
                     }
@@ -787,7 +786,7 @@ export class TrainingLoadProcessor extends OffloadProcessor {
             return;
         }
         const orderedIds = await actsStore.getAllKeysForAthlete(this.athlete.pk,
-            {start: oldest.get('ts')});
+                                                                {start: oldest.get('ts')});
         const need = orderedIds.filter(x => !activities.has(x));
         for (const a of await actsStore.getMany(need, {models: true})) {
             activities.set(a.pk, a);
@@ -827,7 +826,7 @@ export class TrainingLoadProcessor extends OffloadProcessor {
         if (seed) {
             // Drain the current training loads based on gap to our first entry
             const zeros = Array.from(sauce.date.dayRange(seed.getLocaleDay(),
-                oldest.getLocaleDay())).map(x => 0);
+                                                         oldest.getLocaleDay())).map(x => 0);
             zeros.pop();  // Exclude seed day.
             if (zeros.length) {
                 atl = sauce.perf.calcATL(zeros, atl);

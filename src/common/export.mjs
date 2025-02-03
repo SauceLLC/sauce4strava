@@ -59,7 +59,7 @@ class DOMSerializer extends Serializer {
     toFile(name) {
         const heading = `<?xml version="1.0" encoding="${this.doc.inputEncoding}"?>\n`;
         return new File([heading + (new XMLSerializer()).serializeToString(this.doc)],
-            this.getFilename(name), {type: 'text/xml'});
+                        this.getFilename(name), {type: 'text/xml'});
     }
 }
 
@@ -328,7 +328,7 @@ export class FITSerializer extends Serializer {
             const elapsed = streams.time[end] - streams.time[start];
             const active = streams.active ?
                 sauce.data.activeTime(streams.time.slice(start, end + 1),
-                    streams.active.slice(start, end + 1)) :
+                                      streams.active.slice(start, end + 1)) :
                 elapsed;
             const lap = {
                 message_index: lapNumber++,

@@ -492,8 +492,8 @@ export async function getPeaksRelatedToActivity(activity, type, periods, options
     options = _makePeaksFilterOptions({filterTS: activity.ts, ...options});
     const results = [];
     for (const period of periods) {
-        const peaks = await peaksStore.getForAthlete(activity.athlete, type, period,
-            {...options, limit: undefined, expandActivities: false});
+        const peaks = await peaksStore.getForAthlete(
+            activity.athlete, type, period, {...options, limit: undefined, expandActivities: false});
         if (options.limit) {
             const index = peaks.findIndex(x => x.activity === activity.id);
             if (index < options.limit - 1) {
@@ -613,8 +613,8 @@ async function getActivitiesForAthlete(athleteId, options={}) {
         const startDay = sauce.date.toLocaleDayDate(start);
         let atl = 0;
         let ctl = 0;
-        for await (const a of actsStore.byAthlete(athleteId,
-            {...options, direction: 'prev', start: undefined})) {
+        for await (const a of actsStore.byAthlete(athleteId, {...options, direction: 'prev',
+                                                              start: undefined})) {
             if (a.ts > start) {
                 activities.push(a);
             } else if (a.ts < startDay && a.training) {
@@ -898,8 +898,8 @@ export async function integrityCheck(athleteId, options={}) {
         }
         for (const id of haveStreamsFor) {
             if (!options.prune) {
-                syncLogsStore.logWarn(athleteId,
-                    'Ignoring missing activity repair (use "prune" to override):', id);
+                syncLogsStore.logWarn(
+                    athleteId, 'Ignoring missing activity repair (use "prune" to override):', id);
             } else {
                 syncLogsStore.logWarn(athleteId, 'Removing detached stream for activity:', id);
                 await streamsStore.delete(id, {index: 'activity'});

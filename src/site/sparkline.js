@@ -179,9 +179,17 @@ sauce.propDefined('jQuery', function($) {
                 chartRangeMin: undefined,
                 tooltipFormat: new SPFormat('{{field:fields}}: {{value}}'),
                 tooltipFormatFieldlistKey: 'field',
-                tooltipValueLookups: { fields: { lq: 'Lower Quartile', med: 'Median',
-                    uq: 'Upper Quartile', lo: 'Left Outlier', ro: 'Right Outlier',
-                    lw: 'Left Whisker', rw: 'Right Whisker'} }
+                tooltipValueLookups: {
+                    fields: {
+                        lq: 'Lower Quartile',
+                        med: 'Median',
+                        uq: 'Upper Quartile',
+                        lo: 'Left Outlier',
+                        ro: 'Right Outlier',
+                        lw: 'Left Whisker',
+                        rw: 'Right Whisker'
+                    }
+                }
             }
         };
     }
@@ -236,6 +244,360 @@ sauce.propDefined('jQuery', function($) {
         return Class;
     }
 
+
+    // Setup a very simple "virtual canvas" to make drawing the few shapes we need easier
+    // This is accessible as $(foo).simpledraw()
+    const VShape = createClass({
+        init: function(target, id, type, args) {
+            this.target = target;
+            this.id = id;
+            this.type = type;
+            this.args = args;
+        },
+
+        append: function() {
+            this.target.appendShape(this);
+            return this;
+        }
+    });
+
+
+    const VCanvas_base = createClass({
+        _pxregex: /(\d+)(px)?\s*$/i,
+
+        init: function(width, height, target) {
+            if (!width) {
+                return;
+            }
+            this.width = width;
+            this.height = height;
+            this.target = target;
+            this.lastShapeId = null;
+            if (target[0]) {
+                target = target[0];
+            }
+            $.data(target, '_jqs_vcanvas', this);
+        },
+
+        drawLine: function(x1, y1, x2, y2, lineColor, lineWidth) {
+            return this.drawShape([[x1, y1], [x2, y2]], lineColor, lineWidth);
+        },
+
+        drawShape: function(path, lineColor, fillColor, lineWidth) {
+            return this._genShape('Shape', [path, lineColor, fillColor, lineWidth]);
+        },
+
+        drawCircle: function(x, y, radius, lineColor, fillColor, lineWidth) {
+            return this._genShape('Circle', [x, y, radius, lineColor, fillColor, lineWidth]);
+        },
+
+        drawPieSlice: function(x, y, radius, startAngle, endAngle, lineColor, fillColor) {
+            return this._genShape('PieSlice', [x, y, radius, startAngle, endAngle, lineColor, fillColor]);
+        },
+
+        drawRect: function(x, y, width, height, lineColor, fillColor) {
+            return this._genShape('Rect', [x, y, width, height, lineColor, fillColor]);
+        },
+
+        getElement: function() {
+            return this.canvas;
+        },
+
+        getLastShapeId: function() {
+            return this.lastShapeId;
+        },
+
+        reset: function() {
+            throw new Error('reset not implemented');
+        },
+
+        _insert: function(el, target) {
+            $(target).html(el);
+        },
+
+        _calculatePixelDims: function(width, height, canvas) {
+            const heightMatch = this._pxregex.exec(height);
+            const pixelHeight = heightMatch ?  Number(heightMatch[1]) : $(canvas).height();
+            const widthMatch = this._pxregex.exec(width);
+            const pixelWidth = widthMatch ?  Number(widthMatch[1]) : $(canvas).width();
+            const dpr = window.devicePixelRatio || 1;
+            this.pixelHeight = Math.round(pixelHeight * dpr);
+            this.pixelWidth = Math.round(pixelWidth * dpr);
+        },
+
+        _genShape: function(shapetype, shapeargs) {
+            const id = shapeCount++;
+            shapeargs.unshift(id);
+            return new VShape(this, id, shapetype, shapeargs);
+        },
+
+        appendShape: function(shape) {
+            throw new Error('appendShape not implemented');
+        },
+
+        replaceWithShape: function(shapeid, shape) {
+            throw new Error('replaceWithShape not implemented');
+        },
+
+        insertAfterShape: function(shapeid, shape) {
+            throw new Error('insertAfterShape not implemented');
+        },
+
+        removeShapeId: function(shapeid) {
+            throw new Error('removeShapeId not implemented');
+        },
+
+        getShapeAt: function(el, x, y) {
+            throw new Error('getShapeAt not implemented');
+        },
+
+        render: function() {
+            throw new Error('render not implemented');
+        }
+    });
+
+
+    const VCanvas_canvas = createClass(VCanvas_base, {
+        init: function(width, height, target, interact) {
+            VCanvas_canvas._super.init.call(this, width, height, target);
+            this.canvas = document.createElement('canvas');
+            if (target[0]) {
+                target = target[0];
+            }
+            $.data(target, '_jqs_vcanvas', this);
+            $(this.canvas).css({
+                display: 'inline-block',
+                width,
+                height,
+                verticalAlign: 'top'
+            });
+            this._insert(this.canvas, target);
+            this._calculatePixelDims(width, height, this.canvas);
+            this.canvas.width = this.pixelWidth;
+            this.canvas.height = this.pixelHeight;
+            this.interact = interact;
+            this.shapes = {};
+            this.shapeseq = [];
+            this.currentTargetShapeId = undefined;
+            this._fillGradients = new Map();
+        },
+
+        _buildFillGradient: function(context, spec) {
+            // Render gradient into detached context first, then use that for ref.
+            // We need to rebuild a gradient using the subset of ranges.
+            const stepCount = spec.steps.length;
+            const size = stepCount * 100;
+            const refCanvas = document.createElement('canvas');
+            refCanvas.width = size;
+            refCanvas.height = 2;
+            const refContext = refCanvas.getContext('2d', {willReadFrequently: true});
+            const refGradient = refContext.createLinearGradient(0, 0, size, 0);
+            const refMin = sauce.data.min(spec.steps.map(x => x.value));
+            const refMax = sauce.data.max(spec.steps.map(x => x.value));
+            const refRange = refMax - refMin;
+            for (const step of spec.steps) {
+                const pct = Math.min(1, Math.max(0, (step.value - refMin) / refRange));
+                refGradient.addColorStop(pct, step.color);
+            }
+            refContext.fillStyle = refGradient;
+            refContext.fillRect(0, 0, size, 2); // make 1
+            const gradient = context.createLinearGradient(0, this.pixelHeight, 0, 0);
+            const range = this._maxValue - this._minValue;
+            const samples = stepCount * 5;  // Slightly more bands than the orig.
+            const alphaMax = spec.opacity || 1;
+            let over;
+            for (let i = 0; i < samples && !over; i++) {
+                const pct = i / samples;
+                const valOfft = (pct * range) + this._minValue;
+                const refPct = (valOfft - refMin) / refRange;
+                if (refPct > 1) {
+                    over = true;
+                }
+                const alpha = refPct < 0 ? Math.max(0, alphaMax - ((-refPct) ** 0.5 * alphaMax)) : alphaMax;
+                const refOffset = Math.max(0, Math.min(size - 1, Math.round(refPct * size)));
+                const [r, g, b] = refContext.getImageData(refOffset, 0, refOffset + 1, 1).data;
+                gradient.addColorStop(pct, `rgba(${r}, ${g}, ${b}, ${alpha})`);
+            }
+            return gradient;
+        },
+
+        _getContext: function(lineColor, fillColor, lineWidth) {
+            const context = this.canvas.getContext('2d');
+            if (lineColor !== undefined) {
+                context.strokeStyle = lineColor;
+            }
+            context.lineWidth = lineWidth === undefined ? 1 : lineWidth;
+            if (fillColor !== undefined) {
+                if (fillColor.type === 'gradient') {
+                    let fillGradient;
+                    if (this._fillGradients.has(fillColor)) {
+                        fillGradient = this._fillGradients.get(fillColor);
+                    } else {
+                        fillGradient = this._buildFillGradient(context, fillColor);
+                        this._fillGradients.set(fillColor, fillGradient);
+                    }
+                    context.fillStyle = fillGradient;
+                } else {
+                    context.fillStyle = fillColor;
+                }
+            }
+            return context;
+        },
+
+        reset: function() {
+            const context = this._getContext();
+            context.clearRect(0, 0, this.pixelWidth, this.pixelHeight);
+            this.shapes = {};
+            this.shapeseq = [];
+            this.currentTargetShapeId = undefined;
+        },
+
+        _drawShape: function(shapeid, path, lineColor, fillColor, lineWidth) {
+            const context = this._getContext(lineColor, fillColor, lineWidth);
+            context.beginPath();
+            context.moveTo(path[0][0], path[0][1]);
+            for (let i = 1; i < path.length; i++) {
+                context.lineTo(path[i][0], path[i][1]);
+            }
+            if (lineColor !== undefined) {
+                context.stroke();
+            }
+            if (fillColor !== undefined) {
+                context.fill();
+            }
+            if (this.targetX !== undefined && this.targetY !== undefined &&
+                context.isPointInPath(this.targetX, this.targetY)) {
+                this.currentTargetShapeId = shapeid;
+            }
+        },
+
+        _drawCircle: function(shapeid, x, y, radius, lineColor, fillColor, lineWidth) {
+            const context = this._getContext(lineColor, fillColor, lineWidth);
+            context.beginPath();
+            context.arc(x, y, radius, 0, 2 * Math.PI, false);
+            if (this.targetX !== undefined && this.targetY !== undefined &&
+                context.isPointInPath(this.targetX, this.targetY)) {
+                this.currentTargetShapeId = shapeid;
+            }
+            if (lineColor !== undefined) {
+                context.stroke();
+            }
+            if (fillColor !== undefined) {
+                context.fill();
+            }
+        },
+
+        _drawPieSlice: function(shapeid, x, y, radius, startAngle, endAngle, lineColor, fillColor) {
+            const context = this._getContext(lineColor, fillColor);
+            context.beginPath();
+            context.moveTo(x, y);
+            context.arc(x, y, radius, startAngle, endAngle, false);
+            context.lineTo(x, y);
+            context.closePath();
+            if (lineColor !== undefined) {
+                context.stroke();
+            }
+            if (fillColor) {
+                context.fill();
+            }
+            if (this.targetX !== undefined && this.targetY !== undefined &&
+                context.isPointInPath(this.targetX, this.targetY)) {
+                this.currentTargetShapeId = shapeid;
+            }
+        },
+
+        _drawRect: function(shapeid, x, y, width, height, lineColor, fillColor) {
+            return this._drawShape(
+                shapeid,
+                [[x, y], [x + width, y], [x + width, y + height], [x, y + height], [x, y]],
+                lineColor, fillColor);
+        },
+
+        appendShape: function(shape) {
+            this.shapes[shape.id] = shape;
+            this.shapeseq.push(shape.id);
+            this.lastShapeId = shape.id;
+            return shape.id;
+        },
+
+        replaceWithShape: function(shapeid, shape) {
+            this.shapes[shape.id] = shape;
+            for (let i = this.shapeseq.length; i--;) {
+                if (this.shapeseq[i] === shapeid) {
+                    this.shapeseq[i] = shape.id;
+                }
+            }
+            delete this.shapes[shapeid];
+        },
+
+        replaceWithShapes: function(shapeids, shapes) {
+            const shapemap = {};
+            for (let i = shapeids.length; i--;) {
+                shapemap[shapeids[i]] = true;
+            }
+            let first;
+            for (let i = this.shapeseq.length; i--;) {
+                const sid = this.shapeseq[i];
+                if (shapemap[sid]) {
+                    this.shapeseq.splice(i, 1);
+                    delete this.shapes[sid];
+                    first = i;
+                }
+            }
+            for (let i = shapes.length; i--;) {
+                this.shapeseq.splice(first, 0, shapes[i].id);
+                this.shapes[shapes[i].id] = shapes[i];
+            }
+        },
+
+        insertAfterShape: function(shapeid, shape) {
+            for (let i = this.shapeseq.length; i--;) {
+                if (this.shapeseq[i] === shapeid) {
+                    this.shapeseq.splice(i + 1, 0, shape.id);
+                    this.shapes[shape.id] = shape;
+                    return;
+                }
+            }
+        },
+
+        removeShapeId: function(shapeid) {
+            for (let i = this.shapeseq.length; i--;) {
+                if (this.shapeseq[i] === shapeid) {
+                    this.shapeseq.splice(i, 1);
+                    break;
+                }
+            }
+            delete this.shapes[shapeid];
+        },
+
+        getShapeAt: function(el, x, y) {
+            this.targetX = x;
+            this.targetY = y;
+            this.render();
+            return this.currentTargetShapeId;
+        },
+
+        render: function() {
+            const context = this._getContext();
+            context.clearRect(0, 0, this.pixelWidth, this.pixelHeight);
+            for (const shapeid of this.shapeseq) {
+                const shape = this.shapes[shapeid];
+                this['_draw' + shape.type].apply(this, shape.args);
+            }
+            if (!this.interact) {
+                // not interactive so no need to keep the shapes array
+                this.shapes = {};
+                this.shapeseq = [];
+            }
+        },
+
+        setMinMax: function(min, max) {
+            this._minValue = min;
+            this._maxValue = max;
+        }
+    });
+
+
     /**
      * Wraps a format string for tooltips
      * {{x}}
@@ -283,9 +645,9 @@ sauce.propDefined('jQuery', function($) {
                         fieldvalue = options.get('numberFormatter')(fieldvalue);
                     } else {
                         fieldvalue = formatNumber(fieldvalue, prec,
-                            options.get('numberDigitGroupCount'),
-                            options.get('numberDigitGroupSep'),
-                            options.get('numberDecimalMark'));
+                                                  options.get('numberDigitGroupCount'),
+                                                  options.get('numberDigitGroupSep'),
+                                                  options.get('numberDecimalMark'));
                     }
                 }
                 return fieldvalue;
@@ -293,10 +655,12 @@ sauce.propDefined('jQuery', function($) {
         }
     });
 
+
     // convience method to avoid needing the new operator
     $.spformat = function(format, fclass) {
         return new SPFormat(format, fclass);
     };
+
 
     function clipval(val, min, max) {
         if (val < min) {
@@ -307,6 +671,7 @@ sauce.propDefined('jQuery', function($) {
         }
         return val;
     }
+
 
     function quartile(values, q) {
         let vl;
@@ -325,29 +690,31 @@ sauce.propDefined('jQuery', function($) {
         }
     }
 
+
     function normalizeValue(val) {
         let nf;
         switch (val) {
-        case 'undefined':
-            val = undefined;
-            break;
-        case 'null':
-            val = null;
-            break;
-        case 'true':
-            val = true;
-            break;
-        case 'false':
-            val = false;
-            break;
-        default:
-            nf = parseFloat(val);
-            if (val.toString() === nf.toString()) {
-                val = nf;
-            }
+            case 'undefined':
+                val = undefined;
+                break;
+            case 'null':
+                val = null;
+                break;
+            case 'true':
+                val = true;
+                break;
+            case 'false':
+                val = false;
+                break;
+            default:
+                nf = parseFloat(val);
+                if (val.toString() === nf.toString()) {
+                    val = nf;
+                }
         }
         return val;
     }
+
 
     function normalizeValues(vals) {
         const result = [];
@@ -356,6 +723,7 @@ sauce.propDefined('jQuery', function($) {
         }
         return result;
     }
+
 
     function remove(vals, filter) {
         const result = [];
@@ -367,9 +735,11 @@ sauce.propDefined('jQuery', function($) {
         return result;
     }
 
+
     function isNumber(num) {
         return !isNaN(parseFloat(num)) && isFinite(num);
     }
+
 
     function formatNumber(num, prec, groupsize, groupsep, decsep) {
         let p;
@@ -383,6 +753,7 @@ sauce.propDefined('jQuery', function($) {
         }
         return num.join('');
     }
+
 
     // determine if all values of an array match a value
     // returns true if the array is empty
@@ -398,9 +769,11 @@ sauce.propDefined('jQuery', function($) {
         return true;
     }
 
+
     function ensureArray(val) {
         return $.isArray(val) ? val : [val];
     }
+
 
     // http://paulirish.com/2008/bookmarklet-inject-new-css-rules/
     function addCSS(css) {
@@ -416,6 +789,7 @@ sauce.propDefined('jQuery', function($) {
                 'innerText' : 'innerHTML'] = css;
         }
     }
+
 
     // Provide a cross-browser interface to a few simple drawing primitives
     $.fn.simpledraw = function(width, height, useExisting, interact) {
@@ -451,12 +825,14 @@ sauce.propDefined('jQuery', function($) {
         return target;
     };
 
+
     $.fn.cleardraw = function() {
         const target = this.data('_jqs_vcanvas');
         if (target) {
             target.reset();
         }
     };
+
 
     $.RangeMapClass = RangeMap = createClass({
         init: function(map) {
@@ -488,10 +864,124 @@ sauce.propDefined('jQuery', function($) {
         }
     });
 
+
     // Convenience function
     $.range_map = function(map) {
         return new RangeMap(map);
     };
+
+
+    const Tooltip = createClass({
+        sizeStyle: 'position: static !important;' +
+            'display: block !important;' +
+            'visibility: hidden !important;' +
+            'float: left !important;',
+
+        init: function(options) {
+            const tooltipClassname = options.get('tooltipClassname', 'jqstooltip');
+            const sizetipStyle = this.sizeStyle;
+            this.container = options.get('tooltipContainer') || document.body;
+            this.tooltipOffsetX = options.get('tooltipOffsetX', 10);
+            this.tooltipOffsetY = options.get('tooltipOffsetY', 12);
+            // remove any previous lingering tooltip
+            $('#jqssizetip').remove();
+            $('#jqstooltip').remove();
+            this.sizetip = $('<div/>', {
+                id: 'jqssizetip',
+                style: sizetipStyle,
+                'class': tooltipClassname
+            });
+            this.tooltip = $('<div/>', {
+                id: 'jqstooltip',
+                'class': tooltipClassname
+            }).appendTo(this.container);
+            // account for the container's location
+            const offset = this.tooltip.offset();
+            // NOTE: Chrome returns floats for these, but mousemove events are seemingly floored.
+            // This will lead to occasional mouse events outside our region.
+            this.offsetLeft = offset.left;
+            this.offsetTop = offset.top;
+            this.hidden = true;
+            $(window).unbind('resize.jqs scroll.jqs');
+            $(window).bind('resize.jqs scroll.jqs', $.proxy(this.updateWindowDims, this));
+            this.updateWindowDims();
+        },
+
+        updateWindowDims: function() {
+            this.scrollTop = $(window).scrollTop();
+            this.scrollLeft = $(window).scrollLeft();
+            this.scrollRight = this.scrollLeft + $(window).width();
+            this.updatePosition();
+        },
+
+        getSize: function(content) {
+            this.sizetip.html(content).appendTo(this.container);
+            this.width = this.sizetip.width() + 1;
+            this.height = this.sizetip.height();
+            this.sizetip.remove();
+        },
+
+        setContent: function(content) {
+            if (!content) {
+                this.tooltip.css('visibility', 'hidden');
+                this.hidden = true;
+                return;
+            }
+            this.getSize(content);
+            this.tooltip.html(content)
+                .css({
+                    'width': this.width,
+                    'height': this.height,
+                    'visibility': 'visible'
+                });
+            if (this.hidden) {
+                this.hidden = false;
+                this.updatePosition();
+            }
+        },
+
+        updatePosition: function(x, y) {
+            if (x === undefined) {
+                if (this.mousex === undefined) {
+                    return;
+                }
+                x = this.mousex - this.offsetLeft;
+                y = this.mousey - this.offsetTop;
+
+            } else {
+                this.mousex = x = x - this.offsetLeft;
+                this.mousey = y = y - this.offsetTop;
+            }
+            if (!this.height || !this.width || this.hidden) {
+                return;
+            }
+
+            y -= this.height + this.tooltipOffsetY;
+            x += this.tooltipOffsetX;
+
+            if (y < this.scrollTop) {
+                y = this.scrollTop;
+            }
+            if (x < this.scrollLeft) {
+                x = this.scrollLeft;
+            } else if (x + this.width > this.scrollRight) {
+                x = this.scrollRight - this.width;
+            }
+
+            this.tooltip.css({
+                'left': x,
+                'top': y
+            });
+        },
+
+        remove: function() {
+            this.tooltip.remove();
+            this.sizetip.remove();
+            this.sizetip = this.tooltip = undefined;
+            $(window).unbind('resize.jqs scroll.jqs');
+        }
+    });
+
 
     const MouseHandler = createClass({
         init: function(el, options) {
@@ -615,122 +1105,13 @@ sauce.propDefined('jQuery', function($) {
         }
     });
 
-    const Tooltip = createClass({
-        sizeStyle: 'position: static !important;' +
-            'display: block !important;' +
-            'visibility: hidden !important;' +
-            'float: left !important;',
-
-        init: function(options) {
-            const tooltipClassname = options.get('tooltipClassname', 'jqstooltip');
-            const sizetipStyle = this.sizeStyle;
-            this.container = options.get('tooltipContainer') || document.body;
-            this.tooltipOffsetX = options.get('tooltipOffsetX', 10);
-            this.tooltipOffsetY = options.get('tooltipOffsetY', 12);
-            // remove any previous lingering tooltip
-            $('#jqssizetip').remove();
-            $('#jqstooltip').remove();
-            this.sizetip = $('<div/>', {
-                id: 'jqssizetip',
-                style: sizetipStyle,
-                'class': tooltipClassname
-            });
-            this.tooltip = $('<div/>', {
-                id: 'jqstooltip',
-                'class': tooltipClassname
-            }).appendTo(this.container);
-            // account for the container's location
-            const offset = this.tooltip.offset();
-            // NOTE: Chrome returns floats for these, but mousemove events are seemingly floored.
-            // This will lead to occasional mouse events outside our region.
-            this.offsetLeft = offset.left;
-            this.offsetTop = offset.top;
-            this.hidden = true;
-            $(window).unbind('resize.jqs scroll.jqs');
-            $(window).bind('resize.jqs scroll.jqs', $.proxy(this.updateWindowDims, this));
-            this.updateWindowDims();
-        },
-
-        updateWindowDims: function() {
-            this.scrollTop = $(window).scrollTop();
-            this.scrollLeft = $(window).scrollLeft();
-            this.scrollRight = this.scrollLeft + $(window).width();
-            this.updatePosition();
-        },
-
-        getSize: function(content) {
-            this.sizetip.html(content).appendTo(this.container);
-            this.width = this.sizetip.width() + 1;
-            this.height = this.sizetip.height();
-            this.sizetip.remove();
-        },
-
-        setContent: function(content) {
-            if (!content) {
-                this.tooltip.css('visibility', 'hidden');
-                this.hidden = true;
-                return;
-            }
-            this.getSize(content);
-            this.tooltip.html(content)
-                .css({
-                    'width': this.width,
-                    'height': this.height,
-                    'visibility': 'visible'
-                });
-            if (this.hidden) {
-                this.hidden = false;
-                this.updatePosition();
-            }
-        },
-
-        updatePosition: function(x, y) {
-            if (x === undefined) {
-                if (this.mousex === undefined) {
-                    return;
-                }
-                x = this.mousex - this.offsetLeft;
-                y = this.mousey - this.offsetTop;
-
-            } else {
-                this.mousex = x = x - this.offsetLeft;
-                this.mousey = y = y - this.offsetTop;
-            }
-            if (!this.height || !this.width || this.hidden) {
-                return;
-            }
-
-            y -= this.height + this.tooltipOffsetY;
-            x += this.tooltipOffsetX;
-
-            if (y < this.scrollTop) {
-                y = this.scrollTop;
-            }
-            if (x < this.scrollLeft) {
-                x = this.scrollLeft;
-            } else if (x + this.width > this.scrollRight) {
-                x = this.scrollRight - this.width;
-            }
-
-            this.tooltip.css({
-                'left': x,
-                'top': y
-            });
-        },
-
-        remove: function() {
-            this.tooltip.remove();
-            this.sizetip.remove();
-            this.sizetip = this.tooltip = undefined;
-            $(window).unbind('resize.jqs scroll.jqs');
-        }
-    });
 
     function initStyles() {
         addCSS(defaultStyles);
     }
 
     $(initStyles);
+
 
     const pending = [];
     $.fn.sparkline = function(userValues, userOptions) {
@@ -805,6 +1186,7 @@ sauce.propDefined('jQuery', function($) {
     };
 
     $.fn.sparkline.defaults = getDefaults();
+
 
     $.sparkline_display_visible = function() {
         const done = [];
@@ -914,7 +1296,7 @@ sauce.propDefined('jQuery', function($) {
         initTarget: function() {
             const interactive = !this.options.get('disableInteraction');
             if (!(this.target = this.$el.simpledraw(this.width, this.height,
-                this.options.get('composite'), interactive))) {
+                                                    this.options.get('composite'), interactive))) {
                 this.disabled = true;
             } else {
                 this.canvasWidth = this.target.pixelWidth;
@@ -1043,7 +1425,8 @@ sauce.propDefined('jQuery', function($) {
                             prefix: this.options.get('tooltipPrefix'),
                             suffix: this.options.get('tooltipSuffix')
                         });
-                        const text = format.render(fields[j],
+                        const text = format.render(
+                            fields[j],
                             this.options.get('tooltipValueLookups'), this.options);
                         entries.push('<div class="' + fclass + '">' + text + '</div>');
                     }
@@ -1080,6 +1463,7 @@ sauce.propDefined('jQuery', function($) {
             return color;
         }
     });
+
 
     const barHighlightMixin = {
         changeHighlight: function(highlight) {
@@ -1122,6 +1506,7 @@ sauce.propDefined('jQuery', function($) {
             this.target.render();
         }
     };
+
 
     $.fn.sparkline.line = line = createClass($.fn.sparkline._base, {
         type: 'line',
@@ -1168,14 +1553,15 @@ sauce.propDefined('jQuery', function($) {
             const spotRadius = this.options.get('spotRadius');
             const highlightSpotColor = this.options.get('highlightSpotColor');
             if (spotRadius && highlightSpotColor) {
-                const highlightSpot = this.target.drawCircle(vertex[0], vertex[1],
-                    spotRadius, undefined, highlightSpotColor);
+                const highlightSpot = this.target.drawCircle(
+                    vertex[0], vertex[1], spotRadius, undefined, highlightSpotColor);
                 this.highlightSpotId = highlightSpot.id;
                 this.target.insertAfterShape(this.lastShapeId, highlightSpot);
             }
             const highlightLineColor = this.options.get('highlightLineColor');
             if (highlightLineColor) {
-                const highlightLine = this.target.drawLine(vertex[0], this.canvasTop, vertex[0],
+                const highlightLine = this.target.drawLine(
+                    vertex[0], this.canvasTop, vertex[0],
                     this.canvasTop + this.canvasHeight, highlightLineColor);
                 this.highlightLineId = highlightLine.id;
                 this.target.insertAfterShape(this.lastShapeId, highlightLine);
@@ -1262,7 +1648,7 @@ sauce.propDefined('jQuery', function($) {
                 (canvasHeight * ((normalRangeMax - this.miny) / rangey)));
             const height = Math.round((canvasHeight * (normalRangeMax - normalRangeMin)) / rangey);
             this.target.drawRect(canvasLeft, ytop, canvasWidth, height, undefined,
-                this.options.get('normalRangeColor')).append();
+                                 this.options.get('normalRangeColor')).append();
         },
 
         render: function() {
@@ -1385,7 +1771,7 @@ sauce.propDefined('jQuery', function($) {
             }
             for (let i = 0; i < lineShapes.length; i++) {
                 this.target.drawShape(lineShapes[i], this.options.get('lineColor'), undefined,
-                    this.options.get('lineWidth')).append();
+                                      this.options.get('lineWidth')).append();
             }
             if (spotRadius && this.options.get('valueSpots')) {
                 let valueSpots = this.options.get('valueSpots');
@@ -1438,6 +1824,7 @@ sauce.propDefined('jQuery', function($) {
             this.target.render();
         }
     });
+
 
     $.fn.sparkline.bar = bar = createClass($.fn.sparkline._base, barHighlightMixin, {
         type: 'bar',
@@ -1686,6 +2073,7 @@ sauce.propDefined('jQuery', function($) {
         }
     });
 
+
     /**
      * WIP color filled line based on value.
      */
@@ -1850,6 +2238,7 @@ sauce.propDefined('jQuery', function($) {
         }
     });
 
+
     $.fn.sparkline.tristate = tristate = createClass($.fn.sparkline._base, barHighlightMixin, {
         type: 'tristate',
 
@@ -1932,6 +2321,7 @@ sauce.propDefined('jQuery', function($) {
         }
     });
 
+
     $.fn.sparkline.discrete = discrete = createClass($.fn.sparkline._base, barHighlightMixin, {
         type: 'discrete',
 
@@ -1987,6 +2377,7 @@ sauce.propDefined('jQuery', function($) {
         }
     });
 
+
     $.fn.sparkline.bullet = bullet = createClass($.fn.sparkline._base, {
         type: 'bullet',
 
@@ -2038,15 +2429,15 @@ sauce.propDefined('jQuery', function($) {
             let shape;
             delete this.shapes[shapeid];
             switch (this.currentRegion.substr(0, 1)) {
-            case 'r':
-                shape = this.renderRange(this.currentRegion.substr(1), highlight);
-                break;
-            case 'p':
-                shape = this.renderPerformance(highlight);
-                break;
-            case 't':
-                shape = this.renderTarget(highlight);
-                break;
+                case 'r':
+                    shape = this.renderRange(this.currentRegion.substr(1), highlight);
+                    break;
+                case 'p':
+                    shape = this.renderPerformance(highlight);
+                    break;
+                case 't':
+                    shape = this.renderTarget(highlight);
+                    break;
             }
             this.valueShapes[this.currentRegion] = shape.id;
             this.shapes[shape.id] = this.currentRegion;
@@ -2071,7 +2462,7 @@ sauce.propDefined('jQuery', function($) {
                 color = this.calcHighlightColor(color, this.options);
             }
             return this.target.drawRect(0, Math.round(this.canvasHeight * 0.3), perfwidth - 1,
-                Math.round(this.canvasHeight * 0.4) - 1, color, color);
+                                        Math.round(this.canvasHeight * 0.4) - 1, color, color);
         },
 
         renderTarget: function(highlight) {
@@ -2085,7 +2476,7 @@ sauce.propDefined('jQuery', function($) {
                 color = this.calcHighlightColor(color, this.options);
             }
             return this.target.drawRect(x, targettop, this.options.get('targetWidth') - 1, targetheight - 1,
-                color, color);
+                                        color, color);
         },
 
         render: function() {
@@ -2111,6 +2502,7 @@ sauce.propDefined('jQuery', function($) {
             this.target.render();
         }
     });
+
 
     $.fn.sparkline.pie = pie = createClass($.fn.sparkline._base, {
         type: 'pie',
@@ -2176,7 +2568,7 @@ sauce.propDefined('jQuery', function($) {
                     }
                     const borderWidth = this.options.get('borderWidth');
                     return this.target.drawPieSlice(this.radius, this.radius, this.radius - borderWidth,
-                        start, end, undefined, color);
+                                                    start, end, undefined, color);
                 }
                 next = end;
             }
@@ -2189,7 +2581,7 @@ sauce.propDefined('jQuery', function($) {
             const borderWidth = this.options.get('borderWidth');
             if (borderWidth) {
                 this.target.drawCircle(this.radius, this.radius, Math.floor(this.radius - (borderWidth / 2)),
-                    this.options.get('borderColor'), undefined, borderWidth).append();
+                                       this.options.get('borderColor'), undefined, borderWidth).append();
             }
             for (let i = this.values.length; i--;) {
                 if (this.values[i]) { // don't render zero values
@@ -2201,6 +2593,7 @@ sauce.propDefined('jQuery', function($) {
             this.target.render();
         }
     });
+
 
     $.fn.sparkline.box = box = createClass($.fn.sparkline._base, {
         type: 'box',
@@ -2301,14 +2694,16 @@ sauce.propDefined('jQuery', function($) {
                 this.canvasWidth -= 2 * Math.ceil(this.options.get('spotRadius'));
                 unitSize = this.canvasWidth / (maxValue - minValue + 1);
                 if (loutlier < lwhisker) {
-                    this.target.drawCircle((loutlier - minValue) * unitSize + canvasLeft,
+                    this.target.drawCircle(
+                        (loutlier - minValue) * unitSize + canvasLeft,
                         this.canvasHeight / 2,
                         this.options.get('spotRadius'),
                         this.options.get('outlierLineColor'),
                         this.options.get('outlierFillColor')).append();
                 }
                 if (routlier > rwhisker) {
-                    this.target.drawCircle((routlier - minValue) * unitSize + canvasLeft,
+                    this.target.drawCircle(
+                        (routlier - minValue) * unitSize + canvasLeft,
                         this.canvasHeight / 2,
                         this.options.get('spotRadius'),
                         this.options.get('outlierLineColor'),
@@ -2337,7 +2732,8 @@ sauce.propDefined('jQuery', function($) {
                 Math.round(this.canvasHeight - this.canvasHeight / 4),
                 this.options.get('whiskerColor')).append();
             // right whisker
-            this.target.drawLine(Math.round((rwhisker - minValue) * unitSize + canvasLeft),
+            this.target.drawLine(
+                Math.round((rwhisker - minValue) * unitSize + canvasLeft),
                 Math.round(this.canvasHeight / 2),
                 Math.round((q3 - minValue) * unitSize + canvasLeft),
                 Math.round(this.canvasHeight / 2),
@@ -2371,355 +2767,6 @@ sauce.propDefined('jQuery', function($) {
                     this.options.get('targetColor')).append();
             }
             this.target.render();
-        }
-    });
-
-    // Setup a very simple "virtual canvas" to make drawing the few shapes we need easier
-    // This is accessible as $(foo).simpledraw()
-    const VShape = createClass({
-        init: function(target, id, type, args) {
-            this.target = target;
-            this.id = id;
-            this.type = type;
-            this.args = args;
-        },
-
-        append: function() {
-            this.target.appendShape(this);
-            return this;
-        }
-    });
-
-    const VCanvas_base = createClass({
-        _pxregex: /(\d+)(px)?\s*$/i,
-
-        init: function(width, height, target) {
-            if (!width) {
-                return;
-            }
-            this.width = width;
-            this.height = height;
-            this.target = target;
-            this.lastShapeId = null;
-            if (target[0]) {
-                target = target[0];
-            }
-            $.data(target, '_jqs_vcanvas', this);
-        },
-
-        drawLine: function(x1, y1, x2, y2, lineColor, lineWidth) {
-            return this.drawShape([[x1, y1], [x2, y2]], lineColor, lineWidth);
-        },
-
-        drawShape: function(path, lineColor, fillColor, lineWidth) {
-            return this._genShape('Shape', [path, lineColor, fillColor, lineWidth]);
-        },
-
-        drawCircle: function(x, y, radius, lineColor, fillColor, lineWidth) {
-            return this._genShape('Circle', [x, y, radius, lineColor, fillColor, lineWidth]);
-        },
-
-        drawPieSlice: function(x, y, radius, startAngle, endAngle, lineColor, fillColor) {
-            return this._genShape('PieSlice', [x, y, radius, startAngle, endAngle, lineColor, fillColor]);
-        },
-
-        drawRect: function(x, y, width, height, lineColor, fillColor) {
-            return this._genShape('Rect', [x, y, width, height, lineColor, fillColor]);
-        },
-
-        getElement: function() {
-            return this.canvas;
-        },
-
-        getLastShapeId: function() {
-            return this.lastShapeId;
-        },
-
-        reset: function() {
-            throw new Error('reset not implemented');
-        },
-
-        _insert: function(el, target) {
-            $(target).html(el);
-        },
-
-        _calculatePixelDims: function(width, height, canvas) {
-            const heightMatch = this._pxregex.exec(height);
-            const pixelHeight = heightMatch ?  Number(heightMatch[1]) : $(canvas).height();
-            const widthMatch = this._pxregex.exec(width);
-            const pixelWidth = widthMatch ?  Number(widthMatch[1]) : $(canvas).width();
-            const dpr = window.devicePixelRatio || 1;
-            this.pixelHeight = Math.round(pixelHeight * dpr);
-            this.pixelWidth = Math.round(pixelWidth * dpr);
-        },
-
-        _genShape: function(shapetype, shapeargs) {
-            const id = shapeCount++;
-            shapeargs.unshift(id);
-            return new VShape(this, id, shapetype, shapeargs);
-        },
-
-        appendShape: function(shape) {
-            throw new Error('appendShape not implemented');
-        },
-
-        replaceWithShape: function(shapeid, shape) {
-            throw new Error('replaceWithShape not implemented');
-        },
-
-        insertAfterShape: function(shapeid, shape) {
-            throw new Error('insertAfterShape not implemented');
-        },
-
-        removeShapeId: function(shapeid) {
-            throw new Error('removeShapeId not implemented');
-        },
-
-        getShapeAt: function(el, x, y) {
-            throw new Error('getShapeAt not implemented');
-        },
-
-        render: function() {
-            throw new Error('render not implemented');
-        }
-    });
-
-    const VCanvas_canvas = createClass(VCanvas_base, {
-        init: function(width, height, target, interact) {
-            VCanvas_canvas._super.init.call(this, width, height, target);
-            this.canvas = document.createElement('canvas');
-            if (target[0]) {
-                target = target[0];
-            }
-            $.data(target, '_jqs_vcanvas', this);
-            $(this.canvas).css({
-                display: 'inline-block',
-                width,
-                height,
-                verticalAlign: 'top'
-            });
-            this._insert(this.canvas, target);
-            this._calculatePixelDims(width, height, this.canvas);
-            this.canvas.width = this.pixelWidth;
-            this.canvas.height = this.pixelHeight;
-            this.interact = interact;
-            this.shapes = {};
-            this.shapeseq = [];
-            this.currentTargetShapeId = undefined;
-            this._fillGradients = new Map();
-        },
-
-        _buildFillGradient: function(context, spec) {
-            // Render gradient into detached context first, then use that for ref.
-            // We need to rebuild a gradient using the subset of ranges.
-            const stepCount = spec.steps.length;
-            const size = stepCount * 100;
-            const refCanvas = document.createElement('canvas');
-            refCanvas.width = size;
-            refCanvas.height = 2;
-            const refContext = refCanvas.getContext('2d', {willReadFrequently: true});
-            const refGradient = refContext.createLinearGradient(0, 0, size, 0);
-            const refMin = sauce.data.min(spec.steps.map(x => x.value));
-            const refMax = sauce.data.max(spec.steps.map(x => x.value));
-            const refRange = refMax - refMin;
-            for (const step of spec.steps) {
-                const pct = Math.min(1, Math.max(0, (step.value - refMin) / refRange));
-                refGradient.addColorStop(pct, step.color);
-            }
-            refContext.fillStyle = refGradient;
-            refContext.fillRect(0, 0, size, 2); // make 1
-            const gradient = context.createLinearGradient(0, this.pixelHeight, 0, 0);
-            const range = this._maxValue - this._minValue;
-            const samples = stepCount * 5;  // Slightly more bands than the orig.
-            const alphaMax = spec.opacity || 1;
-            let over;
-            for (let i = 0; i < samples && !over; i++) {
-                const pct = i / samples;
-                const valOfft = (pct * range) + this._minValue;
-                const refPct = (valOfft - refMin) / refRange;
-                if (refPct > 1) {
-                    over = true;
-                }
-                const alpha = refPct < 0 ? Math.max(0, alphaMax - ((-refPct) ** 0.5 * alphaMax)) : alphaMax;
-                const refOffset = Math.max(0, Math.min(size - 1, Math.round(refPct * size)));
-                const [r, g, b] = refContext.getImageData(refOffset, 0, refOffset + 1, 1).data;
-                gradient.addColorStop(pct, `rgba(${r}, ${g}, ${b}, ${alpha})`);
-            }
-            return gradient;
-        },
-
-        _getContext: function(lineColor, fillColor, lineWidth) {
-            const context = this.canvas.getContext('2d');
-            if (lineColor !== undefined) {
-                context.strokeStyle = lineColor;
-            }
-            context.lineWidth = lineWidth === undefined ? 1 : lineWidth;
-            if (fillColor !== undefined) {
-                if (fillColor.type === 'gradient') {
-                    let fillGradient;
-                    if (this._fillGradients.has(fillColor)) {
-                        fillGradient = this._fillGradients.get(fillColor);
-                    } else {
-                        fillGradient = this._buildFillGradient(context, fillColor);
-                        this._fillGradients.set(fillColor, fillGradient);
-                    }
-                    context.fillStyle = fillGradient;
-                } else {
-                    context.fillStyle = fillColor;
-                }
-            }
-            return context;
-        },
-
-        reset: function() {
-            const context = this._getContext();
-            context.clearRect(0, 0, this.pixelWidth, this.pixelHeight);
-            this.shapes = {};
-            this.shapeseq = [];
-            this.currentTargetShapeId = undefined;
-        },
-
-        _drawShape: function(shapeid, path, lineColor, fillColor, lineWidth) {
-            const context = this._getContext(lineColor, fillColor, lineWidth);
-            context.beginPath();
-            context.moveTo(path[0][0], path[0][1]);
-            for (let i = 1; i < path.length; i++) {
-                context.lineTo(path[i][0], path[i][1]);
-            }
-            if (lineColor !== undefined) {
-                context.stroke();
-            }
-            if (fillColor !== undefined) {
-                context.fill();
-            }
-            if (this.targetX !== undefined && this.targetY !== undefined &&
-                context.isPointInPath(this.targetX, this.targetY)) {
-                this.currentTargetShapeId = shapeid;
-            }
-        },
-
-        _drawCircle: function(shapeid, x, y, radius, lineColor, fillColor, lineWidth) {
-            const context = this._getContext(lineColor, fillColor, lineWidth);
-            context.beginPath();
-            context.arc(x, y, radius, 0, 2 * Math.PI, false);
-            if (this.targetX !== undefined && this.targetY !== undefined &&
-                context.isPointInPath(this.targetX, this.targetY)) {
-                this.currentTargetShapeId = shapeid;
-            }
-            if (lineColor !== undefined) {
-                context.stroke();
-            }
-            if (fillColor !== undefined) {
-                context.fill();
-            }
-        },
-
-        _drawPieSlice: function(shapeid, x, y, radius, startAngle, endAngle, lineColor, fillColor) {
-            const context = this._getContext(lineColor, fillColor);
-            context.beginPath();
-            context.moveTo(x, y);
-            context.arc(x, y, radius, startAngle, endAngle, false);
-            context.lineTo(x, y);
-            context.closePath();
-            if (lineColor !== undefined) {
-                context.stroke();
-            }
-            if (fillColor) {
-                context.fill();
-            }
-            if (this.targetX !== undefined && this.targetY !== undefined &&
-                context.isPointInPath(this.targetX, this.targetY)) {
-                this.currentTargetShapeId = shapeid;
-            }
-        },
-
-        _drawRect: function(shapeid, x, y, width, height, lineColor, fillColor) {
-            return this._drawShape(shapeid,
-                [[x, y], [x + width, y], [x + width, y + height], [x, y + height], [x, y]],
-                lineColor, fillColor);
-        },
-
-        appendShape: function(shape) {
-            this.shapes[shape.id] = shape;
-            this.shapeseq.push(shape.id);
-            this.lastShapeId = shape.id;
-            return shape.id;
-        },
-
-        replaceWithShape: function(shapeid, shape) {
-            this.shapes[shape.id] = shape;
-            for (let i = this.shapeseq.length; i--;) {
-                if (this.shapeseq[i] === shapeid) {
-                    this.shapeseq[i] = shape.id;
-                }
-            }
-            delete this.shapes[shapeid];
-        },
-
-        replaceWithShapes: function(shapeids, shapes) {
-            const shapemap = {};
-            for (let i = shapeids.length; i--;) {
-                shapemap[shapeids[i]] = true;
-            }
-            let first;
-            for (let i = this.shapeseq.length; i--;) {
-                const sid = this.shapeseq[i];
-                if (shapemap[sid]) {
-                    this.shapeseq.splice(i, 1);
-                    delete this.shapes[sid];
-                    first = i;
-                }
-            }
-            for (let i = shapes.length; i--;) {
-                this.shapeseq.splice(first, 0, shapes[i].id);
-                this.shapes[shapes[i].id] = shapes[i];
-            }
-        },
-
-        insertAfterShape: function(shapeid, shape) {
-            for (let i = this.shapeseq.length; i--;) {
-                if (this.shapeseq[i] === shapeid) {
-                    this.shapeseq.splice(i + 1, 0, shape.id);
-                    this.shapes[shape.id] = shape;
-                    return;
-                }
-            }
-        },
-
-        removeShapeId: function(shapeid) {
-            for (let i = this.shapeseq.length; i--;) {
-                if (this.shapeseq[i] === shapeid) {
-                    this.shapeseq.splice(i, 1);
-                    break;
-                }
-            }
-            delete this.shapes[shapeid];
-        },
-
-        getShapeAt: function(el, x, y) {
-            this.targetX = x;
-            this.targetY = y;
-            this.render();
-            return this.currentTargetShapeId;
-        },
-
-        render: function() {
-            const context = this._getContext();
-            context.clearRect(0, 0, this.pixelWidth, this.pixelHeight);
-            for (const shapeid of this.shapeseq) {
-                const shape = this.shapes[shapeid];
-                this['_draw' + shape.type].apply(this, shape.args);
-            }
-            if (!this.interact) {
-                // not interactive so no need to keep the shapes array
-                this.shapes = {};
-                this.shapeseq = [];
-            }
-        },
-
-        setMinMax: function(min, max) {
-            this._minValue = min;
-            this._maxValue = max;
         }
     });
 });

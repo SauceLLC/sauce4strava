@@ -290,8 +290,8 @@ sauce.ns('sync', ns => {
         let dirty;
         const {FTPHistoryView, WeightHistoryView} = await import(sauce.getURL('/src/site/data-views.mjs'));
         const tpl = await sauce.template.getTemplate('sync-control-panel.html', 'sync_control_panel');
-        const hrZonesTpl = await sauce.template.getTemplate('sync-control-panel-hr-zones.html',
-            'sync_control_panel');
+        const hrZonesTpl = await sauce.template.getTemplate(
+            'sync-control-panel-hr-zones.html', 'sync_control_panel');
         const initiallyEnabled = !!athlete.sync;
         const extraButtons = [{
             text: locale.restore_data,
@@ -625,7 +625,7 @@ sauce.ns('sync', ns => {
             if (dirty) {
                 const fullSync = athlete.estCyclingWatts && athlete.estCyclingPeaks;
                 sauce.hist.invalidateAthleteSyncState(athlete.id, 'local',
-                    fullSync ? undefined : 'athlete-settings');
+                                                      fullSync ? undefined : 'athlete-settings');
             }
         });
         if (initiallyEnabled) {

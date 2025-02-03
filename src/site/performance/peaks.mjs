@@ -169,8 +169,7 @@ export class PeaksTableView extends views.ResizablePerfView {
         this.range = pageView.range.clone({frozen: true});
         this.athlete = pageView.athlete;
         this.controlsView = new PeaksControlsView({panelView: this});
-        this.listenTo(pageView, 'before-update-activities',
-            sauce.debounced(this.onBeforeUpdateActivities));
+        this.listenTo(pageView, 'before-update-activities', sauce.debounced(this.onBeforeUpdateActivities));
         await super.init({pageView, ...options});
     }
 
@@ -269,7 +268,7 @@ export class PeaksTableView extends views.ResizablePerfView {
             this.hasMore = morePeaks.length === this.pageSize;
             const moreRows = await this.makeTableRows(morePeaks);
             sauce.adjacentNodeContents(loadMore.closest('table').querySelector('tbody.data'),
-                'beforeend', moreRows);
+                                       'beforeend', moreRows);
         } finally {
             if (!this.hasMore) {
                 loadMore.classList.add('hidden');
@@ -501,8 +500,10 @@ export class PeaksChartView extends charts.ActivityTimeRangeChartView {
         this.$('.loading-mask').addClass('loading');
         const prefs = this.getPrefs();
         this.valueFormatter = x => x != null ?
-            [getPeaksValueFormatter(prefs.type)(x),
-             `<abbr class="unit">${getPeaksUnit(prefs.type)}</abbr>`].join(' ') :
+            [
+                getPeaksValueFormatter(
+                    prefs.type)(x), `<abbr class="unit">${getPeaksUnit(prefs.type)}</abbr>`
+            ].join(' ') :
             '-';
         try {
             await super.render();

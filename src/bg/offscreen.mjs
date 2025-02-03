@@ -132,7 +132,7 @@ browser.runtime.onConnect.addListener(port => {
             }
         } catch(e) {
             port.postMessage({id, success: false,
-                error: {name: e.name, message: e.message, stack: e.stack}});
+                              error: {name: e.name, message: e.message, stack: e.stack}});
         }
     });
     port.onDisconnect.addListener((...args) => {

@@ -600,7 +600,7 @@ sauce.ns('data', function() {
             return;
         }
         return roll.importReduce(timeStream, valuesStream, options.activeStream, x => x.avg(),
-            (cur, lead) => cur >= lead);
+                                 (cur, lead) => cur >= lead);
     }
 
 
@@ -1165,29 +1165,29 @@ sauce.ns('power', function() {
             return;
         }
         return roll.importReduce(timeStream, wattsStream, options.activeStream, x => x.avg(),
-            (cur, lead) => cur >= lead);
+                                 (cur, lead) => cur >= lead);
     }
 
 
     function peakNP(period, timeStream, wattsStream, options={}) {
         const roll = correctedRollingPower(timeStream, period,
-            {inlineNP: true, active: true, ...options});
+                                           {inlineNP: true, active: true, ...options});
         if (!roll) {
             return;
         }
         return roll.importReduce(timeStream, wattsStream, options.activeStream, x => x.np(),
-            (cur, lead) => cur >= lead, {inlineNP: true});
+                                 (cur, lead) => cur >= lead, {inlineNP: true});
     }
 
 
     function peakXP(period, timeStream, wattsStream, options={}) {
         const roll = correctedRollingPower(timeStream, period,
-            {inlineXP: true, active: true, ...options});
+                                           {inlineXP: true, active: true, ...options});
         if (!roll) {
             return;
         }
         return roll.importReduce(timeStream, wattsStream, options.activeStream, x => x.xp(),
-            (cur, lead) => cur >= lead, {inlineXP: false});
+                                 (cur, lead) => cur >= lead, {inlineXP: false});
     }
 
 
@@ -1901,8 +1901,7 @@ sauce.ns('geo', function(ns) {
         }
 
         getLatitudeRadians() {
-            return this.geographicLatitude(Math.atan2(this.z,
-                Math.sqrt((this.x ** 2) + (this.y ** 2))));
+            return this.geographicLatitude(Math.atan2(this.z, Math.sqrt((this.x ** 2) + (this.y ** 2))));
         }
 
         getLongitudeRadians() {

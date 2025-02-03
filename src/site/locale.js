@@ -129,9 +129,11 @@ sauce.ns('locale', ns => {
 
 
     async function _init(options={}) {
-        const units = ['year', 'week', 'day', 'hour', 'min', 'sec',
-                       'years', 'weeks', 'days', 'hours', 'mins', 'secs',
-                       'ago', 'in', 'now', 'today'];
+        const units = [
+            'year', 'week', 'day', 'hour', 'min', 'sec',
+            'years', 'weeks', 'days', 'hours', 'mins', 'secs',
+            'ago', 'in', 'now', 'today'
+        ];
         hdUnits = await fastGetMessagesObject(units, 'time');
         if (options.skipFormatters) {
             initialized = true;

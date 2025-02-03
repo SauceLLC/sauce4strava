@@ -125,7 +125,8 @@
         const filters = options['activity-filters'] = (options['activity-filters'] || []);
         tbody.textContent = '';
         if (!filters || !filters.length) {
-            sauce.adjacentNodeContents(tbody, 'afterbegin',
+            sauce.adjacentNodeContents(
+                tbody, 'afterbegin',
                 `<tr><td colspan="4"><i>No activity filters are configured</i></td></tr>`);
         } else {
             for (const [i, filter] of filters.entries()) {

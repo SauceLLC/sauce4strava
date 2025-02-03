@@ -46,7 +46,7 @@ export function peaksProcessor(actStreams, athlete, activities, {periods, distan
 
         if (streams.heartrate) {
             hrRoll = sauce.data.correctedRollingAverage(streams.time, null,
-                {active: true, ignoreZeros: true});
+                                                        {active: true, ignoreZeros: true});
             if (hrRoll) {
                 for (const period of periods) {
                     if (period <= totalTime) {
@@ -70,8 +70,8 @@ export function peaksProcessor(actStreams, athlete, activities, {periods, distan
                 }
             }
         } else if (wattsStream) {  // Runs have their own processor for peak power
-            powerRoll = sauce.power.correctedRollingPower(streams.time, null,
-                {inlineNP: !estPower && !disableNP, inlineXP: !estPower && !disableXP});
+            powerRoll = sauce.power.correctedRollingPower(
+                streams.time, null, {inlineNP: !estPower && !disableNP, inlineXP: !estPower && !disableXP});
             if (powerRoll) {
                 for (const period of periods) {
                     if (period > totalTime || (estPower && period < minEstPeakPowerPeriod)) {
@@ -180,7 +180,7 @@ export function peaksProcessor(actStreams, athlete, activities, {periods, distan
                     getRankLevel(l.roll.active(), l.value, l.np, weight, athlete) :
                     undefined;
                 addPeak('power', x.roll.period, l.value, l.roll,
-                    {wp: l.np, estimate: estPower, rankLevel});
+                        {wp: l.np, estimate: estPower, rankLevel});
             }
             if (x.npLeader) {
                 const l = x.npLeader;
@@ -189,7 +189,7 @@ export function peaksProcessor(actStreams, athlete, activities, {periods, distan
                     getRankLevel(l.roll.active(), power, l.value, weight, athlete) :
                     undefined;
                 addPeak('np', x.roll.period, l.value, l.roll,
-                    {power, estimate: estPower, rankLevel});
+                        {power, estimate: estPower, rankLevel});
             }
             if (x.xpLeader) {
                 const l = x.xpLeader;

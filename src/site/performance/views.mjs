@@ -281,8 +281,8 @@ export class ActivityStreamGraphsView extends PerfView {
             }
             if (watts) {
                 options.streams.watts = watts;
-                await sauce.ui.createStreamGraphs(this.$('.power-graph'),
-                    {graphs: ['power'], ...options});
+                await sauce.ui.createStreamGraphs(
+                    this.$('.power-graph'), {graphs: ['power'], ...options});
             }
             if (this.streams.heartrate) {
                 await sauce.ui.createStreamGraphs(this.$('.hr-graph'), {graphs: ['hr'], ...options});
@@ -295,8 +295,8 @@ export class ActivityStreamGraphsView extends PerfView {
                 await sauce.ui.createStreamGraphs(this.$('.pace-graph'), {graphs, ...options});
             }
             if (this.streams.altitude) {
-                await sauce.ui.createStreamGraphs(this.$('.elevation-graph'),
-                    {graphs: ['elevation', 'vam'], ...options});
+                await sauce.ui.createStreamGraphs(
+                    this.$('.elevation-graph'), {graphs: ['elevation', 'vam'], ...options});
             }
         }
     }
@@ -373,7 +373,7 @@ export class ActivityTableView extends PerfView {
             sortKey: x => x.stats?.distance || 0,
             align: 'right',
             format: x => H.distance(x.stats?.distance || null,
-                {precision: 0, suffix: true, html: true}) || '-',
+                                    {precision: 0, suffix: true, html: true}) || '-',
         }, {
             id: 'pace',
             labelKey: '/speed',
@@ -405,38 +405,37 @@ export class ActivityTableView extends PerfView {
             align: 'right',
             format: x => H.number(sauce.model.getActivityTSS(x)) || '-',
         },
-            ...peakRanges.periods.map(x => {
-                const period = x.value;
-                const id = `time-${period}`;
-                return {
-                    id,
-                    period,
-                    type: 'peak',
-                    align: 'right',
-                    metric: 'time',
-                    label: H.peakPeriod(period, {short: false, html: true}),
-                    shortLabel: H.peakPeriod(period, {short: true, html: true}),
-                    sortKey: function(x) { return this.peaks.get(x.id)?.[id]?.peak?.value; },
-                    format: function(a, peaks) { return this._formatPeak(peaks[id]?.peak, a); },
-                };
-            }),
-            ...peakRanges.distances.map(x => {
-                const period = x.value;
-                const id = `distance-${period}`;
-                return {
-                    id,
-                    period,
-                    type: 'peak',
-                    align: 'right',
-                    metric: 'distance',
-                    label: H.raceDistance(period, {html: true, short: false}),
-                    shortLabel: H.raceDistance(period, {html: true, short: true}),
-                    sortKey: function(x) { return this.peaks.get(x.id)?.[id]?.peak?.value; },
-                    sortReverse: true,
-                    format: function(a, peaks) { return this._formatPeak(peaks[id]?.peak, a); },
-                };
-            })
-        ];
+        ...peakRanges.periods.map(x => {
+            const period = x.value;
+            const id = `time-${period}`;
+            return {
+                id,
+                period,
+                type: 'peak',
+                align: 'right',
+                metric: 'time',
+                label: H.peakPeriod(period, {short: false, html: true}),
+                shortLabel: H.peakPeriod(period, {short: true, html: true}),
+                sortKey: function(x) { return this.peaks.get(x.id)?.[id]?.peak?.value; },
+                format: function(a, peaks) { return this._formatPeak(peaks[id]?.peak, a); },
+            };
+        }),
+        ...peakRanges.distances.map(x => {
+            const period = x.value;
+            const id = `distance-${period}`;
+            return {
+                id,
+                period,
+                type: 'peak',
+                align: 'right',
+                metric: 'distance',
+                label: H.raceDistance(period, {html: true, short: false}),
+                shortLabel: H.raceDistance(period, {html: true, short: true}),
+                sortKey: function(x) { return this.peaks.get(x.id)?.[id]?.peak?.value; },
+                sortReverse: true,
+                format: function(a, peaks) { return this._formatPeak(peaks[id]?.peak, a); },
+            };
+        })];
     }
 
     _formatPeak(peak, activity) {
@@ -588,8 +587,8 @@ export class ActivityTableView extends PerfView {
         loadMore.classList.add('loading');
         let activities;
         try {
-            const tpl = await sauce.template.getTemplate('performance/activity-table-entry.html',
-                'performance');
+            const tpl = await sauce.template.getTemplate(
+                'performance/activity-table-entry.html', 'performance');
             const attrs = this.renderAttrs();
             activities = this.getFilteredActivities();
             const moreActs = activities.slice(this.rowLimit, this.rowLimit += this.rowPageSize);
@@ -709,7 +708,7 @@ export class BulkActivityEditDialog extends PerfView {
                         await sauce.hist.updateActivities(updates);
                         for (const id of Object.keys(updates)) {
                             await sauce.hist.invalidateActivitySyncState(Number(id), 'local', null,
-                                {disableSync: true});
+                                                                         {disableSync: true});
                         }
                         for (const x of this.athletes) {
                             await sauce.hist.syncAthlete(x);
@@ -777,8 +776,8 @@ export class SummaryView extends PerfView {
         const ranges = await getPeakRanges(getPeaksRangeTypeForStream(type));
         const keyFormatter = getPeaksKeyFormatter(type);
         const valueFormatter = getPeaksValueFormatter(type);
-        const peaks = await sauce.hist.getPeaksForAthlete(this.athlete.id, type,
-            ranges.map(x => x.value), {limit: 1, start, end, expandActivities: true});
+        const peaks = await sauce.hist.getPeaksForAthlete(
+            this.athlete.id, type, ranges.map(x => x.value), {limit: 1, start, end, expandActivities: true});
         return peaks.map(x => ({
             key: keyFormatter(x.period, {html: true}),
             prettyValue: valueFormatter(x.value, {activityType: x.activityType}),
@@ -1134,8 +1133,7 @@ export class DetailsView extends PerfView {
             return;
         }
         const oldest = this.activities[0];
-        const more = await sauce.hist.getActivitySiblings(oldest.id,
-            {direction: 'prev', limit: 1});
+        const more = await sauce.hist.getActivitySiblings(oldest.id, {direction: 'prev', limit: 1});
         await this.setActivities(this.activities.concat(more), {noHighlight: true});
     }
 
@@ -1144,8 +1142,7 @@ export class DetailsView extends PerfView {
             return;
         }
         const newest = this.activities[this.activities.length - 1];
-        const more = await sauce.hist.getActivitySiblings(newest.id,
-            {direction: 'next', limit: 1});
+        const more = await sauce.hist.getActivitySiblings(newest.id, {direction: 'next', limit: 1});
         await this.setActivities(this.activities.concat(more), {noHighlight: true});
     }
 
@@ -1153,8 +1150,8 @@ export class DetailsView extends PerfView {
         const range = this.pageView.range;
         const start = +range.start;
         const end = +range.end;
-        const activities = await sauce.hist.getActivitiesForAthlete(this.pageView.athlete.id,
-            {start, end, limit: 10, direction: 'prev'});
+        const activities = await sauce.hist.getActivitiesForAthlete(
+            this.pageView.athlete.id, {start, end, limit: 10, direction: 'prev'});
         await this.setActivities(activities, {noHighlight: true});
     }
 
@@ -1721,8 +1718,8 @@ export class MainView extends PerfView {
             const el = ev.currentTarget;
             selected = panelViews.find(x => x.uuid === el.value);
             $dialog.find('.desc').text(await L.getMessage(selected.descLocaleKey));
-            $dialog.find('input[name="name"]').attr('placeholder',
-                await L.getMessage(selected.nameLocaleKey));
+            $dialog.find('input[name="name"]').attr(
+                'placeholder', await L.getMessage(selected.nameLocaleKey));
         });
     }
 
@@ -1787,8 +1784,8 @@ export class MainView extends PerfView {
             resizable: false,
         });
         if (panel.view.constructor.SettingsView) {
-            const v = new panel.view.constructor.SettingsView(panel.view,
-                {el: $dialog.find('.panel-settings')});
+            const v = new panel.view.constructor.SettingsView(
+                panel.view, {el: $dialog.find('.panel-settings')});
             v.render();  // bg okay
             $dialog.on('dialogclose', () => v.remove());
         }
@@ -1990,7 +1987,8 @@ export class PageView extends PerfView {
             const [period, metric] = this.getAllRange();
             this.range = new D.CalendarRange(null, period, metric);
         } else {
-            this.range = new D.CalendarRange(f.suggestedEnd,
+            this.range = new D.CalendarRange(
+                f.suggestedEnd,
                 f.period || defaults.period || 4,
                 f.metric || defaults.metric || 'weeks');
         }
@@ -2109,8 +2107,7 @@ export class PageView extends PerfView {
         }
         const updated = wasNewest !== this.newest || wasOldest !== this.oldest;
         if (updated) {
-            this.trigger('available-activities-changed',
-                {newest: this.newest, oldest: this.oldest});
+            this.trigger('available-activities-changed', {newest: this.newest, oldest: this.oldest});
         }
     }
 
@@ -2225,8 +2222,8 @@ export class PageView extends PerfView {
     async _getActivities(range) {
         const start = +range.start;
         const end = +range.end;
-        const activities = await sauce.hist.getActivitiesForAthlete(this.athlete.id,
-            {start, end, includeTrainingLoadSeed: true, excludeUpper: true});
+        const activities = await sauce.hist.getActivitiesForAthlete(
+            this.athlete.id, {start, end, includeTrainingLoadSeed: true, excludeUpper: true});
         return {activities, range};
     }
 

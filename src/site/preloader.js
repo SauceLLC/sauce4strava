@@ -534,8 +534,8 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                 Strava.Labs.Activities.SegmentsChartView.prototype.render = function() {
                     this.renderTemplate();
                     // Use non-small Activity class..
-                    this.chart = new Strava.Charts.Activities.Activity(this.context, this.streamsRequest,
-                        this.showStreamsOnZoom);
+                    this.chart = new Strava.Charts.Activities.Activity(
+                        this.context, this.streamsRequest, this.showStreamsOnZoom);
                     // Copy height adjustment made by ride overview in StreamsChartView.
                     this.chart.builder.height(100);
                     this.chart.render(this.$el);

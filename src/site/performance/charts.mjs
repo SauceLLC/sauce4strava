@@ -169,7 +169,7 @@ export const overUnderFillPlugin = {
             const topPct = this._safePct(scale.getPixelForValue(max) / height);
             gFill.addColorStop(topPct, `rgba(${overMaxColor.join()}`);
             gFill.addColorStop(this._safePct(zeroPct - midPointMarginPct),
-                `rgba(${overMinColor.join()}`);
+                               `rgba(${overMinColor.join()}`);
             gFill.addColorStop(zeroPct, `rgba(${overMinColor.slice(0, 3).join()}, 0)`);
         }
         if (scale.min < 0) {
@@ -178,7 +178,7 @@ export const overUnderFillPlugin = {
             const bottomPct = this._safePct(scale.getPixelForValue(min) / height);
             gFill.addColorStop(zeroPct, `rgba(${underMinColor.slice(0, 3).join()}, 0`);
             gFill.addColorStop(this._safePct(zeroPct + midPointMarginPct),
-                `rgba(${underMinColor.join()}`);
+                               `rgba(${underMinColor.join()}`);
             gFill.addColorStop(bottomPct, `rgba(${underMaxColor.join()}`);
         }
         return gFill;

@@ -10,7 +10,7 @@ function init() {
 (function() {
     if (!document.documentElement.dataset.sauceBaseInitParams) {
         console.warn("Doing workaround for out of order startup bug:",
-            "https://bugzilla.mozilla.org/show_bug.cgi?id=1920169");
+                     "https://bugzilla.mozilla.org/show_bug.cgi?id=1920169");
         const mo = new MutationObserver(mutes => {
             init();
             mo.disconnect();

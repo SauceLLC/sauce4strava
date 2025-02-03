@@ -1,7 +1,8 @@
 /* global browser, sauce */
 
 (async function() {
-    sauce.proxy.export(browser.runtime.openOptionsPage,
+    sauce.proxy.export(
+        browser.runtime.openOptionsPage,
         {namespace: 'menu', name: 'openOptionsPage'});  // Need to set name for FF
 
     if (browser.contextMenus) {

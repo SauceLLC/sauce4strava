@@ -468,7 +468,7 @@ sauce.ns('analysis', ns => {
                 await this.render();
             });
             this.$el.on('click', '.drop-down-menu .options li.sauce-peaks-settings',
-                showPeaksSettingsDialog);
+                        showPeaksSettingsDialog);
         }
 
         async render() {
@@ -825,7 +825,7 @@ sauce.ns('analysis', ns => {
                 const maxHR = sauce.perf.estimateMaxHR(zones);
                 const restingHR = ns.ftp ? sauce.perf.estimateRestingHR(ns.ftp) : 60;
                 localTrimpTss = sauce.perf.tTSS(hrStream, timeStream, activeStream, ltHR,
-                    restingHR, maxHR, ns.gender);
+                                                restingHR, maxHR, ns.gender);
             }
         }
         if (ns.syncActivity?.tssOverride != null) {
@@ -922,7 +922,7 @@ sauce.ns('analysis', ns => {
                             !attrs.isWattEstimate || x.value >= minWattEstTime);
                         for (const range of ranges) {
                             const roll = sauce.power.peakPower(range.value, timeStream, dataStream,
-                                {activeStream});
+                                                               {activeStream});
                             if (roll) {
                                 if (source === 'peak_power_wkg') {
                                     const native = roll.avg() / ns.weight;
@@ -957,7 +957,7 @@ sauce.ns('analysis', ns => {
                         }[source];
                         for (const range of periodRanges.filter(x => x.value >= minPowerPotentialTime)) {
                             const roll = calcs.peakSearch(range.value, timeStream, wattsStream,
-                                {activeStream});
+                                                          {activeStream});
                             // Use external NP/XP method for consistency.  There are tiny differences because
                             // the peak functions use a continuous rolling avg vs the external method that
                             // only examines the trimmed date set.
@@ -970,7 +970,8 @@ sauce.ns('analysis', ns => {
                     } else if (source === 'peak_hr') {
                         const unit = L.hrFormatter.shortUnitKey();
                         for (const range of periodRanges) {
-                            const roll = sauce.data.peakAverage(range.value, timeStream, hrStream,
+                            const roll = sauce.data.peakAverage(
+                                range.value, timeStream, hrStream,
                                 {ignoreZeros: true, active: true, activeStream});
                             if (roll) {
                                 const native = roll.avg();
@@ -981,7 +982,8 @@ sauce.ns('analysis', ns => {
                     } else if (source === 'peak_cadence') {
                         const unit = ns.cadenceFormatter.shortUnitKey();
                         for (const range of periodRanges) {
-                            const roll = sauce.data.peakAverage(range.value, timeStream, cadenceStream,
+                            const roll = sauce.data.peakAverage(
+                                range.value, timeStream, cadenceStream,
                                 {ignoreZeros: true, active: true, activeStream});
                             if (roll) {
                                 const native = roll.avg();
@@ -993,7 +995,7 @@ sauce.ns('analysis', ns => {
                         const vamStream = sauce.geo.createVAMStream(timeStream, altStream);
                         for (const range of periodRanges.filter(x => x.value >= minVAMTime)) {
                             const roll = sauce.data.peakAverage(range.value, timeStream, vamStream,
-                                {active: true, activeStream});
+                                                                {active: true, activeStream});
                             if (roll) {
                                 const native = roll.avg();
                                 const value = H.number(native);
@@ -1167,7 +1169,7 @@ sauce.ns('analysis', ns => {
         }
         if (options.startTime != null && options.endTime != null) {
             return await fetchStreamTimeRange('grade_adjusted_distance', options.startTime,
-                options.endTime);
+                                              options.endTime);
         } else {
             return await fetchStream('grade_adjusted_distance', options.start, options.end);
         }
@@ -1188,11 +1190,9 @@ sauce.ns('analysis', ns => {
                 const timeStream = _getStream('time');
                 const activeStream = _getStream('active');
                 if (stream.startsWith('watts')) {
-                    roll = sauce.power.correctedPower(timeStream, fullStream,
-                        {activeStream, ...options});
+                    roll = sauce.power.correctedPower(timeStream, fullStream, {activeStream, ...options});
                 } else {
-                    roll = sauce.data.correctedAverage(timeStream, fullStream,
-                        {activeStream, ...options});
+                    roll = sauce.data.correctedAverage(timeStream, fullStream, {activeStream, ...options});
                 }
                 if (roll) {
                     roll.isEstimate = ['watts_calc', 'watts_sealevel'].includes(stream);
@@ -1242,7 +1242,7 @@ sauce.ns('analysis', ns => {
     const _activeGraphs = new Set();
     let _lastInfoDialogSource;
     async function showInfoDialog({startTime, endTime, wallStartTime, wallEndTime, label, range,
-        source, originEl, isDistanceRange}) {
+                                   source, originEl, isDistanceRange}) {
         const powerRoll = await correctedRollTimeRange('watts', wallStartTime, wallEndTime);
         const elapsedTime = wallEndTime - wallStartTime;
         const streams = {
@@ -1256,9 +1256,9 @@ sauce.ns('analysis', ns => {
             streams.velocity_smooth = paceStream.map(x => 1 / x);
         }
         const cadenceRoll = await correctedRollTimeRange('cadence', wallStartTime, wallEndTime,
-            {active: true, ignoreZeros: true});
+                                                         {active: true, ignoreZeros: true});
         const hrRoll = await correctedRollTimeRange('heartrate', wallStartTime, wallEndTime,
-            {active: true, ignoreZeros: true});
+                                                    {active: true, ignoreZeros: true});
         const tempStream = await fetchStreamTimeRange('temp', startTime, endTime);
         const distance = streamDelta(streams.distance);
         const startIdx = getStreamTimeIndex(startTime);
@@ -1764,8 +1764,10 @@ sauce.ns('analysis', ns => {
 
 
     async function exportActivity(type, {start, end, laps}) {
-        const streamTypes = ['time', 'watts', 'heartrate', 'altitude', 'active',
-                             'cadence', 'temp', 'latlng', 'distance', 'velocity_smooth'];
+        const streamTypes = [
+            'time', 'watts', 'heartrate', 'altitude', 'active',
+            'cadence', 'temp', 'latlng', 'distance', 'velocity_smooth'
+        ];
         const streams = (await fetchStreams(streamTypes)).reduce((acc, x, i) =>
             (acc[streamTypes[i]] = x && x.slice(start, end != null ? end + 1 : end), acc), {});
         if (!streams.watts) {
@@ -1987,7 +1989,7 @@ sauce.ns('analysis', ns => {
             return;
         }
         const rank = sauce.power.rank(segment.get('elapsed_time_raw'),
-            segment.get('avg_watts_raw'), null, ns.weight, ns.gender);
+                                      segment.get('avg_watts_raw'), null, ns.weight, ns.gender);
         if (!rank || !rank.badge) {
             return;  // Too slow/weak
         }
@@ -2299,7 +2301,7 @@ sauce.ns('analysis', ns => {
             elapsedWKg: (ns.weight && elapsedAvg != null) && elapsedAvg / ns.weight,
             rank: (ns.weight && elapsedAvg) &&
                 sauce.power.rank(extra.activeTime || powerRoll.active(), elapsedAvg,
-                    extra.np, ns.weight, ns.gender),
+                                 extra.np, ns.weight, ns.gender),
             ...extra
         };
     }
@@ -2350,7 +2352,7 @@ sauce.ns('analysis', ns => {
         const hrStream = await fetchStream('heartrate', start, end);
         const altStream = await fetchSmoothStream('altitude', null, start, end);
         const powerRoll = await correctedRollTimeRange('watts', getStreamIndexTime(start),
-            getStreamIndexTime(end));  // Can be watts_calc too
+                                                       getStreamIndexTime(end));  // Can be watts_calc too
         const activeTime = getActiveTime(start, end);
         const elapsedTime = streamDelta(timeStream);
         const distance = streamDelta(distStream);
@@ -2390,8 +2392,7 @@ sauce.ns('analysis', ns => {
                 const ltHR = (zones.z4 + zones.z3) / 2;
                 const maxHR = sauce.perf.estimateMaxHR(zones);
                 const restingHR = ns.ftp ? sauce.perf.estimateRestingHR(ns.ftp) : 60;
-                tTss = sauce.perf.tTSS(hrStream, timeStream, activeStream, ltHR, restingHR, maxHR,
-                    ns.gender);
+                tTss = sauce.perf.tTSS(hrStream, timeStream, activeStream, ltHR, restingHR, maxHR, ns.gender);
             }
         }
         if (kj || tTss) {
@@ -2654,7 +2655,7 @@ sauce.ns('analysis', ns => {
 
 
     async function createLiveSegment({start, end, uuid, segmentName, leaderName, leaderType,
-        timeMultiplier}) {
+                                      timeMultiplier}) {
         const {FitParser} = await import(sauce.getURL('src/common/jsfit/fit.mjs'));
         const timeStreamOrig = await fetchStream('time', start, end);
         const timeStream = (timeMultiplier && timeMultiplier !== 1) ?
@@ -2717,8 +2718,8 @@ sauce.ns('analysis', ns => {
         const buf = fitParser.encode();
         const leaderInitials = leaderName.trim().split(/\s+/).map(x => x.substr(0, 1)).join('');
         const fname = `SauceLiveSegment-${segmentName.substr(0, 22)}-${leaderInitials}`;
-        sauce.ui.downloadBlob(new File([buf],
-            fname.trim().replace(/\s/g, '_').replace(/[^\w_-]/g, '') + '.fit'));
+        sauce.ui.downloadBlob(
+            new File([buf], fname.trim().replace(/\s/g, '_').replace(/[^\w_-]/g, '') + '.fit'));
     }
 
 
@@ -2727,7 +2728,7 @@ sauce.ns('analysis', ns => {
         const distStream = await fetchStream('distance', start, end);
         const altStream = await fetchSmoothStream('altitude', null, start, end);
         const powerRoll = await correctedRollTimeRange('watts', getStreamIndexTime(start),
-            getStreamIndexTime(end));
+                                                       getStreamIndexTime(end));
         const origTime = streamDelta(timeStream);
         const origDistance = streamDelta(distStream);
         const origVelocity = origDistance / origTime;
@@ -2842,7 +2843,7 @@ sauce.ns('analysis', ns => {
                     positions.set(position, 1);
                     const dr = sauce.power.cyclingDraftDragReduction(riders, position);
                     est = sauce.power.cyclingPowerFastestVelocitySearch({power, slope, weight, crr,
-                        cda: cda * dr, el, wind});
+                                                                         cda: cda * dr, el, wind});
                 } else {
                     const work = fget('work');
                     $draftWork.text(Math.round(work * 100).toLocaleString());
@@ -2852,8 +2853,8 @@ sauce.ns('analysis', ns => {
                             positions.set(i + 1, pct);
                         }
                     }
-                    est = sauce.power.cyclingPowerVelocitySearchMultiPosition(riders,
-                        Array.from(positions).map(x => ({position: x[0], pct: x[1]})),
+                    est = sauce.power.cyclingPowerVelocitySearchMultiPosition(
+                        riders, Array.from(positions).map(x => ({position: x[0], pct: x[1]})),
                         {power, slope, weight, crr, cda, el, wind});
                 }
                 if (est) {
@@ -2868,10 +2869,11 @@ sauce.ns('analysis', ns => {
                             const draftCda = cda * sauce.power.cyclingDraftDragReduction(riders, i + 1);
                             const pct = positions.get(i + 1) || 0;
                             if (rotating) {
-                                const youPosEst = sauce.power.cyclingPowerEstimate({velocity: est.velocity,
-                                    slope, weight, crr, cda: draftCda, el, wind});
-                                const themPosEst = sauce.power.cyclingPowerEstimate({velocity: est.velocity,
-                                    slope, weight: groupWeight, crr, cda: draftCda, el, wind});
+                                const youPosEst = sauce.power.cyclingPowerEstimate(
+                                    {velocity: est.velocity, slope, weight, crr, cda: draftCda, el, wind});
+                                const themPosEst = sauce.power.cyclingPowerEstimate(
+                                    {velocity: est.velocity, slope, weight: groupWeight, crr, cda: draftCda,
+                                     el, wind});
                                 minP = Math.min(youPosEst.watts, themPosEst.watts, minP);
                                 maxP = Math.max(youPosEst.watts, themPosEst.watts, maxP);
                                 const j = (youPosEst.watts * time * pct) +
@@ -2896,8 +2898,8 @@ sauce.ns('analysis', ns => {
                                 icon.style.setProperty('--draft-pct', Math.min(1, pct));
                             } else {
                                 const w = (i + 1) === position ? weight : groupWeight;
-                                const posEst = sauce.power.cyclingPowerEstimate({velocity: est.velocity,
-                                    slope, weight: w, crr, cda: draftCda, el, wind});
+                                const posEst = sauce.power.cyclingPowerEstimate(
+                                    {velocity: est.velocity, slope, weight: w, crr, cda: draftCda, el, wind});
                                 minP = Math.min(posEst.watts, minP);
                                 maxP = Math.max(posEst.watts, maxP);
                                 joules += posEst.watts * time;
@@ -2926,7 +2928,7 @@ sauce.ns('analysis', ns => {
                 }
             } else {
                 est = sauce.power.cyclingPowerFastestVelocitySearch({power, slope, weight, crr,
-                    cda, el, wind});
+                                                                     cda, el, wind});
             }
             $dialog.toggleClass('drafting', drafting);
             $output.toggleClass('valid', !!est);
@@ -3209,13 +3211,13 @@ sauce.ns('analysis', ns => {
                     const origValues = Object.fromEntries(Object.keys(updates).map(x =>
                         [x, ret.syncActivity[x]]));
                     console.info("Updating activity DB entry:", JSON.stringify(origValues),
-                        JSON.stringify(updates));
+                                 JSON.stringify(updates));
                     await sauce.hist.updateActivity(activity.id, updates);
                     Object.assign(ret.syncActivity, updates);
                     if (updates.basetype) {
                         await sauce.hist.deletePeaksForActivity(activity.id); // XXX might be redundant now
                         await sauce.hist.invalidateActivitySyncState(activity.id, 'local', null,
-                            {wait: true});
+                                                                     {wait: true});
                         setSyncDone();
                     }
                 }
@@ -3318,7 +3320,8 @@ sauce.ns('analysis', ns => {
                 Math.round(sauce.power.seaLevelPower(x, altStream[i]))));
         }
         if (hasAccurateWatts() && ns.ftp && ns.wPrime) {
-            streamData.add('w_prime_balance',
+            streamData.add(
+                'w_prime_balance',
                 sauce.power.calcWPrimeBalDifferential(wattsStream, timeStream, ns.ftp, ns.wPrime));
         }
         const isTrainer = pageView.activity().isTrainer();

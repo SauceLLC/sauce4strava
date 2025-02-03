@@ -222,7 +222,7 @@ export class DataExchange extends sauce.proxy.Eventing {
         for (let offt = 0; offt < activities.length; offt += step) {
             const actsBatch = activities.slice(offt, offt + step);
             const streamsBatch = await streamsStore.getManyForActivities(actsBatch.map(x => x.id),
-                {index: 'activity'});
+                                                                         {index: 'activity'});
             console.debug("Adding FIT files to ZIP archive", offt + actsBatch.length, activities.length);
             for (const [i, streams] of streamsBatch.entries()) {
                 const act = actsBatch[i];
@@ -249,8 +249,7 @@ export class DataExchange extends sauce.proxy.Eventing {
                     await this.dispatchBlob(zip.getBlob());
                     zip = new SauceZip();
                 }
-                zip.addFile(`${dir}/${act.id}.${type}`,
-                    await file.arrayBuffer(), {mtime: date});
+                zip.addFile(`${dir}/${act.id}.${type}`, await file.arrayBuffer(), {mtime: date});
                 const ev = new Event('progress');
                 ev.data = zip.size;
                 this.dispatchEvent(ev);

@@ -9,8 +9,7 @@ function handleAttributionDialog() {
         const dialog = document.createElement('dialog');
         dialog.srcElement = el;
         dialog.classList.add('sauce-attr');
-        sauce.adjacentNodeContents(dialog, 'beforeend',
-            browser.i18n.getMessage(`attribution_${key}`));
+        sauce.adjacentNodeContents(dialog, 'beforeend', browser.i18n.getMessage(`attribution_${key}`));
         const pos = el.getBoundingClientRect();
         if (pos.x || pos.y) {
             dialog.style.setProperty('top', pos.y + pos.height + 'px');
@@ -69,8 +68,8 @@ function handleAttributionDialog() {
             }
             dialogSingleton.close();
         }
-        hoverTimeout = setTimeout(() => makeAttrDialog(attr, attr.getAttribute('attr-tooltip')).show(),
-            hoverDelay);
+        hoverTimeout = setTimeout(() =>
+            makeAttrDialog(attr, attr.getAttribute('attr-tooltip')).show(), hoverDelay);
     });
 }
 
@@ -147,7 +146,8 @@ function setCustomFont(options) {
                 });
                 setCustomFont(config.options);
                 if (config.options['analysis-max-page-width']) {
-                    document.documentElement.style.setProperty('--analysis-max-page-width',
+                    document.documentElement.style.setProperty(
+                        '--analysis-max-page-width',
                         `${config.options['analysis-max-page-width']}px`);
                 }
             }
@@ -406,7 +406,7 @@ function setCustomFont(options) {
             options['hide-sauce-bonus-features']);
         Object.assign(sauce, patronVars);
         sauce.loadScripts([`${extUrl}src/site/set_options.js`],
-            {params: JSON.stringify({options: options || {}, patronVars})});
+                          {params: JSON.stringify({options: options || {}, patronVars})});
         const loading = [];
         for (const m of matchingManifests) {
             if (m.name) {

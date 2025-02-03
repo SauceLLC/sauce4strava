@@ -1141,17 +1141,18 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, name, version) {
         get migrations() {
             return [
                 // Version 1 deprecated
-            {
-                version: 2,
-                migrate: (idb, t, next) => {
-                    if (idb.objectStoreNames.contains('entries')) {
-                        idb.deleteObjectStore("entries");
+                {
+                    version: 2,
+                    migrate: (idb, t, next) => {
+                        if (idb.objectStoreNames.contains('entries')) {
+                            idb.deleteObjectStore("entries");
+                        }
+                        const store = idb.createObjectStore("entries", {keyPath: ['bucket', 'key']});
+                        store.createIndex('bucket-expiration', ['bucket', 'expiration']);
+                        next();
                     }
-                    const store = idb.createObjectStore("entries", {keyPath: ['bucket', 'key']});
-                    store.createIndex('bucket-expiration', ['bucket', 'expiration']);
-                    next();
                 }
-            }];
+            ];
         }
     }
 
@@ -1387,7 +1388,7 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, name, version) {
                 }
                 if (obj.prototype) {
                     output.push(['<prototype>', _enterTree(obj.prototype, depth, filter, find, findAll,
-                        [...path, 'prototype'], refs)]);
+                                                           [...path, 'prototype'], refs)]);
                 }
                 if (findAll) {
                     output = output.filter(x => !Object.is(x[1], _treeExclude));

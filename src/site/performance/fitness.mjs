@@ -674,7 +674,8 @@ export class ActivityStatsChartView extends charts.ActivityTimeRangeChartView {
                         H.duration(x, {maxPeriod: 3600, minPeriod: 3600, precision: 1, html: true})
                     ];
                     if (predictions && i === metricData.length - 1) {
-                        const pdur = H.duration(predictions.duration[i].y + x,
+                        const pdur = H.duration(
+                            predictions.duration[i].y + x,
                             {maxPeriod: 3600, minPeriod: 3600, precision: 1, html: true});
                         tips.push(`${this.LM('predicted')}: <b>~${pdur}</b>`);
                     }
@@ -696,7 +697,8 @@ export class ActivityStatsChartView extends charts.ActivityTimeRangeChartView {
                 tooltipFormat: (x, i) => {
                     const tips = [H.distance(x, {precision: 0, suffix: true, html: true})];
                     if (predictions && i === metricData.length - 1) {
-                        const pdist = H.distance(predictions.distance[i].y + x,
+                        const pdist = H.distance(
+                            predictions.distance[i].y + x,
                             {precision: 0, suffix: true, html: true});
                         tips.push(`${this.LM('predicted')}: <b>~${pdist}</b>`);
                     }

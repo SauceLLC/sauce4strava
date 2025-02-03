@@ -390,9 +390,9 @@ sauce.ns('hist.db', ns => {
                     store.createIndex('athlete-type-period-value', ['athlete', 'type', 'period', 'value']);
                     store.createIndex('type-period-value', ['type', 'period', 'value']);
                     store.createIndex('athlete-activitytype-type-period-value',
-                        ['athlete', 'activityType', 'type', 'period', 'value']);
+                                      ['athlete', 'activityType', 'type', 'period', 'value']);
                     store.createIndex('activitytype-type-period-value',
-                        ['activityType', 'type', 'period', 'value']);
+                                      ['activityType', 'type', 'period', 'value']);
                     next();
                 }
             }, {
@@ -663,7 +663,7 @@ sauce.ns('hist.db', ns => {
                 options.index = 'athlete-basetype-ts';
             } else {
                 q = IDBKeyRange.bound([athlete, start], [athlete, end],
-                    options.excludeLower, options.excludeUpper);
+                                      options.excludeLower, options.excludeUpper);
                 options.index = 'athlete-ts';
             }
             return [q, options];
@@ -721,8 +721,9 @@ sauce.ns('hist.db', ns => {
         }
 
         async getPrevSibling(actThing, options={}) {
-            for await (const x of this.siblings(actThing,
-                {direction: 'prev', models: options.model, ...options})) {
+            for await (const x of this.siblings(actThing, {direction: 'prev',
+                                                           models: options.model,
+                                                           ...options})) {
                 return x;
             }
         }
@@ -745,8 +746,9 @@ sauce.ns('hist.db', ns => {
         }
 
         async getNewestForAthlete(athlete, options={}) {
-            for await (const x of this.byAthlete(athlete,
-                {direction: 'prev', models: options.model, ...options})) {
+            for await (const x of this.byAthlete(athlete, {direction: 'prev',
+                                                           models: options.model,
+                                                           ...options})) {
                 return x;
             }
         }
