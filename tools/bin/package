@@ -31,6 +31,7 @@ rsync -a \
 
 node_modules/.bin/sass scss:$TMPDIR/css --no-source-map
 cp -a scss/fonts $TMPDIR/css/
+cp -a css/saucecharts $TMPDIR/css/
 
 $(dirname $0)/mergejson "./manifest_base.json" "./manifest_${KIND}.json" > $TMPDIR/manifest.json
 
