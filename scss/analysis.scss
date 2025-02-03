@@ -7,7 +7,7 @@
 @use 'data_views';
 @use 'sync';
 
-@import 'saucecharts/line.css';
+@import 'saucecharts/bar.css';
 
 
 html.sauce-enabled {
@@ -407,5 +407,32 @@ section.run.segments-list {
 
     .segment-effort-detail {
         min-width: min(100%, 440px);
+    }
+}
+
+#laps .sauce-efforts-chart {
+    border: var(--sauce-thin-border);
+    border-left: none;
+    border-right: none;
+    background-color: color.shade(fg, 0%, 0.02);
+
+    .sauce-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        padding: 0.7em;
+        background-color: color.shade(fg, 40%, 0.05);
+
+        label {
+            all: revert;
+            cursor: pointer;
+            font: inherit;
+            display: flex;
+            align-items: center;
+
+            input {
+                all: revert;
+            }
+        }
     }
 }

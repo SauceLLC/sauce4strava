@@ -651,85 +651,141 @@ sauce.ns('analysis', ns => {
 
     async function initLapsAddon() {
         const sc = await import('./saucecharts/index.mjs');
-        document.addEventListener('lap-efforts-table-view-render', ev => {
-            renderEffortsChart(sc);
+        document.addEventListener('lap-efforts-table-view-render', async ev => {
+            await renderEffortsChart(sc);
         });
-        renderEffortsChart(sc);
+        await renderEffortsChart(sc);
     }
 
 
-    function renderEffortsChart(sc) {
+    async function renderEffortsChart(sc) {
         const $anchor = jQuery('#efforts-table');
         if (!$anchor.length) {
             console.warn("no laps view");
             return;
         }
+        const locale = await L.getMessagesObject(['power', 'pace', 'hr']);
         $anchor.siblings('.sauce-efforts-chart').remove();
         let types = [{
             attr: 'avg_watts',
-            label: 'Power', // XXX locale
-            format: H.power,
-            color: 'purple',
+            label: locale.power,
+            axis: (x, i) => i ? H.power(x) : 'w',
         }, {
             attr: 'avg_moving_speed',
-            label: 'Pace', // XXX locale
-            format: H.pace,
-            color: 'green',
+            label: locale.pace,
+            axis: (x, i) => i ? H.pace(1 / x) : ns.paceFormatter.shortUnitKey(),
         }, {
             attr: 'avg_hr',
-            label: 'HR', // XXX locale
-            format: H.hr,
-            color: 'red',
+            label: locale.hr,
+            axis: (x, i) => i ? H.hr(x) : L.hrFormatter.shortUnitKey(),
         }];
         const efforts = pageView.lapEfforts();
         types = types.filter(x => efforts.models.some(xx => xx.get(x.attr) != null));
         if (!types.length) {
             return;
         }
-        let type = types[0].attr;
+        let type = types[0];
         $anchor.before(`
             <div class="sauce-efforts-chart">
-                <header>
+                <div class="sauce-header">
                     ${types.map((x, i) =>`<label>${x.label}
-                        <input type="radio" value="${x.attr}" ${!i ? 'selected' : ''} name="type"/>
-                    </label>`)}
-                </header>
-                <div style="width: 100%; height: 4em;" class="chart-holder"></div>
-                <div style="width: 100%; height: 4em;" class="saucecharts-holder"></div>
+                        <input type="radio" value="${x.attr}" ${!i ? 'checked' : ''} name="type"/>
+                    </label>`).join('')}
+                </div>
+                <div style="width: 100%; height: 10em;" class="saucecharts-holder"></div>
             </div>
         `);
         const $efforts = $anchor.siblings('.sauce-efforts-chart');
-        const renderChart = () => {
-            const data = efforts.models.map((x, i) => ({
-                value: x.get(type),
-                width: Math.random() * 100,
-            }));
-            const chart = new sc.LineChart({
-                el: $efforts.find('.saucecharts-holder')[0],
-            });
-            chart.setData(data);
-            $efforts.find('.chart-holder').sparkline(data, {
-                type: 'bar',
-                barSpacing: 1,
-                height: '5em',
-                lineColor: '#EA400DA0',
-                fillColor: {
-                    type: 'gradient',
-                    opacity: 0.8,
-                    steps: hslValueGradientSteps([0, 3000],
-                        {hStart: 120, hEnd: 160, sStart: 40, sEnd: 100, lStart: 60, lEnd: 20})
+        let yMin, yMax, totTime;
+        const chart = new sc.BarChart({
+            el: $efforts.find('.saucecharts-holder')[0],
+            padding: [12, 12, 20, 40],
+            barSpacing: 0,
+            tooltip: {
+                format: ({entry}) => {
+                    const model = efforts.models[entry.index];
+                    const power = model.get('avg_watts');
+                    const pace = model.get('avg_moving_speed');
+                    const hr = model.get('avg_hr');
+                    const rows = [`Time: ${H.timer(entry.width, {html: true})}`];
+                    if (power != null) {
+                        rows.push(`Power: ${H.power(power, {suffix: true, html: true})} ` +
+                            `(Z${entry.zoneIndex + 1})`);
+                    }
+                    if (pace != null) {
+                        rows.push(`Pace: ${H.pace(1 / pace, {suffix: true, html: true})}`);
+                    }
+                    if (hr != null) {
+                        rows.push(`HR: ${H.hr(hr, {suffix: true, html: true})}`);
+                    }
+                    return `<div>${rows.join('<br/>')}</div>`;
                 },
-                tooltipFormatter: (_, __, data) => {
-                    console.log(_, __, data);
-                    return data[0].value;
+            },
+            yAxis: {
+                showFirst: true,
+                label: ({index, ticks}) => {
+                    const v = yMin + (index / (ticks - 1)) * (yMax - yMin);
+                    return type.axis(v, index);
                 }
-            });
-        };
-        $efforts.on('input', 'input[name="type"]', ev => {
-            type = ev.currentTarget.value;
-            renderChart();
+            },
+            xAxis: {
+                label: ({index, ticks}) => {
+                    const t = (index / (ticks - 1)) * totTime;
+                    return H.timer(t);
+                }
+            }
         });
-        renderChart();
+        const renderChart = async () => {
+            const data = efforts.models.map(x => ({
+                width: x.get('moving_time'),
+                y: x.get(type.attr),
+            }));
+            yMin = Math.min(...data.map(o => o.y));
+            yMax = Math.max(...data.map(o => o.y));
+            totTime = data.reduce((agg, x) => agg + x.width, 0);
+            let colors;
+            if (type.attr === 'avg_watts') {
+                yMin = 0;
+                if (ns.ftp) {
+                    const zones = sauce.power.cogganZones(ns.ftp);
+                    colors = Object.values(zones).map((x, i) => {
+                        const {h, s, l} = sauce.ui.zoneColors[i];
+                        return {color: `hsl(${h}deg ${s}% ${l}%)`, high: x};
+                    });
+                    yMax = Math.max(yMax, zones.z6 * 1.25);
+                } else {
+                    colors = [{color: '#e33', high: Infinity}];
+                    yMax = Math.max(yMax, 800);
+                }
+            } else if (type.attr === 'avg_moving_speed') {
+                yMin = 0;
+                colors = [{color: '#3d3', high: Infinity}];
+            } else if (type.attr === 'avg_hr') {
+                yMin = Math.min(yMin, 40);
+                colors = [{color: '#f33', high: Infinity}];
+                const zones = await getHRZones();
+                if (zones) {
+                    yMax = Math.max(yMax, sauce.perf.estimateMaxHR(zones));
+                } else {
+                    yMax = Math.max(yMax, 200);
+                }
+            } else {
+                throw new Error('Invalid lap data type');
+            }
+            for (const o of data) {
+                o.zoneIndex = colors.findIndex(x => o.y < x.high);
+                o.color = sc.color.parse(colors[o.zoneIndex].color)
+                    .adjustAlpha(-0.4 + (((o.y - yMin) / (yMax - yMin) * 0.8)));
+            }
+            chart.yMin = yMin;
+            chart.yMax = yMax;
+            chart.setData(data);
+        };
+        $efforts.on('input', 'input[name="type"]', async ev => {
+            type = types.find(x => x.attr === ev.currentTarget.value);
+            await renderChart();
+        });
+        await renderChart();
     }
 
 
@@ -803,9 +859,9 @@ sauce.ns('analysis', ns => {
             power,
             isSyncAthlete: !!ns.syncAthlete,
         }).catch(console.error);
-        /*if (sauce.options['analysis-lap-efforts-chart'] || 'XXX') {
-            initLapsAddon();
-        }*/
+        if (!sauce.options['analysis-disable-lap-efforts-chart']) {
+            initLapsAddon().catch(console.error);
+        }
         if (sauce.options['analysis-cp-chart']) {
             const menu = [/*locale keys*/];
             if (wattsStream) {
@@ -1180,29 +1236,6 @@ sauce.ns('analysis', ns => {
             (b.overlap < a.overlap ? -1 : 1) : (b.correlation < a.correlation ? -1 : 1));
         overlapping.sort((a, b) => b.segment.get('start_index') < a.segment.get('start_index') ? 1 : -1);
         return overlapping;
-    }
-
-
-    function hslValueGradientSteps(thresholds, {hStart, hEnd, sStart, sEnd, lStart, lEnd}) {
-        const steps = [];
-        if (hStart == null || sStart == null || lStart == null) {
-            throw new Error("HSL start args required");
-        }
-        hEnd = hEnd == null ? hStart : hEnd;
-        sEnd = sEnd == null ? sStart : sEnd;
-        lEnd = lEnd == null ? lStart : lEnd;
-        const count = thresholds.length;
-        for (let i = 0; i < count; i++) {
-            const pct = i / (count - 1);
-            const h = Math.round(hStart + ((hEnd - hStart) * pct));
-            const s = Math.round(sStart + ((sEnd - sStart) * pct));
-            const l = Math.round(lStart + ((lEnd - lStart) * pct));
-            steps.push({
-                value: thresholds[i],
-                color: `hsl(${h}deg, ${s}%, ${l}%)`
-            });
-        }
-        return steps;
     }
 
 
