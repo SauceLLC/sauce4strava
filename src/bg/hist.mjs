@@ -315,7 +315,7 @@ class SauceRateLimiter extends jobs.RateLimiter {
             if (key === this._storeKey && sauce.hash(JSON.stringify(value)) !== this._lastSavedHash) {
                 this._mergeExternalState(value);  // bg okay
             }
-        }, {sync: true});
+        }, {sync: false}); // Testing reliability with sync false 2025-02-04
     }
 
     // hack to avoid race with early loadState called via constructor
