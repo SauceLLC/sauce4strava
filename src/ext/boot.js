@@ -316,7 +316,7 @@ function setCustomFont(options) {
             'src/site/dashboard.js'
         ]
     }, {
-        pathExclude: /^\/($|subscribe|login|register|legal)(\/.*|\b|$)/,
+        pathExclude: /^\/($|subscribe|login|register|legal|maps)(\/.*|\b|$)/,
         scripts: [
             'src/common/proxy.js',
             'src/site/proxy.js',
