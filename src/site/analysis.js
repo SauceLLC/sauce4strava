@@ -718,7 +718,7 @@ sauce.ns('analysis', ns => {
                     if (hr != null) {
                         rows.push(`HR: ${H.hr(hr, {suffix: true, html: true})}`);
                     }
-                    return `<div>${rows.join('<br/>')}</div>`;
+                    return jQuery(`<div>${rows.join('<br/>')}</div>`)[0];
                 },
             },
             yAxis: {
