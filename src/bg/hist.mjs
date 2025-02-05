@@ -311,11 +311,12 @@ class SauceRateLimiter extends jobs.RateLimiter {
 
     constructor(name, spec) {
         super(name, spec, {sleep: aggressiveSleep});
+        this.syncStorage = false; // Testing reliability with sync false 2025-02-04
         sauce.storage.addListener((key, value) => {
             if (key === this._storeKey && sauce.hash(JSON.stringify(value)) !== this._lastSavedHash) {
                 this._mergeExternalState(value);  // bg okay
             }
-        }, {sync: false}); // Testing reliability with sync false 2025-02-04
+        }, {sync: this.syncStorage});
     }
 
     // hack to avoid race with early loadState called via constructor
@@ -370,13 +371,13 @@ class SauceRateLimiter extends jobs.RateLimiter {
     }
 
     async getState() {
-        return await this._decodeState(await sauce.storage.get(this._storeKey, {sync: true}));
+        return await this._decodeState(await sauce.storage.get(this._storeKey, {sync: this.syncStorage}));
     }
 
     async setState(state) {
         const encodedState = await this._encodeState(state);
         this._lastSavedHash = sauce.hash(JSON.stringify(encodedState));
-        await sauce.storage.set(this._storeKey, encodedState, {sync: true});
+        await sauce.storage.set(this._storeKey, encodedState, {sync: this.syncStorage});
     }
 
     async _mergeExternalState(encodedState) {
