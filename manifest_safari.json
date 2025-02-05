@@ -1,9 +1,6 @@
 {
     "background": {
-        "persistent": false
-    },
-    "permissions": [
-        "tabs",
-        "https://www.strava.com/*"
-    ]
+        "type": "module",
+        "scripts": ["src/bg/main.mjs"]
+    }
 }
