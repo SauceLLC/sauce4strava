@@ -652,19 +652,19 @@
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 204;
+				CURRENT_PROJECT_VERSION = 205;
 				DEVELOPMENT_TEAM = 7P47F44SKP;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "iOS (Extension)/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Sauce for Strava™ Extension";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 8.3.4;
+				MARKETING_VERSION = 8.7.11.1;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
@@ -685,19 +685,19 @@
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 204;
+				CURRENT_PROJECT_VERSION = 205;
 				DEVELOPMENT_TEAM = 7P47F44SKP;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "iOS (Extension)/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Sauce for Strava™ Extension";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 8.3.4;
+				MARKETING_VERSION = 8.7.11.1;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
@@ -722,7 +722,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 204;
+				CURRENT_PROJECT_VERSION = 205;
 				DEVELOPMENT_TEAM = 7P47F44SKP;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "iOS (App)/Info.plist";
@@ -732,12 +732,12 @@
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 8.3.4;
+				MARKETING_VERSION = 8.7.11.1;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
@@ -762,7 +762,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 204;
+				CURRENT_PROJECT_VERSION = 205;
 				DEVELOPMENT_TEAM = 7P47F44SKP;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "iOS (App)/Info.plist";
@@ -772,12 +772,12 @@
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 8.3.4;
+				MARKETING_VERSION = 8.7.11.1;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
@@ -801,7 +801,7 @@
 				CODE_SIGN_ENTITLEMENTS = "macOS (Extension)/sauce4strava.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 204;
+				CURRENT_PROJECT_VERSION = 205;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 7P47F44SKP;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -815,7 +815,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
-				MARKETING_VERSION = 8.3.4;
+				MARKETING_VERSION = 8.7.11.1;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
@@ -836,7 +836,7 @@
 				CODE_SIGN_ENTITLEMENTS = "macOS (Extension)/sauce4strava.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 204;
+				CURRENT_PROJECT_VERSION = 205;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 7P47F44SKP;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -850,7 +850,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
-				MARKETING_VERSION = 8.3.4;
+				MARKETING_VERSION = 8.7.11.1;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
@@ -874,7 +874,7 @@
 				CODE_SIGN_ENTITLEMENTS = "macOS (App)/sauce4strava.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 204;
+				CURRENT_PROJECT_VERSION = 205;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 7P47F44SKP;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -889,7 +889,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
-				MARKETING_VERSION = 8.3.4;
+				MARKETING_VERSION = 8.7.11.1;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
@@ -914,7 +914,7 @@
 				CODE_SIGN_ENTITLEMENTS = "macOS (App)/sauce4strava.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 204;
+				CURRENT_PROJECT_VERSION = 205;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 7P47F44SKP;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -929,7 +929,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
-				MARKETING_VERSION = 8.3.4;
+				MARKETING_VERSION = 8.7.11.1;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
