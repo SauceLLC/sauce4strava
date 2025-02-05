@@ -899,12 +899,15 @@ self.saucePreloaderInit = function saucePreloaderInit() {
             console.debug('Ignore attempt to patch console.warn');
         },
         get: () => {
-            const caller = new Error().stack.split('\n', 3)[2];
-            if (caller.match(/remoteEntry\.js/)) {
-                return () => undefined;
-            } else {
-                return cWarn;
+            try {
+                const caller = new Error().stack.split('\n', 3)[2];
+                if (caller && caller.match && caller.match(/remoteEntry\.js/)) {
+                    return () => undefined;
+                }
+            } catch(e) {
+                console.error('console.warn patch failed:', e);
             }
+            return cWarn;
         }
     });
 };
