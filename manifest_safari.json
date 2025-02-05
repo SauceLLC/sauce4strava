@@ -1,5 +1,6 @@
 {
     "background": {
+        "persistent": false,
         "type": "module",
         "scripts": ["src/bg/main.mjs"]
     }
