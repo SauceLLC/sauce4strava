@@ -31,10 +31,12 @@ Feature Highlights
    * Cadence
    * Sea Power (potential power at sea level)
  * Themes (including dark mode)
+    * Only works on old school pages like Analysis
  * Export any activity to a TCX, GPX or FIT file
  * Create Live Segments for any effort (including downhills)
  * Running Power estimation
- * Kudo All Activities
+ * ~~Kudo All Activities~~
+    * Removed due to support overhead and abuse
  * Beers and Donuts earned for an activity (based on kcals burned)
  * Analysis page stats are extended to include:
    * Elapsed power average, normalized power, moving power average and watts/kg.
