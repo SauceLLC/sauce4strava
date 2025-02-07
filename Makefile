@@ -68,6 +68,13 @@ build-safari:
 
 build-safari-release:
 	TARGET=safari $(MAKE) manifest-release build
+	rm src/site/base.js
+	cp src/common/base.js src/site/base.js  # HACK must be undone
+
+unbuild-safari-release:
+	TARGET=safari $(MAKE) manifest build
+	rm src/site/base.js
+	ln -s src/common/base.js src/site/base.js
 
 lint:
 	$(NPATH)/eslint src
