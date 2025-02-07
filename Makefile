@@ -74,7 +74,7 @@ build-safari-release:
 unbuild-safari-release:
 	TARGET=safari $(MAKE) manifest build
 	rm src/site/base.js
-	ln -s src/common/base.js src/site/base.js
+	ln -s ../common/base.js src/site/base.js
 
 lint:
 	$(NPATH)/eslint src
