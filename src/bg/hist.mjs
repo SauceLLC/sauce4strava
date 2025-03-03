@@ -1447,9 +1447,20 @@ class SyncJob extends EventTarget {
                 // If the credentials are not valid Strava returns HTML
                 // This would seem impossible, but with add-ons like Facebook Containers
                 // it can happen and has happened to some users.
+                this.logError("Activity feed returned invalid JSON");
                 break;
             }
             const batch = [];
+            // XXX...
+            try {
+                const first = (new Date(data.entries[0]?.cursorData?.updated_at * 1000)).toLocaleDateString();
+                const last = (new Date(data.entries.at(-1)?.cursorData?.updated_at * 1000)).toLocaleDateString();
+                this.logDebug(`Parsing ${data.entries.length} activities from self-feed:`, first, '->', last);
+            } catch(e) {
+                // DEBUG remove this soon.
+                console.error(e);
+            }
+            // /XXX
             for (const x of data.entries) {
                 if (x.entity === 'Activity') {
                     const entry = this.activityToDatabase(await this.parseFeedActivity(x));
@@ -1613,7 +1624,7 @@ class SyncJob extends EventTarget {
                         if (record.sport_type && !record.type) {
                             record.type = record.sport_type;
                         } else {
-                            console.warn("Strava rolled back breaking change from 10-30-2024?", record);
+                            this.logWarn("Strava rolled back breaking change from 10-30-2024?", record);
                         }
                         record.basetype = sauce.model.getActivityBaseType(record.type);
                         for (const x of filteredKeys) {
@@ -1695,11 +1706,20 @@ class SyncJob extends EventTarget {
                 if (x.video) {
                     // See: https://docs.mux.com/guides/enable-static-mp4-renditions
                     //      https://docs.mux.com/guides/get-images-from-a-video
-                    const m = x.video.match(/:\/\/stream.mux.com\/(.*?)\.m3u8/);
+                    const m = x.video.match(/:\/\/stream\.mux\.com\/(.*?)\.m3u8/);
                     const id = m && m[1];
                     if (!id) {
-                        console.warn("Unexpected video URL format:", x.video);
-                        return;
+                        // 03-2025: Seeing cloudfront based videos now (perhaps zwift only)..
+                        // Can't parse them (yet?) but need to not blow up on them...
+                        const m = x.video
+                            .match(/:\/\/d35tn3x5zm6xrc\.cloudfront\.net\/.*?\/hls\/(.*?)\.m3u8/);
+                        const id = m && m[1];
+                        if (id) {
+                            this.logWarn("Found as-of-yet unusable video service URL:", x.video);
+                        } else {
+                            this.logError("Unexpected video URL format:", x.video);
+                        }
+                        continue;
                     }
                     // NOTE: The one problem with not using HLS is that we don't have enough
                     // info to know if the video is only available as low or medium mp4 file.
@@ -1722,7 +1742,7 @@ class SyncJob extends EventTarget {
                             muxQuality: quality,
                         });
                     } else {
-                        console.warn("No acceptable static video URL found:", x.video);
+                        this.logWarn("No acceptable static video URL found:", x.video);
                     }
                 } else if (x.large) {
                     media.push({
@@ -2415,7 +2435,7 @@ class SyncManager extends EventTarget {
             try {
                 await Promise.race([sleep(this.syncJobTimeout), syncJob.wait()]);
             } catch(e) {
-                syncJob.logError('Sync job error:', e);
+                syncJob.logError('Sync job error:', e.stack);
                 athlete.set('lastSyncError', Date.now());
                 this.emitForAthlete(athlete, 'error', {error: e.message});
             } finally {
