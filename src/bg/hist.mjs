@@ -1697,6 +1697,9 @@ class SyncJob extends EventTarget {
     }
 
     async parseFeedActivity({activity, cursorData}) {
+        const ts = activity.startDate ?
+            (new Date(activity.startDate)).getTime() :
+            (cursorData.updated_at - (activity.elapsedTime || 0)) * 1000;
         const media = [];
         if (activity.mapAndPhotos?.photoList?.length) {
             for (const x of activity.mapAndPhotos.photoList) {
@@ -1708,41 +1711,61 @@ class SyncJob extends EventTarget {
                     //      https://docs.mux.com/guides/get-images-from-a-video
                     const m = x.video.match(/:\/\/stream\.mux\.com\/(.*?)\.m3u8/);
                     const id = m && m[1];
-                    if (!id) {
-                        // 03-2025: Seeing cloudfront based videos now (perhaps zwift only)..
-                        // Can't parse them (yet?) but need to not blow up on them...
-                        const m = x.video
-                            .match(/:\/\/d35tn3x5zm6xrc\.cloudfront\.net\/.*?\/hls\/(.*?)\.m3u8/);
-                        const id = m && m[1];
-                        if (id) {
-                            this.logWarn("Found as-of-yet unusable video service URL:", x.video);
+                    if (id) {
+                        // NOTE: The one problem with not using HLS is that we don't have enough
+                        // info to know if the video is only available as low or medium mp4 file.
+                        let url;
+                        let quality;
+                        for (quality of ['high', 'medium', 'low']) {
+                            const testUrl = `https://stream.mux.com/${id}/${quality}.mp4`;
+                            const r = await fetch(testUrl, {method: 'HEAD'});
+                            if (r.ok) {
+                                url = testUrl;
+                                break;
+                            }
+                        }
+                        if (url) {
+                            this.logDebug("Found stream.mux.com video service URL:", x.video, new Date(ts));
+                            media.push({
+                                type: 'video',
+                                url,
+                                thumbnail: x.thumbnail,
+                                muxId: id,
+                                muxQuality: quality,
+                            });
                         } else {
-                            this.logError("Unexpected video URL format:", x.video);
+                            this.logWarn("No acceptable static video URL found:", x.video, new Date(ts));
                         }
-                        continue;
-                    }
-                    // NOTE: The one problem with not using HLS is that we don't have enough
-                    // info to know if the video is only available as low or medium mp4 file.
-                    let url;
-                    let quality;
-                    for (quality of ['high', 'medium', 'low']) {
-                        const testUrl = `https://stream.mux.com/${id}/${quality}.mp4`;
-                        const r = await fetch(testUrl, {method: 'HEAD'});
-                        if (r.ok) {
-                            url = testUrl;
-                            break;
-                        }
-                    }
-                    if (url) {
-                        media.push({
-                            type: 'video',
-                            url,
-                            thumbnail: x.thumbnail,
-                            muxId: id,
-                            muxQuality: quality,
-                        });
                     } else {
-                        this.logWarn("No acceptable static video URL found:", x.video);
+                        // 03-2025: Seeing cloudfront based videos now..
+                        // 04-2025: Sometimes these are m3u8 playlists, othertimes mp4 files..
+                        //          We can use the mp4 files, but the m3u8 files aren't worth the effort
+                        //          of doing full HLS playback support.
+                        // In test I only ever see .m3u8 or .mp4 but we might as well look for a
+                        // few video container extensions that are likely to playback natively.
+                        const supportedExts = [
+                            'mp4', 'm4v',
+                            'mkv', 'webm',
+                            'ogv', 'ogg',
+                            'mov',
+                            'mpeg', 'mpg', 'mp2',
+                            '3gp',
+                            'ts'
+                        ];
+                        const unsupportedExts = ['m3u8'];
+                        const ext = (x.video.match(/\.([^.\s]+?)$/)?.[1] || '').toLowerCase();
+                        if (supportedExts.indexOf(ext) !== -1) {
+                            this.logDebug("Found static video URL:", x.video, new Date(ts));
+                            media.push({
+                                type: 'video',
+                                url: x.video,
+                                thumbnail: x.thumbnail,
+                            });
+                        } else if (unsupportedExts.indexOf(ext) !== -1) {
+                            this.logWarn("Found unsupported video service URL:", x.video, new Date(ts));
+                        } else {
+                            this.logError("Unexpected video URL format:", x.video, new Date(ts));
+                        }
                     }
                 } else if (x.large) {
                     media.push({
@@ -1755,9 +1778,7 @@ class SyncJob extends EventTarget {
         }
         return {
             id: Number(activity.id),
-            ts: activity.startDate ?
-                (new Date(activity.startDate)).getTime() :
-                (cursorData.updated_at - (activity.elapsedTime || 0)) * 1000,
+            ts,
             type: activity.type,
             name: activity.activityName,
             description: activity.description ?
