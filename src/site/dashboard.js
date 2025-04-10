@@ -497,7 +497,7 @@ sauce.ns('dashboard', function(ns) {
 
 
     function load() {
-        const feedSelector = 'main .feed-ui';
+        const feedSelector = 'main .feature-feed';
         const feedEl = document.querySelector(feedSelector);
         if (!feedEl) {
             const mo = new MutationObserver(() => {
