@@ -459,15 +459,6 @@ sauce.ns('dashboard', function(ns) {
                     console.warn("Unknown action:", action);
                 }
             }
-            // To prevent breaking infinite scroll we need to reset the feed loader state.
-            // During first load pagination is not ready though, and will be run by the constructor.
-            //
-            // XXX This might be dead - 2023-02
-            if (self.Strava && Strava.Dashboard && Strava.Dashboard.PaginationRouterFactory &&
-                Strava.Dashboard.PaginationRouterFactory.view) {
-                const view = Strava.Dashboard.PaginationRouterFactory.view;
-                requestAnimationFrame(() => view.resetFeedLoader());
-            }
         }
     }
 
