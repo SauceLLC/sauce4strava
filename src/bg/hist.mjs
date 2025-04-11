@@ -1420,16 +1420,17 @@ class SyncJob extends EventTarget {
                 } else {
                     adding++;
                 }
+                known.set(x.id, x.hash);
             }
             const f = new Intl.DateTimeFormat();
             const range = f.formatRange(
                 sauce.data.min(batch.map(x => x.ts)),
                 sauce.data.max(batch.map(x => x.ts)));
             if (adding) {
-                this.logInfo(`Adding ${adding} new activities:`, range);
+                this.logInfo(`Adding ${adding} activities:`, range);
             }
             if (updating) {
-                this.logInfo(`Updating ${updating} existing activities:`, range);
+                this.logInfo(`Updating ${updating} activities:`, range);
             }
             await actsStore.updateMany(new Map(batch.map(x => [x.id, x])));
             await this.niceSendProgressEvent();
@@ -1438,6 +1439,8 @@ class SyncJob extends EventTarget {
 
     async *_scanSelfActivitiesIter({known}) {
         const q = new URLSearchParams({feed_type: 'my_activity'});
+        let pageTS = Math.floor(Date.now() / 1000);
+        let emptyCount = 0;
         while (!this._cancelEvent.isSet()) {
             const resp = await this.retryFetch(`/dashboard/feed?${q}`);
             let data;
@@ -1450,17 +1453,11 @@ class SyncJob extends EventTarget {
                 this.logError("Activity feed returned invalid JSON");
                 break;
             }
-            const batch = [];
-            // XXX...
-            try {
-                const first = (new Date(data.entries[0]?.cursorData?.updated_at * 1000)).toLocaleDateString();
-                const last = (new Date(data.entries.at(-1)?.cursorData?.updated_at * 1000)).toLocaleDateString();
-                this.logDebug(`Parsing ${data.entries.length} activities from self-feed:`, first, '->', last);
-            } catch(e) {
-                // DEBUG remove this soon.
-                console.error(e);
+            if (!data.entries.length) {
+                break;
             }
-            // /XXX
+            const batch = [];
+            let lastTS;
             for (const x of data.entries) {
                 if (x.entity === 'Activity') {
                     const entry = this.activityToDatabase(await this.parseFeedActivity(x));
@@ -1474,13 +1471,31 @@ class SyncJob extends EventTarget {
                             batch.push(entry);
                         }
                     }
+                } else {
+                    this.logDebug("Ignoring non-activity type:", x.entity);
+                    continue;
                 }
-                q.set('before', x.cursorData.updated_at);
+                lastTS = x.cursorData.updated_at;
             }
-            if (!batch.length) {
-                break;
+            // Strava's feed API is not exactly chronological.  Post entity types are out of order and break
+            // paging.  Only trust that activity types are chronological and if we can't find any of those,
+            // manually backoff the pageTS value until we find something.
+            if (lastTS !== undefined) {
+                if (!batch.length) {
+                    break;  // Normal nothing new state
+                }
+                pageTS = lastTS;
+                emptyCount = 0;
+            } else {
+                const pageOffset = Math.round(1.5 ** emptyCount++);
+                this.logWarn("No chronological activity entries found: Using manual page offset mitigation",
+                             pageOffset);
+                pageTS -= pageOffset;
             }
-            yield batch;
+            q.set('before', pageTS);
+            if (batch.length) {
+                yield batch;
+            }
         }
     }
 
@@ -1525,7 +1540,6 @@ class SyncJob extends EventTarget {
                             debugger;
                         }
                         batch.push(x);
-                        //known.set(x.id, x.hash);
                     }
                 }
                 if (!batch.length) {
