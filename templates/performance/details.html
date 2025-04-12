@@ -113,13 +113,13 @@
                     <% if (a.media || (a.map?.url)) { %>
                         <div class="activity-media">
                             <% if (a.map?.url) { %>
-                                <a class="detail-media map wide" href="{{a.map.url}}" target="sauce_perf_media">
+                                <div class="detail-media map wide">
                                     <img src="{{a.map.url}}"
                                          onload="this.parentElement.classList.toggle('wide', this.naturalWidth / this.naturalHeight > 1.5)"/>
-                                </a>
+                                </div>
                             <% } %>
                             <% for (const x of (a.media || []).filter(x => x?.url && x?.thumbnail)) { %>
-                                <a class="detail-media" href="{{x.url}}" target="sauce_perf_media">
+                                <div class="detail-media">
                                     <% if (x.type === 'image') { %>
                                         <img src="{{x.thumbnail}}" data-full-res-url="{{x.url}}"
                                              onload="this.parentElement.classList.toggle('wide', this.naturalWidth / this.naturalHeight > 1.5)"/>
@@ -129,7 +129,7 @@
                                                onmouseover="this.play()" onmouseout="this.pause()"
                                                onloadedmetadata="this.parentElement.classList.toggle('wide', this.videoWidth / this.videoHeight > 1.5)"/>
                                     <% } %>
-                                </a>
+                                </div>
                             <% } %>
                         </div>
                     <% } %>

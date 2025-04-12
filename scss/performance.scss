@@ -1732,6 +1732,8 @@ table.activity-table {
             padding: 0 0.2em 0.4em;
 
             .detail-media {
+                cursor: pointer;
+
                 img {
                     background-image: linear-gradient(135deg, #928681, #fff);
                 }
@@ -1906,6 +1908,59 @@ table.activity-table {
                 background-color: color.shade(fg, 2%);
             }
         }
+    }
+}
+
+
+dialog.modal-media {
+    border-radius: 0.28em;
+    background: #3339;
+    padding: 2em;
+    overflow: hidden;
+    border: none;
+    outline: none;
+    font-size: 15px;
+
+    &::backdrop {
+        background: #0008;
+    }
+
+    &:not(:hover) .close-btn {
+        opacity: 0;
+    }
+
+    .close-btn {
+        position: absolute;
+        right: 0;
+        top: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0.6;
+        transition: opacity 200ms, box-shadow 200ms;
+        width: 1.8em;
+        height: 1.8em;
+        background: #fffd;
+        border-radius: 100%;
+        margin: 0.26em;
+        cursor: pointer;
+        padding-top: 2px;
+
+        &:hover {
+            opacity: 1;
+            box-shadow: 1px 1px 4px 0 #111d;
+        }
+
+        &:active {
+            box-shadow: inset 0 0 2px 1px #000;
+        }
+    }
+
+    img, video {
+        object-fit: contain;
+        max-width: calc(90vw - 7em);
+        max-height: calc(90vh - 7em);
+        outline: none;
     }
 }
 

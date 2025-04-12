@@ -972,6 +972,8 @@ export class DetailsView extends PerfView {
             'click .btn.load-more.recent': 'onLoadRecentClick',
             'click row .btn.expand': 'onExpandRowClick',
             'click row .btn.compress': 'onCompressRowClick',
+            'click .detail-media video': 'onVideoClick',
+            'click .detail-media img': 'onImageClick',
         };
     }
 
@@ -1199,6 +1201,37 @@ export class DetailsView extends PerfView {
 
     onCompressRowClick(ev) {
         ev.currentTarget.closest('row').classList.remove('expanded');
+    }
+
+    onVideoClick(ev) {
+        const srcVideo = ev.currentTarget;
+        const video = document.createElement('video');
+        video.src = srcVideo.src;
+        video.setAttribute('controls', '1');
+        this.showModalMedia(video);
+    }
+
+    onImageClick(ev) {
+        const srcImg = ev.currentTarget;
+        const img = document.createElement('img');
+        img.src = srcImg.dataset.fullResUrl || srcImg.src;
+        this.showModalMedia(img);
+    }
+
+    showModalMedia(el) {
+        const dialog = document.createElement('dialog');
+        dialog.classList.add('modal-media');
+        dialog.setAttribute('closedby', 'any');
+        document.body.append(dialog);
+        dialog.addEventListener('close', ev => {
+            dialog.remove();
+        });
+        const closeBtn = document.createElement('div');
+        closeBtn.classList.add('close-btn');
+        closeBtn.textContent = '✕';
+        closeBtn.addEventListener('click', () => dialog.close());
+        dialog.append(closeBtn, el);
+        dialog.showModal();
     }
 }
 
