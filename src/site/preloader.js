@@ -202,7 +202,8 @@ self.saucePreloaderInit = function saucePreloaderInit() {
             }
             const smoothing = sauce.options['analysis-graph-smoothing'];
             if (smoothing) {
-                this.context.streamsContext.data.add(id, sauce.data.smooth(smoothing, data));
+                const smoothingClipped = Math.min(data.length - 1, smoothing);
+                this.context.streamsContext.data.add(id, sauce.data.smooth(smoothingClipped, data));
             } else {
                 this.context.streamsContext.data.add(id, data);
             }

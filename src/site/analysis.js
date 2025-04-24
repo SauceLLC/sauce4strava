@@ -661,7 +661,6 @@ sauce.ns('analysis', ns => {
     async function renderEffortsChart(sc) {
         const $anchor = jQuery('#efforts-table');
         if (!$anchor.length) {
-            console.warn("no laps view");
             return;
         }
         const locale = await L.getMessagesObject(['power', 'pace', 'hr']);
