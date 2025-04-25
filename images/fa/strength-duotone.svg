@@ -1,0 +1,8 @@
+<svg aria-hidden="true" focusable="false" data-prefix="fad" data-icon="strength" role="img" class="svg-inline--fa fa-strength fa-w-18" viewBox="0 0 24 24" fill="none" stroke-width="2" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <g class="fa-group">
+    <path class="fa-primary" d="M 5.333702,9.4582337 C 6.0676362,11.530309 7.3450614,14.061065 8.81,15.7" stroke="currentColor"/>
+    <path class="fa-primary" d="M 2.6438091,8.5188315 2.7901072,11.084086 C 3.0489675,15.623058 5.5957417,22.707888 7.0571276,22.47 12.738322,21.545202 16.74,17.53 18.57,14.76 22.578651,14.077933 24.059894,9.8193944 20.944148,7.2070909 17.828403,4.5947874 14.435346,6.8650434 14.46298,10.931213 13.417917,11.445424 12.111321,10.294814 10.09,12 c -0.9222593,1.001893 -1.3859976,2.342386 -1.28,3.7 0.025502,0.677887 0.1363769,1.349853 0.33,2" stroke="currentColor"/>
+    <circle class="fa-secondary barbell" stroke="currentColor" cy="6" cx="5.4" r="4.3"/>
+    <circle class="fa-secondary" stroke="currentColor" cy="6" cx="5.4" r="0.48"/>
+  </g>
+</svg>
