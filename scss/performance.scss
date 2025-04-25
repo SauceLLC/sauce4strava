@@ -808,6 +808,17 @@ table.activity-table {
                                     opacity: 0.8;
                                 }
                             }
+
+                            &[data-icon="strength"] {
+                                margin: 0.5em;
+                                .fa-primary {
+                                    fill: #888;
+                                }
+
+                                .barbell {
+                                    fill: silver;
+                                }
+                            }
                         }
                     }
 

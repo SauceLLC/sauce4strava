@@ -8,6 +8,14 @@
             <a class="view-control expander">{{=icon plus-square-duotone=}}</a>
         </header>
 
+        <% if (currentCTL != null) { %>
+            <row class="full">
+                <header>{{{fitness}}}:</header>
+                <div class="backdrop-icon">{{=icon strength-duotone=}}</div>
+                <h2>{-humanNumber(currentCTL, {html: true, suffix: 'CTL'})-}</h2>
+            </row>
+        <% } %>
+
         <% if (totalTime && weeklyTime) { %>
             <row class="full">
                 <header>{{{/time}}}:</header>

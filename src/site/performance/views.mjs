@@ -800,6 +800,8 @@ export class SummaryView extends PerfView {
             activeDays: this.daily.filter(x => x.activities.length).length,
             tssAvg: this.daily.length ? sauce.data.sum(this.daily.map(x =>
                 x.tss)) / this.daily.length : 0,
+            currentCTL: (this.end >= Date.now() && this.daily.length) ?
+                this.daily[this.daily.length - 1].ctl : undefined,
             maxCTL: sauce.data.max(this.daily.map(x => x.ctl)),
             minTSB: sauce.data.min(this.daily.map(x => x.ctl - x.atl)),
             totalTime,
