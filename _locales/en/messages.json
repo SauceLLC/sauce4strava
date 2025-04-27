@@ -56,6 +56,7 @@
     "analysis_xp_tooltip": {"message": "xPower: An improved potential power estimation inspired by Normalized Power® (created by Dr. Philip Friere Skiba)"},
     "analysis_sp_tooltip": {"message": "Sea Power: An estimate of potential power at sea level"},
     "analysis_sp_adjust_tooltip": {"message": "Compensation due to altitude's effect on V02Max"},
+    "analysis_leadin_energy_tooltip": {"message": "Energy expended before this effort in kilojoules"},
     "analysis_energy_tooltip": {"message": "Energy expended in kilojoules"},
     "analysis_energy_rate_tooltip": {"message": "Kilojoules per hour"},
     "analysis_elevation_gain_tooltip": {"message": "Elevation gain: climbing"},
@@ -184,6 +185,7 @@
     "analysis_keyboard_tooltip": {"message": "Analysis keyboard controls are active.\n\nWhen the analysis charts are focused you can change the\nselection or highlighted data with the arrow keys.\n\nLeft/Right:\n\tMove the cursor 1 data point left or right.\nUp/Down:\n\tMove the cursor 60 data points left or right.\nCtrl + Left/Right:\n\tMove the current selection.\nShift + Left/Right:\n\tExpand the current selection.\nCtrl + Shift + Left/Right:\n\tShrink the current selection."},
     "analysis_any_activity_type": {"message": "Any activity type"},
     "analysis_activity_start_time": {"message": "Activity start time"},
+    "leadin": {"message": "Lead-in"},
 
     "time_sec": {"message": "sec"},
     "time_secs": {"message": "secs"},

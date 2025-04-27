@@ -2367,7 +2367,7 @@ sauce.ns('analysis', ns => {
             samples: timeStream.length,
             elevation: elevationData(altStream, elapsedTime, distance)
         };
-        let kj, tss, tTss, intensity, pwhr;
+        let kj, preKj, tss, tTss, intensity, pwhr;
         if (powerRoll) {
             tplData.power = powerData(powerRoll, altStream, {
                 np: supportsNP() ? powerRoll.np() : null,
@@ -2384,6 +2384,11 @@ sauce.ns('analysis', ns => {
                 pwhr = sauce.power.calcPwHrDecouplingFromRoll(powerRoll, hrStream);
             }
             kj = powerRoll.joules() / 1000;
+            if (start > 0) {
+                const prePowerRoll = await correctedRollTimeRange('watts', getStreamIndexTime(0),
+                                                                  getStreamIndexTime(start));
+                preKj = prePowerRoll.joules() / 1000;
+            }
         }
         if (hrStream) {
             const zones = await getHRZones();
@@ -2397,6 +2402,7 @@ sauce.ns('analysis', ns => {
         if (kj || tTss) {
             tplData.energy = {
                 kj,
+                preKj,
                 kjHour: kj && (kj / activeTime * 3600),
                 tss,
                 tTss,

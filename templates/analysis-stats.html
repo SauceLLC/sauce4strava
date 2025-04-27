@@ -133,6 +133,13 @@
             </line>
         <% } %>
 
+        <% if (energy.preKj) { %>
+            <line title="{{{leadin_energy_tooltip}}}">
+                <key>{{{/leadin}}}</key>
+                <value>{-hNum(energy.preKj, 'kJ')-}</value>
+            </line>
+        <% } %>
+
         <% if (energy.kjHour) { %>
             <line title="{{{energy_rate_tooltip}}}">
                 <key>{{{rate}}}</key>
