@@ -209,6 +209,9 @@
         "message": "基于海拔高度对 V02Max 的影响而进行的补偿",
         "description": "IMMUTABLE"
     },
+    "analysis_leadin_energy_tooltip": {
+        "message": "此次努力之前消耗的能量（千焦耳）"
+    },
     "analysis_energy_tooltip": {
         "message": "能量消耗以千焦耳为单位",
         "description": "IMMUTABLE"
@@ -706,6 +709,9 @@
     },
     "analysis_activity_start_time": {
         "message": "活动开始时间"
+    },
+    "leadin": {
+        "message": "导入"
     },
     "time_sec": {
         "message": "秒",

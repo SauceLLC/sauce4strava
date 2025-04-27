@@ -182,6 +182,9 @@
         "message": "Compensação devido ao efeito da altitude no V02Max",
         "description": "IMMUTABLE"
     },
+    "analysis_leadin_energy_tooltip": {
+        "message": "Energia gasta antes deste esforço em quilojoules"
+    },
     "analysis_energy_tooltip": {
         "message": "Energia gasta em kilojoules"
     },
@@ -606,6 +609,9 @@
     },
     "analysis_activity_start_time": {
         "message": "Hora de início da atividade"
+    },
+    "leadin": {
+        "message": "Introdução"
     },
     "time_sec": {
         "message": "seg",

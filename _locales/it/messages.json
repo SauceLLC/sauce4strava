@@ -169,6 +169,9 @@
     "analysis_sp_adjust_tooltip": {
         "message": "Compensazione per effetto dell'altitudine su V02Max"
     },
+    "analysis_leadin_energy_tooltip": {
+        "message": "Energia spesa prima di questo sforzo in kilojoule"
+    },
     "analysis_energy_tooltip": {
         "message": "Energia spesa in kilojoule"
     },
@@ -572,6 +575,9 @@
     },
     "analysis_activity_start_time": {
         "message": "Ora di inizio dell'attività"
+    },
+    "leadin": {
+        "message": "Introduzione"
     },
     "time_sec": {
         "message": "sec"
