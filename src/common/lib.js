@@ -336,15 +336,30 @@ sauce.ns('data', function() {
 
         slice(startTime, endTime) {
             const clone = this.clone();
+            if (startTime === undefined) {
+                return clone;
+            }
             if (startTime < 0) {
-                startTime = clone.lastTime() + startTime;
+                startTime = this.lastTime() + startTime;
             }
-            while (clone.firstTime() < startTime) {
-                clone.shift();
-            }
-            if (endTime != null) {
-                while (clone.lastTime() > endTime) {
-                    clone.pop();
+            const startIndex = this.findNearestTimeIndex(startTime);
+            const endIndex = endTime != null ? this.findNearestTimeIndex(endTime) : this._length - 1;
+            if (endIndex - startIndex < (this._length - this._offt) * 0.5) {
+                clone._offt = startIndex;
+                clone._activeAcc = 0;
+                clone._valuesAcc = 0;
+                for (let i = startIndex + 1; i <= endIndex; i++) {
+                    clone.processAdd(i);
+                }
+                clone._length = endIndex + 1;
+            } else {
+                while (clone.firstTime() < startTime) {
+                    clone.shift();
+                }
+                if (endTime != null) {
+                    while (clone.lastTime() > endTime) {
+                        clone.pop();
+                    }
                 }
             }
             return clone;
@@ -541,6 +556,26 @@ sauce.ns('data', function() {
         valueAt(i) {
             const idx = i < 0 ? this._length + i : this._offt + i;
             return idx < this._length && idx >= this._offt ? this._values[idx] : undefined;
+        }
+
+        findNearestTimeIndex(time) {
+            let left = this._offt;
+            let right = this._length - 1;
+            for (let i = (this._length * 0.5) | 0;; i = ((right - left) * 0.5 + left) | 0) {
+                const t = this._times[i];
+                if (t > time) {
+                    right = i;
+                } else if (t < time) {
+                    left = i;
+                } else {
+                    return i;
+                }
+                if (right - left <= 1) {
+                    const lDist = time - this._times[left];
+                    const rDist = this._times[right] - time;
+                    return lDist < rDist ? left : right;
+                }
+            }
         }
 
         *entries() {
@@ -1613,6 +1648,9 @@ sauce.ns('power', function() {
     function calcPwHrDecouplingFromRoll(powerRoll, hrStream) {
         hrStream = hrStream.filter(x => x);  // exclude any null/invalid readings
         const times = powerRoll.times();
+        if (!times.length || !hrStream.length) {
+            return;
+        }
         const midPowerTime = times[Math.floor(times.length / 2)];
         const firstHalf = powerRoll.slice(times[0], midPowerTime);
         const secondHalf = powerRoll.slice(midPowerTime, times[times.length - 1]);
