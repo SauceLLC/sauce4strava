@@ -585,6 +585,9 @@
     "analysis_activity_start_time": {
         "message": "Hora de inicio de la actividad"
     },
+    "analysis_my_history": {
+        "message": "Mi historia"
+    },
     "leadin": {
         "message": "Introducción"
     },

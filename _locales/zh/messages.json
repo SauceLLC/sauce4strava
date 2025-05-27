@@ -710,6 +710,9 @@
     "analysis_activity_start_time": {
         "message": "活动开始时间"
     },
+    "analysis_my_history": {
+        "message": "我的历史"
+    },
     "leadin": {
         "message": "导入"
     },
