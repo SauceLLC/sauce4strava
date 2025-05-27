@@ -108,7 +108,7 @@
                 onInput();
             }
             input.addEventListener('change', async ev => {
-                options[input.name] = input.value;
+                options[input.name] = +input.value;
                 resetSuboptions(input);
                 await sauce.storage.set('options', options);
                 if (isPopup && !input.classList.contains('no-reload')) {

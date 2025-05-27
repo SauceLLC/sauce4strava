@@ -444,11 +444,11 @@ function setCustomFont(options) {
         document.dispatchEvent(ev);
     }
 
-    document.documentElement.addEventListener('sauceCurrentUserUpdate', async ev => {
+    document.addEventListener('sauceCurrentUserUpdate', async () => {
         // Handle message from the preloader which has access to more user info.
         // This works on almost every strava page thankfully.
-        const id = Number(ev.currentTarget.dataset.sauceCurrentUser) || undefined;
-        delete ev.currentTarget.dataset.sauceCurrentUser;
+        const id = Number(document.documentElement.dataset.sauceCurrentUser) || undefined;
+        delete document.documentElement.dataset.sauceCurrentUser;
         if (id !== self.currentUser) {
             if (!id) {
                 console.debug("Detected user logout");

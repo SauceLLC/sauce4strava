@@ -396,7 +396,17 @@ sauce.ns('locale', ns => {
             date = new Date(date);
         }
         const style = options.style || 'default';
-        return _intlDateFormats[style].format(date);
+        let formatter = _intlDateFormats[style];
+        if (options.concise) {
+            const options = formatter.resolvedOptions();
+            if (options.year) {
+                if (date.getYear() === (new Date()).getYear()) {
+                    delete options.year;
+                    formatter = new Intl.DateTimeFormat([], options);
+                }
+            }
+        }
+        return formatter.format(date);
     }
 
 

@@ -272,39 +272,50 @@
                 </div>
 
                 <div class="option" title="Use detailed segments view for runs">
-                    <label><input type="checkbox" name="analysis-detailed-run-segments">Use detailed run segments</label>
+                    <label><input type="checkbox" name="analysis-detailed-run-segments"/>Use detailed run segments</label>
                 </div>
 
                 <div class="option" title="Enable history for menu navigation (e.g. support back button)">
-                    <label><input type="checkbox" name="analysis-menu-nav-history">Menu navigation history</label>
+                    <label><input type="checkbox" name="analysis-menu-nav-history"/>Menu navigation history</label>
                 </div>
 
                 <div class="option" title="Disable/hide xPower releated information.">
-                    <label><input type="checkbox" name="analysis-disable-xp">Disable xPower</label>
+                    <label><input type="checkbox" name="analysis-disable-xp"/>Disable xPower</label>
                 </div>
 
                 <div class="option" title="Disable/hide Normalized Power® releated information.">
-                    <label><input type="checkbox" name="analysis-disable-np">Disable Normalized Power®</label>
+                    <label><input type="checkbox" name="analysis-disable-np"/>Disable Normalized Power®</label>
                 </div>
 
                 <div class="option" title="Disable/hide Sea Power (sea level adjusted power) releated information.">
-                    <label><input type="checkbox" name="analysis-disable-sp">Disable Sea Power</label>
+                    <label><input type="checkbox" name="analysis-disable-sp"/>Disable Sea Power</label>
                 </div>
 
                 <div class="option" title="Disable/hide the food or drink stats in the overview section.">
-                    <label><input type="checkbox" name="analysis-disable-food-reward">Disable food/drink overview</label>
+                    <label><input type="checkbox" name="analysis-disable-food-reward"/>Disable food/drink overview</label>
                 </div>
 
                 <div class="option" title="Disable watts data from runs.  Note: estimated watts may still be used.">
-                    <label><input type="checkbox" name="analysis-disable-run-watts">Disable run watts data</label>
+                    <label><input type="checkbox" name="analysis-disable-run-watts"/>Disable run watts data</label>
                 </div>
 
                 <div class="option" title="Show the Grade Adjusted Pace for runs in the analysis graphs.">
-                    <label><input type="checkbox" name="analysis-graph-gap">Include GAP graph in stacked chart</label>
+                    <label><input type="checkbox" name="analysis-graph-gap"/>Include GAP graph in stacked chart</label>
                 </div>
 
                 <div class="option" title="Show W Prime Balance in the analysis graphs.">
-                    <label><input type="checkbox" name="analysis-graph-wbal">Include W'bal graph in stacked chart</label>
+                    <label><input type="checkbox" name="analysis-graph-wbal"/>Include W'bal graph in stacked chart</label>
+                </div>
+
+                <div class="option" title="Change the default number of results shown when viewing segment details.
+
+NOTE: This is only for the Activity Analysis page.">
+                    <label>
+                        Activity leaderboard size:&nbsp;
+                        <input class="no-reload" type="range" min="0" value="10" step="1" max="100"
+                               name="analysis-segment-results-size"/>
+                        <span style="margin-left: 0.2em" class="input-display" data-placeholder="default"/>
+                    </label>
                 </div>
             </div>
         </main>

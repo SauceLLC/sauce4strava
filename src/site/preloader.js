@@ -12,6 +12,9 @@ self.saucePreloaderInit = function saucePreloaderInit() {
     const booted = document.documentElement.classList.contains('sauce-booted') ?
         Promise.resolve() :
         new Promise(resolve => document.addEventListener('sauceBooted', resolve));
+    const optionsReady = sauce.options ?
+        Promise.resolve() :
+        new Promise(resolve => document.addEventListener('sauceOptionsSet', resolve));
 
 
     sauce.propDefined('pageView', view => {
@@ -665,11 +668,77 @@ self.saucePreloaderInit = function saucePreloaderInit() {
         Klass.prototype.render = function() {
             const ret = renderSave.apply(this, arguments);
             booted.then(() => addButtons.call(this));
-            document.documentElement.dispatchEvent(new Event('sauceResetPageMonitor'));
+            document.dispatchEvent(new CustomEvent('sauceSegmentEffortDetailsRender',
+                                                   {detail: {view: this}}));
+            document.dispatchEvent(new Event('sauceResetPageMonitor'));
             return ret;
         };
     });
 
+
+    sauce.propDefined('Strava.Labs.Activities.SegmentLeaderboardView', Klass => {
+        let filterLabel = 'My History';
+        let actLabel = 'Activity';
+        let customResultsSize = false;
+        booted.then(() => sauce.locale.getMessages(['analysis_my_history', 'activity']).then(x => {
+            filterLabel = x[0];
+            actLabel = x[1];
+        }));
+        optionsReady.then(() => customResultsSize = !!sauce.options['analysis-segment-results-size']);
+        const renderTemplate = Klass.prototype.renderTemplate;
+        Klass.prototype.renderTemplate = function() {
+            const ret = renderTemplate.apply(this, arguments);
+            try {
+                const filter =  this.viewModel.leaderboard.get('filter');
+                this.$el[0].dataset.filter = filter;
+                this.$el.toggleClass('sauce-overflow-leaderboard',
+                                     customResultsSize || filter === 'my_history');
+                if (filter === 'my_results' || filter === 'my_history') {
+                    this.$('table thead th.results-col-js').text(actLabel);
+                }
+                let $refEl = this.$el.find('.leaderboard-filter ul.options [data-filter="my_results"]');
+                if (!$refEl.length) {
+                    $refEl = this.$el.find('.leaderboard-filter ul.options [data-filter]').last();
+                }
+                const histEl = $refEl[0].cloneNode(/*deep*/ true);
+                histEl.dataset.filter = 'my_history';
+                histEl.textContent = filterLabel;
+                $refEl.parent().after(`<li class="sauce"></li>`).next().append(histEl);
+            } catch(e) {
+                // Don't ever break things...
+                console.error("Internal Error:", e);
+            }
+            return ret;
+        };
+
+        const showHideCols = Klass.prototype.showHideCols;
+        Klass.prototype.showHideCols = function() {
+            if (this.viewModel.leaderboard.get('filter') === 'my_history') {
+                this.$(this.RESULTS_COL_SELECTOR).show();
+                return this.$(this.MY_RESULTS_COL_SELECTOR).show();
+            } else {
+                return showHideCols.apply(this, arguments);
+            }
+        };
+    });
+
+
+    sauce.propDefined('Strava.Labs.Activities.SegmentLeaderboardViewModel', Klass => {
+        const myResults = Klass.prototype.myResults;
+        Klass.prototype.myResults = function() {
+            return myResults.apply(this, arguments) || this.leaderboard.get('filter') === 'my_history';
+        };
+
+        const highlightRow = Klass.prototype.highlightRow;
+        Klass.prototype.highlightRow = function(effort) {
+            const filter = this.leaderboard.get('filter');
+            if (filter === 'my_history' || filter === 'my_results') {
+                return pageView.activityId() === effort.activity_id;
+            } else {
+                return highlightRow.apply(this, arguments);
+            }
+        };
+    });
 
     async function fetchLikeXHR(url, query) {
         /* This fetch technique is required for several API endpoints. */
@@ -837,34 +906,105 @@ self.saucePreloaderInit = function saucePreloaderInit() {
         if (!_segmentLeaderboardCache) {
             _segmentLeaderboardCache = new sauce.cache.TTLCache('segment-leaderboard', 1 * 86400 * 1000);
         }
+
         async function fillCache(options, key) {
             const data = await fetchLikeXHR(options.url, options.data);
             await _segmentLeaderboardCache.set(key, data);
             return data;
         }
+
         async function getSegmentLeaderboard(options) {
             const id = options.url.match(/segments\/([0-9]+)\/leaderboard/)[1];
             if (isNaN(Number(id))) {
                 throw new TypeError("Invalid leaderboard id: " + id);
             }
+            if (options.data?.filter === 'my_history') {
+                const resp = await fetch(`/athlete/segments/${id}/history`);
+                let data;
+                if (!resp.ok) {
+                    if (resp.status >= 400 && resp.status < 500) {
+                        console.warn("Segment history API is unavailable:", resp.status);
+                        data = {efforts: []};
+                        return;
+                    }
+                    console.error("Error fetching segment history:", await resp.text());
+                    throw new TypeError("Fetch error");
+                } else {
+                    // Workaround for bug in strava API sending overflowed data...
+                    data = JSON.parse(await resp.text(), (key, value, context) =>
+                        key === 'id' ? context && context.source || "" + value : value);
+                    data.efforts.reverse();
+                }
+                const athlete_id = pageView.currentAthlete().id;
+                // Make this look like /segments/<ID>/leaderboard ...
+                return {
+                    filter: 'my_history',
+                    date_range: null,
+                    age_group: null,
+                    weight_class: null,
+                    gender: 'all',
+                    page: 1,
+                    per_page: data.efforts.length,
+                    top_results: data.efforts.map((x, i) => ({
+                        ...x,
+                        athlete_id,
+                        avg_heart_rate: x.avg_hr,
+                        avg_speed: sauce.locale.human.pace(1 / (x.distance / x.moving_time),
+                                                           {html: true, suffix: true}),
+                        display_name: x.activity.name,
+                        display_name_raw: x.activity.name,
+                        elapsed_time: sauce.locale.human.timer(x.elapsed_time),
+                        elapsed_time_raw: x.elapsed_time,
+                        first_name: null,
+                        has_watts: !!x.avg_watts,
+                        start_date_local: sauce.locale.human.date(x.start_date_local, {concise: true}),
+                        start_date_local_raw: x.start_date_local,
+                    })),
+                    top_results_count: data.athlete_effort_count,
+                    viewer_clubs: [],
+                };
+            }
             const key = `${id}-${JSON.stringify(options.data)}`;
+            let data;
             const cachedEntry = await _segmentLeaderboardCache.getEntry(key);
             if (cachedEntry) {
                 if (Date.now() - cachedEntry.created > cacheRefreshThreshold) {
                     setTimeout(() => maybeRequestIdleCallback(() => fillCache(options, key)), 1000);
                 }
-                return cachedEntry.value;
+                data = cachedEntry.value;
+            } else {
+                data = await fillCache(options, key);
             }
-            return await fillCache(options, key);
+            return data;
         }
+
         Klass.prototype.fetch = interceptModelFetch(Klass.prototype.fetch, getSegmentLeaderboard);
+
+        let per_page;
+        const getDefaults = Klass.prototype.getDefaults;
+        Klass.prototype.getDefaults = function() {
+            const defs = getDefaults();
+            return per_page ? Object.assign(defs, {per_page}) : defs;
+        };
+
+        optionsReady.then(() => {
+            per_page = sauce.options['analysis-segment-results-size'];
+            if (per_page) {
+                const localeRoots = Strava.I18n.Locales.DICTIONARY.templates.activities.segment_efforts;
+                for (const obj of Object.values(localeRoots)) {
+                    if (typeof obj === 'object' && obj.top_10) {
+                        obj.top_10 = obj.top_10.replace(/[0-9]+/, per_page.toLocaleString());
+                    }
+                }
+            }
+        });
     });
 
 
     sauce.propDefined('currentAthlete', athlete => {
         document.documentElement.dataset.sauceCurrentUser = athlete.id || '';
-        document.documentElement.dispatchEvent(new Event('sauceCurrentUserUpdate'));
         document.documentElement.classList.toggle('sauce-non-premium-user', !athlete.isPremium());
+        document.dispatchEvent(new Event('sauceCurrentUserUpdate'));
     });
 
 

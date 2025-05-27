@@ -185,6 +185,7 @@
     "analysis_keyboard_tooltip": {"message": "Analysis keyboard controls are active.\n\nWhen the analysis charts are focused you can change the\nselection or highlighted data with the arrow keys.\n\nLeft/Right:\n\tMove the cursor 1 data point left or right.\nUp/Down:\n\tMove the cursor 60 data points left or right.\nCtrl + Left/Right:\n\tMove the current selection.\nShift + Left/Right:\n\tExpand the current selection.\nCtrl + Shift + Left/Right:\n\tShrink the current selection."},
     "analysis_any_activity_type": {"message": "Any activity type"},
     "analysis_activity_start_time": {"message": "Activity start time"},
+    "analysis_my_history": {"message": "My History"},
     "leadin": {"message": "Lead-in"},
 
     "time_sec": {"message": "sec"},
