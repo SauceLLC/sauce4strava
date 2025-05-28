@@ -3,9 +3,12 @@
 import * as jobs from '/src/common/jscoop/jobs.mjs';
 import * as queues from '/src/common/jscoop/queues.mjs';
 import * as locks from '/src/common/jscoop/locks.mjs';
+import * as net from '/src/bg/net.mjs';
+import * as meta from '/src/bg/meta.mjs';
 import * as processors from '/src/bg/hist/processors.mjs';
 import * as dataExchange from '/src/bg/hist/data-exchange.mjs';
 
+globalThis.meta = meta;
 
 const {
     ActivitiesStore,
@@ -47,13 +50,6 @@ function aggressiveSleep(ms) {
     } else {
         sauce.setWakeupAlarm(ms);
         return sauce.suspendSafeSleep(ms);
-    }
-}
-
-
-class CancelledError extends Error {
-    constructor() {
-        super("cancelled");
     }
 }
 
@@ -136,19 +132,6 @@ ActivityModel.addSyncManifest({
     depends: ['activity-stats'],
     data: {processor: processors.TrainingLoadProcessor}
 });
-
-
-class FetchError extends Error {
-    static fromResp(resp) {
-        const msg = `${this.name}: ${resp.url} [${resp.status}]`;
-        const instance = new this(msg);
-        instance.resp = resp;
-        return instance;
-    }
-}
-
-
-class Timeout extends Error {}
 
 
 class OffscreenDocumentRPC {
@@ -254,8 +237,7 @@ class PseudoDocumentRPC {
         this._importing = import('./offscreen.mjs').then(m => this._calls = m.calls);
     }
 
-    async _connect() {
-    }
+    async _connect() {}
 
     async invoke(name, ...args) {
         if (!this._calls) {
@@ -276,35 +258,6 @@ class PseudoDocumentRPC {
 export const specialProxy = new Proxy(
     browser.offscreen ? new OffscreenDocumentRPC() : new PseudoDocumentRPC(),
     {get: (target, prop) => (...args) => target.invoke(prop, ...args)});
-
-
-async function networkOnline(timeout) {
-    if (navigator.onLine === undefined || navigator.onLine) {
-        return;
-    }
-    console.debug("Network offline");
-    await new Promise((resolve, reject) => {
-        let timeoutID;
-        const cb = () => {
-            if (navigator.onLine) {
-                console.debug("Network online");
-                if (timeout) {
-                    clearTimeout(timeoutID);
-                }
-                removeEventListener('online', cb);
-                resolve();
-            }
-        };
-        addEventListener('online', cb);
-        if (timeout) {
-            timeoutID = setTimeout(() => {
-                console.warn("Timeout waiting for online network");
-                removeEventListener('online', cb);
-                reject(new Timeout('network offline'));
-            }, timeout);
-        }
-    });
-}
 
 
 class SauceRateLimiter extends jobs.RateLimiter {
@@ -331,10 +284,8 @@ class SauceRateLimiter extends jobs.RateLimiter {
         const clone = structuredClone(state);
         if (state.zBucketV1) {
             delete clone.zBucketV1;
-            const deltas = sauce.data.fromVarintArray(
-                await sauce.data.decompress(
-                    sauce.data.fromBase64(state.zBucketV1.zDeltas),
-                    'deflate-raw'));
+            const r = await sauce.data.decompress(sauce.data.fromBase64(state.zBucketV1.zDeltas));
+            const deltas = sauce.data.fromVarintArray(await r.arrayBuffer());
             const start = state.zBucketV1.start;
             clone.bucket = [start];
             for (const x of deltas) {
@@ -359,12 +310,11 @@ class SauceRateLimiter extends jobs.RateLimiter {
                 deltas.push(x - prev);
                 prev = x;
             }
+            const r = await sauce.data.compress(sauce.data.toVarintArray(deltas));
+            const zDeltas = sauce.data.toBase64(await r.arrayBuffer());
             clone.zBucketV1 = {
                 start,
-                zDeltas: sauce.data.toBase64(
-                    await sauce.data.compress(
-                        sauce.data.toVarintArray(deltas),
-                        'deflate-raw')),
+                zDeltas,
             };
         }
         return clone;
@@ -720,7 +670,7 @@ sauce.proxy.export(fetchAthleteStatsHistory, {namespace});
 export async function fetchAthleteStatsForActivity(activityId) {
     let data;
     try {
-        const resp = await retryFetch(`/activities/${activityId}/power_data`);
+        const resp = await net.retryFetch(`/activities/${activityId}/power_data`);
         data = await resp.json();
     } catch(e) {
         if (!e.resp || ![401, 404].includes(e.resp.status)) {
@@ -1218,62 +1168,6 @@ export async function activityTypeCounts(athleteId, options) {
 sauce.proxy.export(activityTypeCounts, {namespace});
 
 
-async function retryFetch(urn, options={}) {
-    const maxErrors = 3;
-    const headers = options.headers || {};
-    headers["x-requested-with"] = "XMLHttpRequest";  // Required for most Strava endpoints
-    const url = `https://www.strava.com${urn}`;
-    for (let r = 1;; r++) {
-        let resp;
-        let fetchError;
-        await networkOnline(120000);
-        try {
-            resp = await fetch(url, Object.assign({headers}, options));
-        } catch(e) {
-            fetchError = e;
-        }
-        if (resp && resp.ok) {
-            return resp;
-        }
-        if ((!resp || (resp.status >= 500 && resp.status < 600)) && r <= maxErrors) {
-            console.info(`Server error: ${urn} - Retry: ${r}/${maxErrors}`);
-            // To avoid triggering Anti-DDoS HTTP Throttling of Extension-Originated Requests
-            // perform a cool down before relinquishing control. Ie. do one last sleep.
-            // See: http://dev.chromium.org/throttling
-            const sleeping = sleep(5000 * 2 ** r);
-            if (options.cancelEvent) {
-                await Promise.race([sleeping, options.cancelEvent.wait()]);
-                if (options.cancelEvent.isSet()) {
-                    throw new CancelledError();
-                }
-            } else {
-                await sleeping;
-            }
-            if (r < maxErrors) {
-                continue;
-            }
-        }
-        if (fetchError) {
-            throw fetchError;
-        } else if (resp.status === 429) {
-            const delay = 30000 * 2 ** r;
-            console.warn(`Hit Throttle Limits: Delaying next request for ${Math.round(delay / 1000)}s`);
-            if (options.cancelEvent) {
-                await Promise.race([sleep(delay), options.cancelEvent.wait()]);
-                if (options.cancelEvent.isSet()) {
-                    throw new CancelledError();
-                }
-            } else {
-                await sleep(delay);
-            }
-            continue;
-        } else {
-            throw FetchError.fromResp(resp);
-        }
-    }
-}
-
-
 class SyncJob extends EventTarget {
     constructor(athlete, isSelf, options={}) {
         super();
@@ -1359,7 +1253,7 @@ class SyncJob extends EventTarget {
 
     async _run() {
         this.setStatus('checking-network');
-        await Promise.race([networkOnline(), this._cancelEvent.wait()]);
+        await Promise.race([net.online(), this._cancelEvent.wait()]);
         if (this._cancelEvent.isSet()) {
             return;
         }
@@ -1368,7 +1262,7 @@ class SyncJob extends EventTarget {
             try {
                 await this._scanActivities({forceUpdate: this.options.forceActivityUpdate});
             } catch(e) {
-                if (!(e instanceof CancelledError)) {
+                if (!(e instanceof net.CancelledError)) {
                     throw e;
                 }
             } finally {
@@ -1404,7 +1298,7 @@ class SyncJob extends EventTarget {
     }
 
     async retryFetch(urn, options={}) {
-        return await retryFetch(urn, {cancelEvent: this._cancelEvent, ...options});
+        return await net.retryFetch(urn, {cancelEvent: this._cancelEvent, ...options});
     }
 
     async _scanActivities() {
@@ -1843,7 +1737,7 @@ class SyncJob extends EventTarget {
             const resp = await this.retryFetch(`/athletes/${this.athlete.pk}/interval?${q}`);
             data = await resp.text();
         } catch(e) {
-            if (!(e instanceof CancelledError)) {
+            if (!(e instanceof net.CancelledError)) {
                 // In some cases Strava just returns 500 for a month.  I suspect it's when the only
                 // activity data in a month is private, but it's an upstream problem and we need to
                 // treat it like an empty response.
@@ -1996,7 +1890,7 @@ class SyncJob extends EventTarget {
                     count++;
                 }
             }
-            if (error && !(error instanceof CancelledError)) {
+            if (error && !(error instanceof net.CancelledError)) {
                 this.logWarn("Fetch streams error (will retry later):", error);
                 activity.setManifestSyncError(manifest, error);
             }

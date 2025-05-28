@@ -680,17 +680,15 @@ sauce.ns('data', function() {
     }
 
 
-    async function compress(data, format='deflate') {
+    async function compress(data, {format='deflate-raw'}={}) {
         const b = new Blob([data]);
-        const resp = new Response(await b.stream().pipeThrough(new CompressionStream(format)));
-        return await resp.arrayBuffer();
+        return new Response(await b.stream().pipeThrough(new CompressionStream(format)));
     }
 
 
-    async function decompress(data, format='deflate') {
+    async function decompress(data, {format='deflate-raw'}={}) {
         const b = new Blob([data]);
-        const resp = new Response(await b.stream().pipeThrough(new DecompressionStream(format)));
-        return await resp.arrayBuffer();
+        return new Response(await b.stream().pipeThrough(new DecompressionStream(format)));
     }
 
 
