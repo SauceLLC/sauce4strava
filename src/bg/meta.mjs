@@ -4,8 +4,9 @@ import * as locks from '/src/common/jscoop/locks.mjs';
 
 const sauceBrandName = 'Unbranded'; // Must be in strava backend
 const sauceModelName = 'Sauce Meta Data';
-const maxFileSize = 65535;
+const maxGearDescSize = 65535;
 const loadLock = new locks.Lock();
+const metaVersion = 1;
 
 let _athleteId;
 let _loadData;
@@ -14,12 +15,16 @@ let _csrfToken;
 
 async function encode(data) {
     const r = await sauce.data.compress(JSON.stringify(data));
-    return sauce.data.toBase64(await r.arrayBuffer());
+    return [metaVersion, sauce.data.toBase64(await r.arrayBuffer())].join('\n');
 }
 
 
 async function decode(raw) {
-    const r = await sauce.data.decompress(sauce.data.fromBase64(raw));
+    const v = raw.split('\n', 1)[0];
+    if (+v !== metaVersion) {
+        throw new TypeError("Incompatible gear file version");
+    }
+    const r = await sauce.data.decompress(sauce.data.fromBase64(raw.substr(v.length + 1)));
     return await r.json();
 }
 
@@ -83,17 +88,28 @@ export async function load(name, {forceFetch}={}) {
         try {
             if (forceFetch || !_loadData || (name && !_loadData.some(x => x.name === name))) {
                 const r = await fetchGear('shoes');
-                // XXX Test what happens with no gear present
-                if (!r || !Array.isArray(r)) {
-                    throw new Error("Fetch gear empty");
-                }
                 const files = r.filter(x => x.brand_name === sauceBrandName &&
                                             x.model_name === sauceModelName);
-                _loadData = await Promise.all(files.map(async x => ({
-                    id: x.id,
-                    name: x.name,
-                    data: await decode(x.description)
-                })));
+                _loadData = await Promise.all(files.map(async x => {
+                    let decoded;
+                    let corrupt;
+                    try {
+                        decoded = await decode(x.description);
+                        corrupt = false;
+                    } catch(e) {
+                        console.error("Failed to decode gear file:", e);
+                        corrupt = true;
+                        decoded = {};
+                    }
+                    return {
+                        id: x.id,
+                        name: x.name,
+                        corrupt,
+                        created: decoded.created,
+                        updated: decoded.updated,
+                        data: decoded.data,
+                    };
+                }));
             }
         } finally {
             loadLock.release();
@@ -103,21 +119,25 @@ export async function load(name, {forceFetch}={}) {
 }
 
 
-export function get(name) {
+export function get(name, {corrupt}={}) {
     if (!_loadData) {
         return [];
-    } else if (!name) {
-        return _loadData;
     } else {
-        return _loadData.filter(x => x.name === name);
+        const filtered = corrupt ? _loadData : _loadData.filter(x => !x.corrupt);
+        return name ? filtered.filter(x => x.name === name) : filtered;
     }
 }
 
 
 export async function create(name, data) {
-    const file = data ? await encode(data) : '';
-    if (file.length > maxFileSize) {
-        throw new Error("File too large");
+    const created = Date.now();
+    const encoded = await encode({
+        created,
+        updated: created,
+        data,
+    });
+    if (encoded.length > maxGearDescSize) {
+        throw new Error("Data too large");
     }
     const r = await fetchGear(null, {
         method: 'POST',
@@ -125,10 +145,14 @@ export async function create(name, data) {
             brandName: sauceBrandName,
             modelName: sauceModelName,
             name,
-            description: file
+            description: encoded,
         })
     });
-    const entry = {id: r.id, name, data};
+    const entry = {id: r.id, name, created, updated: created, data};
+    if (!_loadData) {
+        console.warn("meta.load() not called prior to create()");
+        _loadData = [];
+    }
     _loadData.push(entry);
     await fetchGear(`${entry.id}/retire`, {method: 'PUT'});
     return entry;
@@ -136,13 +160,25 @@ export async function create(name, data) {
 
 
 export async function save(id, data) {
-    const existing = _loadData && _loadData.find(x => x.id === id);
-    if (!existing) {
+    const entry = _loadData && _loadData.find(x => x.id === id);
+    if (!entry) {
         throw new Error("Invalid ID");
     }
-    existing.data = data;
-    const file = data ? await encode(data) : '';
-    if (file.length > maxFileSize) {
+    entry.data = data;
+    entry.updated = Date.now();
+    if (entry.corrupt) {
+        console.warn("Repairing corrupt file:", id);
+        entry.corrupt = false;
+        if (!entry.created) {
+            entry.created = entry.updated;
+        }
+    }
+    const encoded = await encode({
+        created: entry.created,
+        updated: entry.updated,
+        data,
+    });
+    if (encoded.length > maxGearDescSize) {
         throw new Error("File too large");
     }
     await fetchGear(id, {
@@ -150,8 +186,8 @@ export async function save(id, data) {
         body: new URLSearchParams({
             brandName: sauceBrandName,
             modelName: sauceModelName,
-            name: existing.name, // XXX try without, maybe even try PATCH method
-            description: file,
+            name: entry.name, // XXX try without, maybe even try PATCH method
+            description: encoded,
             shoeId: id
         })
     });
