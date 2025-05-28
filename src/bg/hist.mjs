@@ -265,11 +265,13 @@ class SauceRateLimiter extends jobs.RateLimiter {
     constructor(name, spec) {
         super(name, spec, {sleep: aggressiveSleep});
         this.syncStorage = false; // Testing reliability with sync false 2025-02-04
+        /*
         sauce.storage.addListener((key, value) => {
             if (key === this._storeKey && sauce.hash(JSON.stringify(value)) !== this._lastSavedHash) {
                 this._mergeExternalState(value);  // bg okay
             }
         }, {sync: this.syncStorage});
+        */
     }
 
     // hack to avoid race with early loadState called via constructor
@@ -320,17 +322,27 @@ class SauceRateLimiter extends jobs.RateLimiter {
         return clone;
     }
 
-    async getState() {
+    async getStateBuggy() {
         return await this._decodeState(await sauce.storage.get(this._storeKey, {sync: this.syncStorage}));
     }
 
-    async setState(state) {
+    async setStateBuggy(state) {
         const encodedState = await this._encodeState(state);
         this._lastSavedHash = sauce.hash(JSON.stringify(encodedState));
         await sauce.storage.set(this._storeKey, encodedState, {sync: this.syncStorage});
     }
 
-    async _mergeExternalState(encodedState) {
+    async getState() {
+        const storeKey = `hist-rate-limiter-${this.label}`;
+        return await sauce.storage.get(storeKey);
+    }
+
+    async setState(state) {
+        const storeKey = `hist-rate-limiter-${this.label}`;
+        await sauce.storage.set(storeKey, state);
+    }
+
+    async _mergeExternalStateBuggy(encodedState) {
         const state = await this._decodeState(encodedState);
         let count = 0;
         for (const x of state.bucket) {

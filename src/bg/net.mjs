@@ -1,4 +1,4 @@
-/* global sauce, browser */
+/* global sauce */
 
 
 export class FetchError extends Error {
