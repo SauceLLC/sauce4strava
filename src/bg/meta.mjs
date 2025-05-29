@@ -236,3 +236,12 @@ export async function remove(id) {
         loadLock.release();
     }
 }
+
+
+export function initProxyExports() {
+    sauce.proxy.export(load, {namespace: 'meta'});
+    sauce.proxy.export(get, {namespace: 'meta'});
+    sauce.proxy.export(create, {namespace: 'meta'});
+    sauce.proxy.export(save, {namespace: 'meta'});
+    sauce.proxy.export(remove, {namespace: 'meta'});
+}

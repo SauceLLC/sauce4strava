@@ -15,8 +15,7 @@ import * as hist from './hist.mjs';
 import * as meta from './meta.mjs';
 
 patron.initProxyExports();
-
-globalThis.meta = meta;
+meta.initProxyExports();
 
 let _starting = undefined;
 self.currentUser = null;

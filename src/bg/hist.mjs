@@ -4,6 +4,7 @@ import * as jobs from '/src/common/jscoop/jobs.mjs';
 import * as queues from '/src/common/jscoop/queues.mjs';
 import * as locks from '/src/common/jscoop/locks.mjs';
 import * as net from './net.mjs';
+import * as meta from './meta.mjs';
 import * as db from './hist/db.mjs';
 import * as processors from './hist/processors.mjs';
 import * as dataExchange from './hist/data-exchange.mjs';
@@ -604,6 +605,102 @@ async function getActivitiesForAthlete(athleteId, options={}) {
     }
 }
 sauce.proxy.export(getActivitiesForAthlete, {namespace});
+
+
+export async function exportMetaDataToStrava(athleteId) {
+    const athlete = await athletesStore.get(athleteId);
+    const activities = await actsStore.getAllForAthlete(athleteId);
+    const data = {
+        version: 1,
+        athleteId,
+        ftpHistory: athlete.ftpHistory,
+        weightHistory: athlete.weightHistory,
+        tssOverrides: [],
+        peaksExcludes: [],
+    };
+    for (const x of activities) {
+        if (x.tssOverride != null && !isNaN(x.tssOverride)) {
+            data.tssOverrides.push({id: x.id, value: x.tssOverride});
+        }
+        if (x.peaksExclude != null) {
+            data.peaksExcludes.push({id: x.id, value: x.peaksExclude});
+        }
+    }
+    let file = (await meta.get(`hist-md-${athleteId}`))[0];
+    if (!file) {
+        file = await meta.create(`hist-md-${athleteId}`);
+    }
+    await meta.save(file.id, data);
+}
+sauce.proxy.export(exportMetaDataToStrava, {namespace});
+
+
+export async function importMetaDataFromStrava(athleteId) {
+    const file = (await meta.get(`hist-md-${athleteId}`))[0];
+    if (!file) {
+        throw new Error("File not found");
+    }
+    const data = file.data;
+    if (!data || data.version !== 1) {
+        throw new TypeError("Unsupported meta data file");
+    }
+    const athlete = await athletesStore.get(athleteId, {model: true});
+    if (!athlete) {
+        throw new Error("Athlete not found");
+    }
+    const activities = await actsStore.getAllForAthlete(athleteId, {models: true});
+    let edited = false;
+    if (data.ftpHistory && data.ftpHistory.length) {
+        if (JSON.stringify(data.ftpHistory) !== JSON.stringify(athlete.get('ftpHistory') || [])) {
+            console.debug("Updating FTP history:", athleteId);
+            await athlete.save({ftpHistory: data.ftpHistory});
+            edited = true;
+        }
+    }
+    if (data.weightHistory && data.weightHistory.length) {
+        if (JSON.stringify(data.weightHistory) !== JSON.stringify(athlete.get('weightHistory') || [])) {
+            console.debug("Updating weight history:", athleteId);
+            await athlete.save({weightHistory: data.weightHistory});
+            edited = true;
+        }
+    }
+    const toSave = new Set();
+    const tssOverrides = new Map(data.tssOverrides.map(x => [x.id, x.value]));
+    for (const x of activities) {
+        const suggested = tssOverrides.get(x.pk) ?? undefined;
+        const existing = x.get('tssOverride') ?? undefined;
+        if (suggested !== existing) {
+            console.debug(`Updating TSS for ${x.pk}:`, existing, '->', suggested);
+            x.set('tssOverride', suggested);
+            toSave.add(x);
+        }
+    }
+    const peaksExcludes = new Map(data.peaksExcludes.map(x => [x.id, x.value]));
+    for (const x of activities) {
+        const suggested = peaksExcludes.get(x.pk) ?? undefined;
+        const existing = x.get('peaksExclude') ?? undefined;
+        if (suggested !== existing) {
+            console.debug(`Updating peaksExclude for ${x.pk}:`, existing, '->', suggested);
+            x.set('peaksExclude', suggested);
+            toSave.add(x);
+        }
+    }
+    if (toSave.size) {
+        edited = true;
+        console.info(`Updated: ${toSave.size} models`);
+        debugger;
+        for (const x of toSave) {
+            console.debug("woudl save:", x);
+        }
+        //await Promise.all(Array.from(toSave).map(x => x.save()));
+    } else {
+        console.info("No differences found");
+    }
+    if (edited) {
+        //await invalidateAthleteSyncState(athleteId, 'local');
+    }
+}
+sauce.proxy.export(importMetaDataFromStrava, {namespace});
 
 
 // EXPERIMENT
