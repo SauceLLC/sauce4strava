@@ -1,21 +1,15 @@
 /* global sauce */
 
-import * as hist from '/src/bg/hist.mjs';
 import * as fflate from '/src/common/fflate.mjs';
 import {FITSerializer, TCXSerializer, GPXSerializer} from '/src/common/export.mjs';
-
-
-const {
-    ActivitiesStore,
-    StreamsStore,
-    AthletesStore,
-} = sauce.hist.db;
+import * as hist from '../hist.mjs';
+import * as db from './db.mjs';
 
 const DBTrue = 1;
 
-const actsStore = ActivitiesStore.singleton();
-const streamsStore = StreamsStore.singleton();
-const athletesStore = AthletesStore.singleton();
+const actsStore = db.ActivitiesStore.singleton();
+const streamsStore = db.StreamsStore.singleton();
+const athletesStore = db.AthletesStore.singleton();
 
 
 class SauceZip extends fflate.Zip {

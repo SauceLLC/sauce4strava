@@ -3,22 +3,10 @@
 import * as jobs from '/src/common/jscoop/jobs.mjs';
 import * as queues from '/src/common/jscoop/queues.mjs';
 import * as locks from '/src/common/jscoop/locks.mjs';
-import * as net from '/src/bg/net.mjs';
-import * as meta from '/src/bg/meta.mjs';
-import * as processors from '/src/bg/hist/processors.mjs';
-import * as dataExchange from '/src/bg/hist/data-exchange.mjs';
-
-globalThis.meta = meta;
-
-const {
-    ActivitiesStore,
-    StreamsStore,
-    AthletesStore,
-    PeaksStore,
-    SyncLogsStore,
-    ActivityModel
-} = sauce.hist.db;
-
+import * as net from './net.mjs';
+import * as db from './hist/db.mjs';
+import * as processors from './hist/processors.mjs';
+import * as dataExchange from './hist/data-exchange.mjs';
 
 const activityListVersion = 3;  // Increment to force full update of activities.
 const noStreamsTag = 'no-streams-v2'; // Increment if no stream handling is updated.
@@ -28,11 +16,11 @@ const DBFalse = 0;
 const sleep = sauce.sleep;
 
 export let syncManager;
-export const actsStore = ActivitiesStore.singleton();
-export const streamsStore = StreamsStore.singleton();
-export const athletesStore = AthletesStore.singleton();
-export const peaksStore = PeaksStore.singleton();
-export const syncLogsStore = SyncLogsStore.singleton();
+export const actsStore = db.ActivitiesStore.singleton();
+export const streamsStore = db.StreamsStore.singleton();
+export const athletesStore = db.AthletesStore.singleton();
+export const peaksStore = db.PeaksStore.singleton();
+export const syncLogsStore = db.SyncLogsStore.singleton();
 
 sauce.proxy.export(dataExchange.DataExchange, {namespace});
 
@@ -54,7 +42,7 @@ function aggressiveSleep(ms) {
 }
 
 
-ActivityModel.addSyncManifest({
+db.ActivityModel.addSyncManifest({
     processor: 'streams',
     name: 'fetch',
     version: 1,
@@ -75,21 +63,21 @@ ActivityModel.addSyncManifest({
     ])
 });
 
-ActivityModel.addSyncManifest({
+db.ActivityModel.addSyncManifest({
     processor: 'local',
     name: 'athlete-settings',
     version: 2,
     data: {processor: processors.athleteSettingsProcessor}
 });
 
-ActivityModel.addSyncManifest({
+db.ActivityModel.addSyncManifest({
     processor: 'local',
     name: 'extra-streams',
     version: 3, // Updated active AND run powers (again)
     data: {processor: processors.extraStreamsProcessor}
 });
 
-ActivityModel.addSyncManifest({
+db.ActivityModel.addSyncManifest({
     processor: 'local',
     name: 'run-power',
     version: 1,
@@ -97,7 +85,7 @@ ActivityModel.addSyncManifest({
     data: {processor: processors.runPowerProcessor}
 });
 
-ActivityModel.addSyncManifest({
+db.ActivityModel.addSyncManifest({
     processor: 'local',
     name: 'activity-stats',
     version: 6,  // Fix disableRunWatts causing eTSS use bug
@@ -106,7 +94,7 @@ ActivityModel.addSyncManifest({
     data: {processor: processors.activityStatsProcessor}
 });
 
-ActivityModel.addSyncManifest({
+db.ActivityModel.addSyncManifest({
     processor: 'local',
     name: 'peaks',
     version: 15, // Repair run pace regression from 14
@@ -116,7 +104,7 @@ ActivityModel.addSyncManifest({
     data: {processor: processors.PeaksProcessor}
 });
 
-ActivityModel.addSyncManifest({
+db.ActivityModel.addSyncManifest({
     processor: 'local',
     name: 'peaks-finalizer',
     version: 1,
@@ -125,7 +113,7 @@ ActivityModel.addSyncManifest({
     data: {processor: processors.peaksFinalizerProcessor}
 });
 
-ActivityModel.addSyncManifest({
+db.ActivityModel.addSyncManifest({
     processor: 'local',
     name: 'training-load',
     version: 4,
@@ -334,7 +322,11 @@ class SauceRateLimiter extends jobs.RateLimiter {
 
     async getState() {
         const storeKey = `hist-rate-limiter-${this.label}`;
-        return await sauce.storage.get(storeKey);
+        const state = await sauce.storage.get(storeKey);
+        if (!state.bucket) {
+            console.warn("Healing migration from buggy rate limiter state");
+            state.bucket = [];
+        }
     }
 
     async setState(state) {
@@ -734,7 +726,7 @@ sauce.proxy.export(getActivities, {namespace});
 
 
 export function getActivitySyncManifests(processor) {
-    return ActivityModel.getSyncManifests(processor).map(x => ({...x, data: undefined}));
+    return db.ActivityModel.getSyncManifests(processor).map(x => ({...x, data: undefined}));
 }
 sauce.proxy.export(getActivitySyncManifests, {namespace});
 
@@ -824,7 +816,7 @@ export async function integrityCheck(athleteId, options={}) {
     for await (const [id] of streamsStore.byAthlete(athleteId, 'time', {keys: true})) {
         haveStreamsFor.add(id);
     }
-    const streamManifest = ActivityModel.getSyncManifest('streams', 'fetch');
+    const streamManifest = db.ActivityModel.getSyncManifest('streams', 'fetch');
     const activities = new Map((await actsStore.getAllForAthlete(athleteId, {models: true}))
         .map(x => [x.pk, x]));
     for (const a of activities.values()) {
@@ -840,7 +832,7 @@ export async function integrityCheck(athleteId, options={}) {
         }
     }
     if (options.repair) {
-        const localManifests = ActivityModel.getSyncManifests('local');
+        const localManifests = db.ActivityModel.getSyncManifests('local');
         for (const id of missingStreamsFor) {
             syncLogsStore.logWarn(athleteId, 'Repairing activity with missing streams:', id);
             const a = activities.get(id);
@@ -1095,7 +1087,7 @@ export async function invalidateActivitySyncState(activityId, processor, name, o
     if (!activityId || !processor) {
         throw new TypeError("'activityId' and 'processor' are required args");
     }
-    const manifests = ActivityModel.getSyncManifests(processor, name);
+    const manifests = db.ActivityModel.getSyncManifests(processor, name);
     if (!manifests.length) {
         throw new TypeError('Invalid sync processor/name');
     }
@@ -1121,8 +1113,8 @@ sauce.proxy.export(invalidateSyncState, {namespace});
 
 export async function activityCounts(athleteId, activities) {
     activities = activities || await actsStore.getAllForAthlete(athleteId, {models: true});
-    const streamManifests = ActivityModel.getSyncManifests('streams');
-    const localManifests = ActivityModel.getSyncManifests('local');
+    const streamManifests = db.ActivityModel.getSyncManifests('streams');
+    const localManifests = db.ActivityModel.getSyncManifests('local');
     const total = activities.length;
     let imported = 0;
     let unavailable = 0;
@@ -1804,7 +1796,7 @@ class SyncJob extends EventTarget {
         this.allActivities = new Map(activities.map(x => [x.pk, x]));
         const unfetched = [];
         let deferCount = 0;
-        const streamManifest = ActivityModel.getSyncManifest('streams', 'fetch');
+        const streamManifest = db.ActivityModel.getSyncManifest('streams', 'fetch');
         for (const a of activities) {
             if (a.isSyncComplete('streams') || a.getManifestSyncError(streamManifest) === noStreamsTag) {
                 if (!a.isSyncComplete('local')) {
@@ -1849,8 +1841,8 @@ class SyncJob extends EventTarget {
     async __fetchStreamsWorker(activities) {
         activities.sort((a, b) => b.get('ts') - a.get('ts'));  // newest -> oldest
         const q = new URLSearchParams();
-        const manifest = ActivityModel.getSyncManifest('streams', 'fetch');
-        const localManifests = ActivityModel.getSyncManifests('local');
+        const manifest = db.ActivityModel.getSyncManifest('streams', 'fetch');
+        const localManifests = db.ActivityModel.getSyncManifests('local');
         for (const x of manifest.data) {
             q.append('stream_types[]', x);
         }
@@ -2193,14 +2185,14 @@ class SyncManager extends EventTarget {
             if (this.stopping || key !== 'options') {
                 return;
             }
-            const manifests = ActivityModel.getSyncManifests('local');
+            const manifests = db.ActivityModel.getSyncManifests('local');
             const keys = Array.from(new Set([].concat(...manifests.map(x => x.storageOptionTriggers || []))));
             const oldSig = JSON.stringify(keys.map(x => [x, oldValue && oldValue[x]]));
             const newSig = JSON.stringify(keys.map(x => [x, newValue && newValue[x]]));
             if (oldSig !== newSig) {
                 console.info("Sauce options change triggering refresh...");
                 for (const m of manifests) {
-                    ActivityModel.updateSyncManifestStorageOptionsHash(m);
+                    db.ActivityModel.updateSyncManifestStorageOptionsHash(m);
                 }
                 const athletes = await athletesStore.getEnabled();
                 for (const x of athletes) {
@@ -2227,9 +2219,9 @@ class SyncManager extends EventTarget {
         }
         this.stopped = false;
         this.stopping = false;
-        const manifests = ActivityModel.getSyncManifests('local');
+        const manifests = db.ActivityModel.getSyncManifests('local');
         for (const m of manifests) {
-            ActivityModel.updateSyncManifestStorageOptionsHash(m);
+            db.ActivityModel.updateSyncManifestStorageOptionsHash(m);
         }
         this._refreshLoop = this.refreshLoop();
         this._refreshLoop.catch(e =>
@@ -2248,8 +2240,8 @@ class SyncManager extends EventTarget {
 
     async syncVersionHash() {
         const manifests = [].concat(
-            ActivityModel.getSyncManifests('local'),
-            ActivityModel.getSyncManifests('streams'));
+            db.ActivityModel.getSyncManifests('local'),
+            db.ActivityModel.getSyncManifests('streams'));
         const records = [];
         for (const x of manifests) {
             records.push(`${x.processor}-${x.name}-v${x.version}`);

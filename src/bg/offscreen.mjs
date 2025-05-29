@@ -1,6 +1,6 @@
 /* global browser, sauce */
 
-import '../ext/webext.js';
+import '/src/ext/webext.js';
 
 self.sauce = self.sauce || {};
 

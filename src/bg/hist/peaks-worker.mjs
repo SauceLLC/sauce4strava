@@ -1,13 +1,13 @@
 /* global sauce */
 
-import "../../common/base.js";
-import "../worker_base_init.js";
-import "../../common/lib.js";
-import "./db.js";
-import {peaksProcessor} from '/src/bg/hist/peaks.mjs';
+import "/src/common/base.js";
+import "/src/bg/worker_base_init.js";
+import "/src/common/lib.js";
+import * as db from './db.mjs';
+import {peaksProcessor} from './peaks.mjs';
 
 
-const streamsStore = sauce.hist.db.StreamsStore.singleton();
+const streamsStore = db.StreamsStore.singleton();
 
 
 function withTimeout(promise, delay) {

@@ -1,22 +1,22 @@
 /* global browser, sauce */
 
-import "../ext/webext.js";
-import "../common/base.js";
-import "../common/base_init.js";
-import "../common/proxy.js";
+import "/src/ext/webext.js";
+import "/src/common/base.js";
+import "/src/common/base_init.js";
+import "/src/common/proxy.js";
 import "./proxy.js";
-import "../common/lib.js";
-import "../common/storage.js";
+import "/src/common/lib.js";
+import "/src/common/storage.js";
 import "./migrate.js";
 import "./menu.js";
-import "./hist/db.js";
 
 import * as patron from './patron.mjs';
 import * as hist from './hist.mjs';
+import * as meta from './meta.mjs';
 
 patron.initProxyExports();
 
-sauce.ns('hist', () => Object.fromEntries(Object.entries(hist))); // For console debugging only.
+globalThis.meta = meta;
 
 let _starting = undefined;
 self.currentUser = null;
@@ -35,6 +35,10 @@ async function start() {
     const config = await sauce.storage.get(null);
     sauce.options = config.options;
     self.currentUser = config.currentUser || null;
+    if (self.currentUser) {
+        meta.init({athleteId: self.currentUser});
+        meta.load(null, {forceFetch: true});  // bg okay
+    }
     await hist.startSyncManager(self.currentUser);
     sauce.proxy.startBackgroundHandler();
 }
@@ -141,6 +145,10 @@ browser.runtime.onMessage.addListener(async msg => {
             const id = msg.currentUser || null;
             if (id !== self.currentUser) {
                 self.currentUser = id;
+                if (id) {
+                    meta.init({athleteId: id});
+                    meta.load(null, {forceFetch: true});  // bg okay
+                }
                 await hist.restartSyncManager(id);
             }
         }

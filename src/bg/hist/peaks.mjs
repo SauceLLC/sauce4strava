@@ -1,6 +1,5 @@
 /* global sauce */
 
-
 const minEstPeakPowerPeriod = 300;
 
 

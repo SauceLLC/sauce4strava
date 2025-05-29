@@ -2,12 +2,13 @@
 
 import * as queues from '/src/common/jscoop/queues.mjs';
 import * as locks from '/src/common/jscoop/locks.mjs';
-import {specialProxy} from '/src/bg/hist.mjs';
-import {peaksProcessor} from '/src/bg/hist/peaks.mjs';
+import * as db from './db.mjs';
+import {specialProxy, invalidateAthleteSyncState} from '../hist.mjs';
+import {peaksProcessor} from './peaks.mjs';
 
-const actsStore = sauce.hist.db.ActivitiesStore.singleton();
-const peaksStore = sauce.hist.db.PeaksStore.singleton();
-const streamsStore = sauce.hist.db.StreamsStore.singleton();
+const actsStore = db.ActivitiesStore.singleton();
+const peaksStore = db.PeaksStore.singleton();
+const streamsStore = db.StreamsStore.singleton();
 
 const minEstPeakPowerPeriod = 300;
 
@@ -270,7 +271,7 @@ export async function athleteSettingsProcessor({manifest, activities, athlete}) 
 
     if (invalidate) {
         console.info("Athlete settings updated for:", athlete.pk, athlete.get('name'));
-        sauce.hist.invalidateAthleteSyncState(athlete.pk, manifest.processor, manifest.name).catch(e =>
+        invalidateAthleteSyncState(athlete.pk, manifest.processor, manifest.name).catch(e =>
             console.error("Failed to force resync during athlete settings update:", e));
     }
 }

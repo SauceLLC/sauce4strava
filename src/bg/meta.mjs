@@ -79,6 +79,7 @@ async function fetchGear(resource, options={}, _allowRetry) {
 
 export function init({athleteId}) {
     _athleteId = athleteId;
+    console.debug("Init meta gear store:", athleteId);
 }
 
 
@@ -87,6 +88,7 @@ export async function load(name, {forceFetch}={}) {
         await loadLock.acquire();
         try {
             if (forceFetch || !_loadData || (name && !_loadData.some(x => x.name === name))) {
+                console.debug("Fetching meta gear files");
                 const r = await fetchGear('shoes');
                 const files = r.filter(x => x.brand_name === sauceBrandName &&
                                             x.model_name === sauceModelName);
@@ -111,15 +113,26 @@ export async function load(name, {forceFetch}={}) {
                     };
                 }));
             }
+            return _get(name);
         } finally {
             loadLock.release();
         }
     }
-    return get(name);
+    return await get(name);
 }
 
 
-export function get(name, {corrupt}={}) {
+export async function get(...args) {
+    await loadLock.acquire();
+    try {
+        return _get(...args);
+    } finally {
+        loadLock.release();
+    }
+}
+
+
+function _get(name, {corrupt}={}) {
     if (!_loadData) {
         return [];
     } else {
@@ -129,7 +142,18 @@ export function get(name, {corrupt}={}) {
 }
 
 
-export async function create(name, data) {
+export async function create(...args) {
+    await loadLock.acquire();
+    try {
+        return await _create(...args);
+    } finally {
+        loadLock.release();
+    }
+}
+
+
+async function _create(name, data) {
+    console.debug("Creating meta gear file (name):", name, data);
     const created = Date.now();
     const encoded = await encode({
         created,
@@ -159,7 +183,18 @@ export async function create(name, data) {
 }
 
 
-export async function save(id, data) {
+export async function save(...args) {
+    await loadLock.acquire();
+    try {
+        return await _save(...args);
+    } finally {
+        loadLock.release();
+    }
+}
+
+
+async function _save(id, data) {
+    console.debug("Saving meta gear file:", id, data);
     const entry = _loadData && _loadData.find(x => x.id === id);
     if (!entry) {
         throw new Error("Invalid ID");
@@ -195,5 +230,15 @@ export async function save(id, data) {
 
 
 export async function remove(id) {
-    await fetchGear(id, {method: 'DELETE'});
+    console.debug("Removing meta gear file:", id);
+    await loadLock.acquire();
+    try {
+        await fetchGear(id, {method: 'DELETE'});
+        const idx = _loadData.findIndex(x => x.id === id);
+        if (idx !== -1) {
+            _loadData.splice(idx, 1);
+        }
+    } finally {
+        loadLock.release();
+    }
 }

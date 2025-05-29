@@ -1,5 +1,6 @@
 /* global sauce */
 
+
 async function updatePatronLevelNames() {
     const ts = await sauce.storage.get('patronLevelNamesTimestamp');
     if (!ts || ts < Date.now() - (7 * 86400 * 1000)) {
