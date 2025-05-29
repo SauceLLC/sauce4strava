@@ -339,23 +339,6 @@ export class AthleteModel extends sauce.db.Model {
     setWeightHistory(data) {
         return this.setHistoryValues('weight', data);
     }
-
-    async save(...args) {
-        await meta.load();
-        let metaId = this.get('metaId');
-        if (!metaId) {
-            const entries = await meta.get(`athlete-${this.pk}`);
-            let entry = entries[0];
-            if (!entry) {
-                entry = await meta.create(`athlete-${this.pk}`);
-            }
-            metaId = entry.id;
-            this.set('metaId', metaId);
-        }
-        const ret = await super.save(...args);
-        await meta.save(metaId, this.data);
-        return ret;
-    }
 }
 
 
