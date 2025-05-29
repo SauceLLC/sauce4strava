@@ -3,7 +3,7 @@
 import * as locks from '/src/common/jscoop/locks.mjs';
 
 const sauceBrandName = 'Unbranded'; // Must be in strava backend
-const sauceModelName = 'Sauce Meta Data';
+const sauceModelName = '__SMETA__';
 const maxGearDescSize = 65535;
 const loadLock = new locks.Lock();
 const metaVersion = 1;
@@ -93,24 +93,19 @@ export async function load(name, {forceFetch}={}) {
                 const files = r.filter(x => x.brand_name === sauceBrandName &&
                                             x.model_name === sauceModelName);
                 _loadData = await Promise.all(files.map(async x => {
-                    let decoded;
-                    let corrupt;
+                    const entry = {id: x.id, name: x.name};
                     try {
-                        decoded = await decode(x.description);
-                        corrupt = false;
+                        const decoded = await decode(x.description);
+                        Object.assign(entry, {
+                            created: decoded.created,
+                            updated: decoded.updated,
+                            data: decoded.data,
+                        });
                     } catch(e) {
                         console.error("Failed to decode gear file:", e);
-                        corrupt = true;
-                        decoded = {};
+                        entry.corrupt = true;
                     }
-                    return {
-                        id: x.id,
-                        name: x.name,
-                        corrupt,
-                        created: decoded.created,
-                        updated: decoded.updated,
-                        data: decoded.data,
-                    };
+                    return entry;
                 }));
             }
             return _get(name);
@@ -217,11 +212,10 @@ async function _save(id, data) {
         throw new Error("File too large");
     }
     await fetchGear(id, {
-        method: 'PUT',
+        method: 'PATCH',
         body: new URLSearchParams({
             brandName: sauceBrandName,
             modelName: sauceModelName,
-            name: entry.name, // XXX try without, maybe even try PATCH method
             description: encoded,
             shoeId: id
         })
