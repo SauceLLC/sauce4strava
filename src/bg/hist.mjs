@@ -686,18 +686,14 @@ export async function importMetaDataFromStrava(athleteId) {
         }
     }
     if (toSave.size) {
-        edited = true;
+        await Promise.all(Array.from(toSave).map(x => x.save()));
         console.info(`Updated: ${toSave.size} models`);
-        debugger;
-        for (const x of toSave) {
-            console.debug("woudl save:", x);
-        }
-        //await Promise.all(Array.from(toSave).map(x => x.save()));
+        edited = true;
     } else {
         console.info("No differences found");
     }
     if (edited) {
-        //await invalidateAthleteSyncState(athleteId, 'local');
+        await invalidateAthleteSyncState(athleteId, 'local');
     }
 }
 sauce.proxy.export(importMetaDataFromStrava, {namespace});
