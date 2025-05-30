@@ -863,14 +863,15 @@ export async function updateAthlete(id, updates) {
 sauce.proxy.export(updateAthlete, {namespace});
 
 
-async function setAthleteHistoryValues(athleteId, key, data, options={}) {
+async function setAthleteHistoryValues(athleteId, key, data) {
     const athlete = await athletesStore.get(athleteId, {model: true});
     if (!athlete) {
         throw new Error('Athlete not found: ' + athleteId);
     }
     const clean = athlete.setHistoryValues(key, data);
     await athlete.save();
-    await invalidateAthleteSyncState(athleteId, 'local', 'athlete-settings');
+    const processor = key === 'weight' ? 'extra-streams' : 'athlete-settings';
+    await invalidateAthleteSyncState(athleteId, 'local', processor);
     return clean;
 }
 sauce.proxy.export(setAthleteHistoryValues, {namespace});

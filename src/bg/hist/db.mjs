@@ -726,8 +726,11 @@ export class ActivitiesStore extends sauce.db.DBStore {
     }
 
     async invalidateForAthleteWithSync(athlete, processor, name) {
-        const activities = await this.getAllForAthlete(athlete, {models: true});
         const manifests = this.Model.getSyncManifests(processor, name);
+        if (!manifests.length) {
+            throw new TypeError('No manifests found');
+        }
+        const activities = await this.getAllForAthlete(athlete, {models: true});
         for (const a of activities) {
             for (const m of manifests) {
                 a.clearManifestSyncState(m);

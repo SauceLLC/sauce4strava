@@ -287,7 +287,7 @@ sauce.ns('sync', ns => {
             'delayed_until', 'title', 'remaining', 'restore_data', 'backup_data', 'export_fit_files',
         ], 'sync_control_panel');
         let athlete = await sauce.hist.getAthlete(athleteId);
-        let dirty;
+        const edited = new Set();
         const {FTPHistoryView, WeightHistoryView} = await import(sauce.getURL('/src/site/data-views.mjs'));
         const tpl = await sauce.template.getTemplate('sync-control-panel.html', 'sync_control_panel');
         const hrZonesTpl = await sauce.template.getTemplate(
@@ -558,14 +558,15 @@ sauce.ns('sync', ns => {
             $modal.toggleClass('sync-disabled', !enabled);
         });
         $modal.on('input', '.sync-settings input[data-athlete-bool]', async ev => {
+            const key = ev.currentTarget.dataset.athleteBool;
+            edited.add(key);
             const enabled = ev.currentTarget.checked;
             const entry = ev.currentTarget.closest('.entry');
             if (!ev.currentTarget.classList.contains('sub-option')) {
                 entry.querySelectorAll('input.sub-option').forEach(x => x.disabled = !enabled);
             }
-            athlete[ev.currentTarget.dataset.athleteBool] = enabled;
+            athlete[key] = enabled;
             await sauce.hist.updateAthlete(athlete.id, athlete);
-            dirty = true;
         });
         $modal.on('click', '.perf-promo .btn.enable', ev => void $modal.find('input[name="enable"]').click());
         $modal.on('click', '.perf-promo .nav-left', ev => {
@@ -622,10 +623,15 @@ sauce.ns('sync', ns => {
             for (const [event, cb] of Object.entries(listeners)) {
                 syncController.removeEventListener(event, cb);
             }
-            if (dirty) {
-                const fullSync = athlete.estCyclingWatts && athlete.estCyclingPeaks;
-                sauce.hist.invalidateAthleteSyncState(athlete.id, 'local',
-                                                      fullSync ? undefined : 'athlete-settings');
+            if (edited.size) {
+                const affectsStreams = [
+                    'disableRunWatts',
+                    'estRunWatts',
+                    'estCyclingWatts',
+                    'estCyclingPeaks'
+                ];
+                const proc = affectsStreams.some(x => edited.has(x)) ? 'extra-streams' : 'athlete-settings';
+                sauce.hist.invalidateAthleteSyncState(athlete.id, 'local', proc);
             }
         });
         if (initiallyEnabled) {
