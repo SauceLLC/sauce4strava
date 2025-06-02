@@ -610,20 +610,30 @@ sauce.proxy.export(getActivitiesForAthlete, {namespace});
 export async function exportMetaDataToStrava(athleteId) {
     const athlete = await athletesStore.get(athleteId);
     const activities = await actsStore.getAllForAthlete(athleteId);
+    const settings = [
+        'disableRunWatts', 'estRunWatts', 'estCyclingWatts',
+        'estRunningPeaks', 'estCyclingPeaks'
+    ];
     const data = {
         version: 1,
         athleteId,
+        settings: {},
         ftpHistory: athlete.ftpHistory,
         weightHistory: athlete.weightHistory,
-        tssOverrides: [],
-        peaksExcludes: [],
+        activityOverrides: {},
     };
+    for (const k of settings) {
+        data.settings[k] = athlete[k];
+    }
     for (const x of activities) {
-        if (x.tssOverride != null && !isNaN(x.tssOverride)) {
-            data.tssOverrides.push({id: x.id, value: x.tssOverride});
+        if (x.tssOverride !== undefined) {
+            data.activityOverrides[x.id] = {tssOverride: x.tssOverride};
         }
-        if (x.peaksExclude != null) {
-            data.peaksExcludes.push({id: x.id, value: x.peaksExclude});
+        if (x.peaksExclude !== undefined) {
+            if (!data.activityOverrides[x.id]) {
+                data.activityOverrides[x.id] = {};
+            }
+            data.activityOverrides[x.id].peaksExclude = x.peaksExclude;
         }
     }
     let file = (await meta.get(`hist-md-${athleteId}`))[0];
@@ -635,7 +645,36 @@ export async function exportMetaDataToStrava(athleteId) {
 sauce.proxy.export(exportMetaDataToStrava, {namespace});
 
 
-export async function importMetaDataFromStrava(athleteId) {
+function diffHistories(to, from) {
+    from = new Map(from.map(x => [JSON.stringify(x), x]));
+    to = new Map(to.map(x => [JSON.stringify(x), x]));
+    const diffs = [];
+    for (const [sig, entry] of to) {
+        if (from.has(sig)) {
+            from.delete(sig);
+            continue;
+        }
+        let found;
+        for (const [k, v] of from) {
+            if (v.ts === entry.ts) {
+                diffs.push({type: 'changed', entry, from: v});
+                from.delete(k);
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            diffs.push({type: 'added', entry});
+        }
+    }
+    for (const entry of from.values()) {
+        diffs.push({type: 'removed', entry});
+    }
+    return diffs;
+}
+
+
+export async function importMetaDataFromStrava(athleteId, {replace, dryrun}={}) {
     const file = (await meta.get(`hist-md-${athleteId}`))[0];
     if (!file) {
         throw new Error("File not found");
@@ -650,51 +689,85 @@ export async function importMetaDataFromStrava(athleteId) {
     }
     const activities = await actsStore.getAllForAthlete(athleteId, {models: true});
     let edited = false;
+    const logs = [];
     if (data.ftpHistory && data.ftpHistory.length) {
-        if (JSON.stringify(data.ftpHistory) !== JSON.stringify(athlete.get('ftpHistory') || [])) {
-            console.debug("Updating FTP history:", athleteId);
-            await athlete.save({ftpHistory: data.ftpHistory});
-            edited = true;
+        const diffs = diffHistories(data.ftpHistory, athlete.get('ftpHistory') || []);
+        if (diffs.length) {
+            for (const x of diffs) {
+                const action = {added: 'Added', removed: 'Removed', changed: 'Changed'}[x.type];
+                logs.push(`${action} FTP: ${new Date(x.entry.ts).toLocaleDateString()}, ` +
+                          `type: ${x.entry.type || '*'}, power: ${x.entry.value}`);
+            }
+            if (!dryrun) {
+                await athlete.save({ftpHistory: data.ftpHistory});
+                edited = true;
+            }
         }
     }
     if (data.weightHistory && data.weightHistory.length) {
-        if (JSON.stringify(data.weightHistory) !== JSON.stringify(athlete.get('weightHistory') || [])) {
-            console.debug("Updating weight history:", athleteId);
-            await athlete.save({weightHistory: data.weightHistory});
+        const diffs = diffHistories(data.weightHistory, athlete.get('weightHistory') || []);
+        if (diffs.length) {
+            for (const x of diffs) {
+                const action = {added: 'Added', removed: 'Removed', changed: 'Changed'}[x.type];
+                logs.push(`${action} weight: ${(new Date(x.entry.ts)).toLocaleDateString()}, ` +
+                          `type: ${x.entry.type || '*'}, weight: ${x.entry.value.toFixed(2)} kg`);
+            }
+            if (!dryrun) {
+                await athlete.save({weightHistory: data.weightHistory});
+                edited = true;
+            }
+        }
+    }
+    if (data.settings) {
+        let settingsEdited;
+        for (const [k, v] of Object.entries(data.settings)) {
+            if (athlete.get(k) !== v) {
+                if (!replace && v === undefined) {
+                    continue;
+                }
+                logs.push(`Athlete setting changed [${k}]: ${athlete.get(k)} -> ${v}`);
+                if (!dryrun) {
+                    athlete.set(k, v);
+                    settingsEdited = true;
+                }
+            }
+        }
+        if (settingsEdited) {
+            await athlete.save();
             edited = true;
         }
     }
     const toSave = new Set();
-    const tssOverrides = new Map(data.tssOverrides.map(x => [x.id, x.value]));
     for (const x of activities) {
-        const suggested = tssOverrides.get(x.pk) ?? undefined;
-        const existing = x.get('tssOverride') ?? undefined;
-        if (suggested !== existing) {
-            console.debug(`Updating TSS for ${x.pk}:`, existing, '->', suggested);
-            x.set('tssOverride', suggested);
-            toSave.add(x);
+        for (const key of ['tssOverride', 'peaksExclude']) {
+            const suggested = (data.activityOverrides[x.pk] ?? {})[key];
+            const existing = x.get(key);
+            if (suggested !== existing) {
+                if (!replace && suggested === undefined) {
+                    debugger;
+                    continue;
+                }
+                logs.push(`Updating activity ${x.pk} [${key}]: ${existing} -> ${suggested}`);
+                if (!dryrun) {
+                    x.set(key, suggested);
+                    toSave.add(x);
+                }
+            }
         }
     }
-    const peaksExcludes = new Map(data.peaksExcludes.map(x => [x.id, x.value]));
-    for (const x of activities) {
-        const suggested = peaksExcludes.get(x.pk) ?? undefined;
-        const existing = x.get('peaksExclude') ?? undefined;
-        if (suggested !== existing) {
-            console.debug(`Updating peaksExclude for ${x.pk}:`, existing, '->', suggested);
-            x.set('peaksExclude', suggested);
-            toSave.add(x);
+    if (!dryrun) {
+        if (toSave.size) {
+            await Promise.all(Array.from(toSave).map(x => x.save()));
+            console.info(`Updated: ${toSave.size} models`);
+            edited = true;
+        } else {
+            console.info("No differences found");
+        }
+        if (edited) {
+            await invalidateAthleteSyncState(athleteId, 'local');
         }
     }
-    if (toSave.size) {
-        await Promise.all(Array.from(toSave).map(x => x.save()));
-        console.info(`Updated: ${toSave.size} models`);
-        edited = true;
-    } else {
-        console.info("No differences found");
-    }
-    if (edited) {
-        await invalidateAthleteSyncState(athleteId, 'local');
-    }
+    return logs;
 }
 sauce.proxy.export(importMetaDataFromStrava, {namespace});
 

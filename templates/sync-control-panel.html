@@ -109,6 +109,12 @@
                                   {{athlete.estCyclingPeaks ? 'checked' : ''}}/></value>
                 </div>
             </div>
+
+            <div class="entry sync-athlete-settings" title="{{{synchronize_athlete_settings}}}">
+                <key>{{{synchronize_athlete_settings}}}:</key>
+                <value><input data-athlete-bool="syncAthleteSettings" name="sync-athlete-settings" type="checkbox"
+                              {{athlete.syncAthleteSettings ? 'checked' : ''}}/></value>
+            </div>
         </section>
 
         <section class="sync-logs">
