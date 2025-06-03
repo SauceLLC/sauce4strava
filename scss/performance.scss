@@ -781,9 +781,23 @@ table.activity-table {
                         pointer-events: none;
                         width: $icon-size;
                         height: $icon-size;
-                        opacity: 0.2;
+                        opacity: 0.33;
 
                         svg[data-icon] {
+                            &[data-icon="star-of-life"] {
+                                margin: 0.65em;
+
+                                .fa-primary {
+                                    color: #015ae9;
+                                    opacity: 0.8;
+                                }
+
+                                .fa-secondary {
+                                    color: #a7711b;
+                                    opacity: 1;
+                                }
+                            }
+
                             &[data-icon="watch"] {
                                 .fa-secondary {
                                     color: #ff8b00;
@@ -794,6 +808,7 @@ table.activity-table {
                                 .fa-primary {
                                     color: #00542a;
                                 }
+
                                 .fa-secondary {
                                     color: white;
                                 }
@@ -803,21 +818,10 @@ table.activity-table {
                                 .fa-primary {
                                     color: #420000;
                                 }
+
                                 .fa-secondary {
                                     color: #d75353;
                                     opacity: 0.8;
-                                }
-                            }
-
-                            &[data-icon="strength"] {
-                                margin: 0.5em;
-
-                                .fa-primary {
-                                    fill: #a7711b;
-                                }
-
-                                .barbell {
-                                    fill: #ddd;
                                 }
                             }
                         }
