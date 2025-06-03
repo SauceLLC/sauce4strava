@@ -277,6 +277,9 @@ sauce.ns('sync', ns => {
             }
             await activitySyncDialog(id, controllers.get(id));
         });
+        if (athlete && athlete.sync && athlete.syncSettings) {
+            debugger;
+        }
         return $btn;
     }
 

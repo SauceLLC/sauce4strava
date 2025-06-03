@@ -33,6 +33,7 @@ async function start() {
     });
     const config = await sauce.storage.get(null);
     sauce.options = config.options;
+    sauce.deviceId = config.deviceId;
     self.currentUser = config.currentUser || null;
     if (self.currentUser) {
         meta.init({athleteId: self.currentUser});

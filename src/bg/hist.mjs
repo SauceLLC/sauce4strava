@@ -134,7 +134,7 @@ class OffscreenDocumentRPC {
         this._idleKillId = null;
         sauce.storage.addListener(async (key, value) => {
             if (key === 'options' && this._port && !this._connecting) {
-                await this._invoke('_setOptions', [value]);
+                await this._invoke('_setConfig', [{options: value, deviceId: sauce.deviceId}]);
             }
         });
     }
@@ -163,7 +163,7 @@ class OffscreenDocumentRPC {
                 this._port = null;
             }
         });
-        await this._invoke('_setOptions', [sauce.options]);
+        await this._invoke('_setConfig', [{options: sauce.options, deviceId: sauce.deviceId}]);
         this._connecting = null;
     }
 
@@ -617,6 +617,7 @@ export async function exportMetaDataToStrava(athleteId) {
     const data = {
         version: 1,
         athleteId,
+        deviceId: sauce.deviceId,
         settings: {},
         ftpHistory: athlete.ftpHistory,
         weightHistory: athlete.weightHistory,
@@ -636,9 +637,10 @@ export async function exportMetaDataToStrava(athleteId) {
             data.activityOverrides[x.id].peaksExclude = x.peaksExclude;
         }
     }
-    let file = (await meta.get(`hist-md-${athleteId}`))[0];
+    const filename = `hist-md-${athleteId}/${sauce.deviceId}`;
+    let file = (await meta.get(filename))[0];
     if (!file) {
-        file = await meta.create(`hist-md-${athleteId}`);
+        file = await meta.create(filename);
     }
     await meta.save(file.id, data);
 }
@@ -674,8 +676,9 @@ function diffHistories(to, from) {
 }
 
 
-export async function importMetaDataFromStrava(athleteId, {replace, dryrun}={}) {
-    const file = (await meta.get(`hist-md-${athleteId}`))[0];
+export async function importMetaDataFromStrava(athleteId, deviceId, {replace, dryrun}={}) {
+    const filename = `hist-md-${athleteId}/${deviceId}`;
+    const file = (await meta.get(filename))[0];
     if (!file) {
         throw new Error("File not found");
     }

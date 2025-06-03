@@ -60,6 +60,7 @@ async function processor(athlete, activities, options) {
 addEventListener('message', async ev => {
     if (!sauce.options) {
         sauce.options = ev.data.sauceConfig.options;
+        sauce.deviceId = ev.data.sauceConfig.deviceId;
     }
     const port = ev.data.port;
     try {

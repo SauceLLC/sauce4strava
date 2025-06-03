@@ -141,6 +141,12 @@ sauce.ns(namespace, ns => {
                 "analysis-prefer-estimated-power-tss": false,
             });
         }
+    }, {
+        version: 11,
+        name: 'create-device-id',
+        migrate: async config => {
+            await sauce.storage.set('deviceId', crypto.randomUUID());
+        }
     }];
 
     let _activeMigration;

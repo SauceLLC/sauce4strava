@@ -8,8 +8,9 @@ const idleWorkers = [];
 const workers = new Set();
 
 
-function _setOptions(options) {
+function _setConfig({options, deviceId}) {
     sauce.options = options;
+    sauce.deviceId = deviceId;
     for (const x of idleWorkers) {
         x.terminate();
         workers.delete(x);
@@ -59,7 +60,10 @@ async function peaksProcessor(athlete, activities, options) {
         });
     });
     ourPort.start();
-    const sauceConfig = {options: sauce.options};
+    const sauceConfig = {
+        options: sauce.options,
+        deviceId: sauce.deviceId,
+    };
     worker.postMessage({athlete, activities, options, port: theirPort, sauceConfig}, [theirPort]);
     try {
         const ret = await p;
@@ -112,7 +116,7 @@ function stripHTML(raw) {
 
 
 export const calls = {
-    _setOptions,
+    _setConfig,
     parseRawReactProps,
     stripHTML,
     peaksProcessor,

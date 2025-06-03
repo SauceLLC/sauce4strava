@@ -391,22 +391,26 @@ function setCustomFont(options) {
         const options = config.options;
         self.currentUser = config.currentUser;
         sauce.proxy.ensureConnected().then(() => sauce.patron.updatePatronLevelNames());  // bg okay
-        const patronVars = {};
+        const patronProps = {};
         if ((config.patronLevelExpiration || 0) > Date.now()) {
-            patronVars.patronLegacy = config.patronLegacy == null ?
+            patronProps.patronLegacy = config.patronLegacy == null ?
                 !!config.patronLevel : config.patronLegacy;
-            patronVars.patronLevel = config.patronLevel || 0;
+            patronProps.patronLevel = config.patronLevel || 0;
         } else {
-            [patronVars.patronLevel, patronVars.patronLegacy] =
+            [patronProps.patronLevel, patronProps.patronLegacy] =
                 await sauce.proxy.ensureConnected().then(() =>
                     sauce.patron.updatePatronLevel(self.currentUser));
         }
-        patronVars.hideBonusFeatures = (patronVars.patronLevel || 0) < 10 && !!(options &&
-            options['hide-upsells'] &&
-            options['hide-sauce-bonus-features']);
-        Object.assign(sauce, patronVars);
-        sauce.loadScripts([`${extUrl}src/site/set_options.js`],
-                          {params: JSON.stringify({options: options || {}, patronVars})});
+        patronProps.hideBonusFeatures = (patronProps.patronLevel || 0) < 10 &&
+            !!(options && options['hide-upsells'] && options['hide-sauce-bonus-features']);
+        Object.assign(sauce, patronProps);
+        sauce.loadScripts([`${extUrl}src/site/set_options.js`], {
+            params: JSON.stringify({
+                ...patronProps,
+                deviceId: config.deviceId,
+                options: options || {},
+            })
+        });
         const loading = [];
         for (const m of matchingManifests) {
             if (m.name) {
