@@ -744,7 +744,6 @@ export async function importMetaDataFromStrava(athleteId, {replace, dryrun}={}) 
             const existing = x.get(key);
             if (suggested !== existing) {
                 if (!replace && suggested === undefined) {
-                    debugger;
                     continue;
                 }
                 logs.push(`Updating activity ${x.pk} [${key}]: ${existing} -> ${suggested}`);
@@ -945,9 +944,32 @@ async function setAthleteHistoryValues(athleteId, key, data) {
     await athlete.save();
     const processor = key === 'weight' ? 'extra-streams' : 'athlete-settings';
     await invalidateAthleteSyncState(athleteId, 'local', processor);
+    if (athlete.get('syncSettings')) {
+        schedMetaDataExport(athlete.pk);
+    }
     return clean;
 }
 sauce.proxy.export(setAthleteHistoryValues, {namespace});
+
+
+const _pendingMetaDataExports = new Map();
+async function schedMetaDataExport(athleteId) {
+    console.debug(111, "XXX sched athlete update:", athleteId);
+    clearTimeout(_pendingMetaDataExports.get(athleteId));
+    const athlete = await athletesStore.get(athleteId);
+    if (!athlete || !athlete.syncSettings) {
+        return;
+    }
+    await updateAthlete(athleteId, {syncSettingsTS: null});
+    clearTimeout(_pendingMetaDataExports.get(athleteId));
+    console.debug(222, "XXX sched athlete update:", athleteId);
+    _pendingMetaDataExports.set(athleteId, setTimeout(async () => {
+        console.debug(333, "XXX invoke athlete update:", athleteId);
+        await updateAthlete(athleteId, {syncSettingsTS: Date.now()});
+        await exportMetaDataToStrava(athleteId);
+    }, 5000));
+}
+sauce.proxy.export(schedMetaDataExport, {namespace});
 
 
 export async function disableAthlete(id) {
@@ -2334,6 +2356,9 @@ class SyncManager extends EventTarget {
         getEnabledAthletes().then(athletes => {
             for (const x of athletes) {
                 syncLogsStore.write('debug', x.id, msg);
+                if (x.syncSettings && Date.now() - (x.syncSettingsTS || 0) > 86400_000) {
+                    schedMetaDataExport(x.id);
+                }
             }
         });
         this.refreshInterval = 12 * 3600 * 1000;

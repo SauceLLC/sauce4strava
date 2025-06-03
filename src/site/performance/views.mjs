@@ -113,6 +113,7 @@ export async function editActivityDialogXXX(activity, pageView) {
                 try {
                     await sauce.hist.updateActivity(activity.id, updates);
                     await sauce.hist.invalidateActivitySyncState(activity.id, 'local', null);
+                    await sauce.hist.schedMetaDataExport(activity.athlete);
                 } finally {
                     ev.currentTarget.classList.remove('sauce-loading');
                     ev.currentTarget.disabled = false;
@@ -697,25 +698,35 @@ export class BulkActivityEditDialog extends PerfView {
                 click: async ev => {
                     const updates = {};
                     for (const tr of this.$('table tbody tr[data-id]')) {
-                        updates[Number(tr.dataset.id)] = {
-                            tssOverride: Number(tr.querySelector('input[name="tss-override"]').value) || null,
-                            peaksExclude: tr.querySelector('input[name="peaks-exclude"]').checked,
-                        };
+                        const tssEl = tr.querySelector('input[name="tss-override"]');
+                        if (tssEl.getAttribute('value') !== tssEl.value) {
+                            updates[tr.dataset.id] = {
+                                tssOverride: Number(tssEl.value) || null
+                            };
+                        }
+                        const peaksEl = tr.querySelector('input[name="peaks-exclude"]');
+                        if (peaksEl.hasAttribute('checked') !== peaksEl.checked) {
+                            updates[tr.dataset.id] = updates[tr.dataset.id] || {};
+                            updates[tr.dataset.id].peaksExclude = peaksEl.checked;
+                        }
                     }
-                    ev.currentTarget.disabled = true;
-                    ev.currentTarget.classList.add('sauce-loading');
-                    try {
-                        await sauce.hist.updateActivities(updates);
-                        for (const id of Object.keys(updates)) {
-                            await sauce.hist.invalidateActivitySyncState(Number(id), 'local', null,
-                                                                         {disableSync: true});
+                    if (Object.keys(updates).length) {
+                        ev.currentTarget.disabled = true;
+                        ev.currentTarget.classList.add('sauce-loading');
+                        try {
+                            await sauce.hist.updateActivities(updates);
+                            for (const id of Object.keys(updates)) {
+                                await sauce.hist.invalidateActivitySyncState(Number(id), 'local', null,
+                                                                             {disableSync: true});
+                            }
+                            for (const x of this.athletes) {
+                                await sauce.hist.syncAthlete(x);
+                                await sauce.hist.schedMetaDataExport(x);
+                            }
+                        } finally {
+                            ev.currentTarget.classList.remove('sauce-loading');
+                            ev.currentTarget.disabled = false;
                         }
-                        for (const x of this.athletes) {
-                            await sauce.hist.syncAthlete(x);
-                        }
-                    } finally {
-                        ev.currentTarget.classList.remove('sauce-loading');
-                        ev.currentTarget.disabled = false;
                     }
                     this.$el.dialog('destroy');
                 }

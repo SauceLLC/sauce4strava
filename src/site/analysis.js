@@ -340,7 +340,8 @@ sauce.ns('analysis', ns => {
         const $field = $parent.find('.sauce-editable-field.tss');
         async function save(tssOverride) {
             await sauce.hist.updateActivity(pageView.activityId(), {tssOverride});
-            //await sauce.hist.invalidateActivitySyncState(pageView.activityId(), 'local', null); // XXX I think I need this...
+            await sauce.hist.invalidateActivitySyncState(pageView.activityId(), 'local', 'activity-stats');
+            await sauce.hist.schedMetaDataExport(ns.athlete.id);
         }
         editableField($field, {
             validator: rawValue => {

@@ -619,7 +619,7 @@ sauce.ns('sync', ns => {
             setActive(true, {passive: true});  // responsive UI feedback
             await sauce.hist.syncAthlete(athlete.id);
         });
-        $modal.on('dialogclose', () => {
+        $modal.on('dialogclose', async () => {
             for (const [event, cb] of Object.entries(listeners)) {
                 syncController.removeEventListener(event, cb);
             }
@@ -631,7 +631,8 @@ sauce.ns('sync', ns => {
                     'estCyclingPeaks'
                 ];
                 const proc = affectsStreams.some(x => edited.has(x)) ? 'extra-streams' : 'athlete-settings';
-                sauce.hist.invalidateAthleteSyncState(athlete.id, 'local', proc);
+                await sauce.hist.invalidateAthleteSyncState(athlete.id, 'local', proc);
+                await sauce.hist.schedMetaDataExport(athlete.id);
             }
         });
         if (initiallyEnabled) {
