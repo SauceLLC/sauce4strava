@@ -813,6 +813,7 @@ export async function importMetaDataFromStrava(athleteId, deviceId, {replace, dr
         for (const x of logs) {
             syncLogsStore.logInfo(athleteId, x);
         }
+        schedMetaDataExport(athleteId);
     }
     return logs;
 }
