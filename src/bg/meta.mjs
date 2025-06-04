@@ -13,9 +13,40 @@ let _loadData;
 let _csrfToken;
 
 
-async function encode(data) {
-    const r = await sauce.data.compress(JSON.stringify(data));
-    return [metaVersion, sauce.data.toBase64(await r.arrayBuffer())].join('\n');
+async function computeHash(data) {
+    return await crypto.subtle.digest('SHA-1', data);
+}
+
+
+function bufToHex(data) {
+    return Array.from(new Uint8Array(data)).map(x => x.toString(16).padStart(2, '0')).join('');
+}
+
+
+async function compress(obj) {
+    return await (await sauce.data.compress(JSON.stringify(obj))).arrayBuffer();
+}
+
+
+async function decompress(buf) {
+    return await (await sauce.data.decompress(buf)).json();
+}
+
+
+async function encode(data, attrs) {
+    const dataBuf = await compress(data);
+    const attrsBuf = attrs ? await compress(attrs) : undefined;
+    const hashBuf = await computeHash(dataBuf);
+    const encoded = [
+        metaVersion,
+        sauce.data.toBase64(dataBuf),
+        sauce.data.toBase64(hashBuf),
+        sauce.data.toBase64(attrsBuf),
+    ].join('\n');
+    return {
+        encoded,
+        hash: bufToHex(hashBuf),
+    };
 }
 
 
@@ -24,8 +55,20 @@ async function decode(raw) {
     if (+v !== metaVersion) {
         throw new TypeError("Incompatible gear file version");
     }
-    const r = await sauce.data.decompress(sauce.data.fromBase64(raw.substr(v.length + 1)));
-    return await r.json();
+    const [, b64Data, b64Hash, b64Attrs] = raw.split('\n');
+    const dataBuf = sauce.data.fromBase64(b64Data);
+    const hashBuf = await computeHash(dataBuf);
+    if (b64Hash !== sauce.data.toBase64(hashBuf)) {
+        debugger;
+        throw new Error("Hash Mismatch");
+    }
+    const data = await decompress(dataBuf);
+    const attrs = b64Attrs ? await decompress(sauce.data.fromBase64(b64Attrs)) : undefined;
+    return {
+        data,
+        hash: bufToHex(hashBuf),
+        attrs,
+    };
 }
 
 
@@ -95,14 +138,15 @@ export async function load(name, {forceFetch}={}) {
                 _loadData = await Promise.all(files.map(async x => {
                     const entry = {id: x.id, name: x.name};
                     try {
-                        const decoded = await decode(x.description);
+                        const {data, hash, attrs} = await decode(x.description);
                         Object.assign(entry, {
-                            created: decoded.created,
-                            updated: decoded.updated,
-                            data: decoded.data,
+                            created: attrs.created,
+                            updated: attrs.updated,
+                            data,
+                            hash,
                         });
                     } catch(e) {
-                        console.error("Failed to decode gear file:", e);
+                        console.warn("Failed to decode gear file:", e);
                         entry.corrupt = true;
                     }
                     return entry;
@@ -132,7 +176,18 @@ function _get(name, {corrupt}={}) {
         return [];
     } else {
         const filtered = corrupt ? _loadData : _loadData.filter(x => !x.corrupt);
-        return name ? filtered.filter(x => x.name === name) : filtered;
+        if (name) {
+            const lookupPath = name.split('/');
+            if (!lookupPath[lookupPath.length - 1]) {
+                lookupPath.pop();  // trailing slash
+            }
+            return filtered.filter(file => {
+                const path = file.name.split('/');
+                return lookupPath.every((x, i) => path[i] === x);
+            });
+        } else {
+            return filtered;
+        }
     }
 }
 
@@ -150,11 +205,7 @@ export async function create(...args) {
 async function _create(name, data) {
     console.debug("Creating meta gear file (name):", name, data);
     const created = Date.now();
-    const encoded = await encode({
-        created,
-        updated: created,
-        data,
-    });
+    const {encoded, hash} = await encode(data, {created, updated: created});
     if (encoded.length > maxGearDescSize) {
         throw new Error("Data too large");
     }
@@ -167,7 +218,7 @@ async function _create(name, data) {
             description: encoded,
         })
     });
-    const entry = {id: r.id, name, created, updated: created, data};
+    const entry = {id: r.id, name, created, updated: created, data, hash};
     if (!_loadData) {
         console.warn("meta.load() not called prior to create()");
         _loadData = [];
@@ -203,11 +254,8 @@ async function _save(id, data) {
             entry.created = entry.updated;
         }
     }
-    const encoded = await encode({
-        created: entry.created,
-        updated: entry.updated,
-        data,
-    });
+    const {encoded, hash} = await encode(data, {created: entry.created, updated: entry.updated});
+    entry.hash = hash;
     if (encoded.length > maxGearDescSize) {
         throw new Error("File too large");
     }
