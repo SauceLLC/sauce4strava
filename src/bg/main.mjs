@@ -35,12 +35,12 @@ async function start() {
     sauce.options = config.options;
     sauce.deviceId = config.deviceId;
     self.currentUser = config.currentUser || null;
-    if (self.currentUser) {
-        meta.init({athleteId: self.currentUser});
-        meta.load(null, {forceFetch: true});  // bg okay
-    }
     await hist.startSyncManager(self.currentUser);
     sauce.proxy.startBackgroundHandler();
+    if (self.currentUser) {
+        meta.init({athleteId: self.currentUser});
+        meta.load();  // bg okay
+    }
 }
 
 
@@ -145,11 +145,11 @@ browser.runtime.onMessage.addListener(async msg => {
             const id = msg.currentUser || null;
             if (id !== self.currentUser) {
                 self.currentUser = id;
+                await hist.restartSyncManager(id);
                 if (id) {
                     meta.init({athleteId: id});
-                    meta.load(null, {forceFetch: true});  // bg okay
+                    meta.load({forceFetch: true});  // bg okay
                 }
-                await hist.restartSyncManager(id);
             }
         }
     }

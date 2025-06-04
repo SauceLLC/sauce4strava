@@ -126,11 +126,11 @@ export function init({athleteId}) {
 }
 
 
-export async function load(name, {forceFetch}={}) {
-    if (forceFetch || !_loadData || (name && !_loadData.some(x => x.name === name))) {
+export async function load({forceFetch}={}) {
+    if (forceFetch || !_loadData) {
         await loadLock.acquire();
         try {
-            if (forceFetch || !_loadData || (name && !_loadData.some(x => x.name === name))) {
+            if (forceFetch || !_loadData) {
                 console.debug("Fetching meta gear files");
                 const r = await fetchGear('shoes');
                 const files = r.filter(x => x.brand_name === sauceBrandName &&
@@ -152,12 +152,12 @@ export async function load(name, {forceFetch}={}) {
                     return entry;
                 }));
             }
-            return _get(name);
+            return _get();
         } finally {
             loadLock.release();
         }
     }
-    return await get(name);
+    return await get();
 }
 
 

@@ -293,7 +293,8 @@ sauce.ns('sync', ns => {
                 const dryrun = await sauce.hist.importMetaDataFromStrava(athleteId, x.data.deviceId,
                                                                          {dryrun: true});
                 if (!dryrun.length) {
-                    await sauce.hist.addMetaDataImportReceipt(athleteId, x);
+                    console.info("Ignoring empty sync settings changeset");
+                    //await sauce.hist.addMetaDataImportReceipt(athleteId, x);
                     continue;
                 }
                 const tpl = await sauce.template.getTemplate('sync-settings-update.html', 'sync_settings');
