@@ -761,9 +761,10 @@ export async function importMetaDataFromStrava(athleteId, deviceId, {replace, dr
         for (const [k, v] of Object.entries(data.settings)) {
             if (athlete.get(k) !== v) {
                 if (!replace && v === undefined) {
+                    console.debug("Ignore unsetting of athlete setting:", k);
                     continue;
                 }
-                logs.push(`Athlete setting: (${k}) ${athlete.get(k)} -> ${v}`);
+                logs.push(`Athlete setting: (${k}) ${athlete.get(k) ?? '<unset>'} ⇾ ${v ?? '<unset>'}`);
                 if (!dryrun) {
                     athlete.set(k, v);
                     settingsEdited = true;
@@ -782,6 +783,7 @@ export async function importMetaDataFromStrava(athleteId, deviceId, {replace, dr
             const existing = x.get(key);
             if (suggested !== existing) {
                 if (!replace && suggested === undefined) {
+                    console.debug("Ignore unsetting of activity override:", key);
                     continue;
                 }
                 const localeDate = (new Date(x.get('ts'))).toLocaleDateString();
