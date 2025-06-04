@@ -1,8 +1,6 @@
 /* global sauce */
 /* eslint no-unreachable-loop: off */
 
-import * as meta from '../meta.mjs';
-
 const defaultSyncErrorBackoff = 300 * 1000;  // Actual is (<value-ms> * 2^errorCount)
 
 
