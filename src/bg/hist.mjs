@@ -642,7 +642,11 @@ export async function exportMetaDataToStrava(athleteId) {
     if (!file) {
         file = await meta.create(filename);
     }
-    await meta.save(file.id, data);
+    file = await meta.save(file.id, data);
+    const receipts = new Map(athlete.syncSettingsReceipts || []);
+    receipts.set(sauce.deviceId, {updated: file.updated, hash: file.hash});
+    await updateAthlete(athleteId, {syncSettingsReceipts: Array.from(receipts.entries())});
+    syncLogsStore.logInfo(athleteId, 'Exported meta-data to Strava gear file:', filename);
 }
 sauce.proxy.export(exportMetaDataToStrava, {namespace});
 
@@ -677,6 +681,7 @@ function diffHistories(to, from) {
 
 
 export async function importMetaDataFromStrava(athleteId, deviceId, {replace, dryrun}={}) {
+    // XXX Should probably take a lock for this whole thing...
     const filename = `hist-md-${athleteId}/${deviceId}`;
     const file = (await meta.get(filename))[0];
     if (!file) {
@@ -749,7 +754,7 @@ export async function importMetaDataFromStrava(athleteId, deviceId, {replace, dr
                 if (!replace && suggested === undefined) {
                     continue;
                 }
-                logs.push(`Updating activity ${x.pk} [${key}]: ${existing} -> ${suggested}`);
+                logs.push(`Activity setting changed ${x.pk} [${key}]: ${existing} -> ${suggested}`);
                 if (!dryrun) {
                     x.set(key, suggested);
                     toSave.add(x);
@@ -765,13 +770,38 @@ export async function importMetaDataFromStrava(athleteId, deviceId, {replace, dr
         } else {
             console.info("No differences found");
         }
+        const receipts = new Map(athlete.get('syncSettingsReceipts') || []);
+        receipts.set(deviceId, {updated: file.updated, hash: file.hash});
+        await athlete.save('syncSettingsReceipts', Array.from(receipts.entries()));
         if (edited) {
             await invalidateAthleteSyncState(athleteId, 'local');
+        }
+        for (const x of logs) {
+            syncLogsStore.logInfo(athleteId, x);
         }
     }
     return logs;
 }
 sauce.proxy.export(importMetaDataFromStrava, {namespace});
+
+
+export async function scanAvailableMetaDataFromStrava(athleteId) {
+    const athlete = await athletesStore.get(athleteId);
+    if (!athlete || !athlete.syncSettings) {
+        return [];
+    }
+    const receipts = new Map(athlete.syncSettingsReceipts || []);
+    const dir = `hist-md-${athleteId}/`;
+    const files = (await meta.get(dir)).filter(x => {
+        return x.data?.version === 1 && (
+            !receipts.has(x.data.deviceId) ||
+            receipts.get(x.data.deviceId).hash !== x.hash
+        );
+    });
+    files.sort((a, b) => a.updated - b.updated);
+    return files;
+}
+sauce.proxy.export(scanAvailableMetaDataFromStrava, {namespace});
 
 
 // EXPERIMENT
@@ -957,7 +987,6 @@ sauce.proxy.export(setAthleteHistoryValues, {namespace});
 
 const _pendingMetaDataExports = new Map();
 async function schedMetaDataExport(athleteId) {
-    console.debug(111, "XXX sched athlete update:", athleteId);
     clearTimeout(_pendingMetaDataExports.get(athleteId));
     const athlete = await athletesStore.get(athleteId);
     if (!athlete || !athlete.syncSettings) {
@@ -965,9 +994,7 @@ async function schedMetaDataExport(athleteId) {
     }
     await updateAthlete(athleteId, {syncSettingsTS: null});
     clearTimeout(_pendingMetaDataExports.get(athleteId));
-    console.debug(222, "XXX sched athlete update:", athleteId);
     _pendingMetaDataExports.set(athleteId, setTimeout(async () => {
-        console.debug(333, "XXX invoke athlete update:", athleteId);
         await updateAthlete(athleteId, {syncSettingsTS: Date.now()});
         await exportMetaDataToStrava(athleteId);
     }, 5000));

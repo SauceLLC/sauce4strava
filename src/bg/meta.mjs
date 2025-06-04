@@ -53,7 +53,7 @@ async function encode(data, attrs) {
 async function decode(raw) {
     const v = raw.split('\n', 1)[0];
     if (+v !== metaVersion) {
-        throw new TypeError("Incompatible gear file version");
+        throw new TypeError("Incompatible version");
     }
     const [, b64Data, b64Hash, b64Attrs] = raw.split('\n');
     const dataBuf = sauce.data.fromBase64(b64Data);
@@ -82,7 +82,7 @@ async function refreshCSRFToken() {
         }
     }
     if (!_csrfToken) {
-        throw new Error("Failed to get csrf token for gear files");
+        throw new Error("Failed to get csrf token for Gear API");
     }
 }
 
@@ -181,8 +181,8 @@ function _get(name, {corrupt}={}) {
             if (!lookupPath[lookupPath.length - 1]) {
                 lookupPath.pop();  // trailing slash
             }
-            return filtered.filter(file => {
-                const path = file.name.split('/');
+            return filtered.filter(entry => {
+                const path = entry.name.split('/');
                 return lookupPath.every((x, i) => path[i] === x);
             });
         } else {
@@ -268,6 +268,7 @@ async function _save(id, data) {
             shoeId: id
         })
     });
+    return entry;
 }
 
 

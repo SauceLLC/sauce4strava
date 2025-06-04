@@ -278,9 +278,17 @@ sauce.ns('sync', ns => {
             await activitySyncDialog(id, controllers.get(id));
         });
         if (athlete && athlete.sync && athlete.syncSettings) {
-            debugger;
+            setTimeout(() => checkForSyncSettingsUpdates(id), 1000);
         }
         return $btn;
+    }
+
+
+    async function checkForSyncSettingsUpdates(athleteId) {
+        const avail = await sauce.hist.scanAvailableMetaDataFromStrava(athleteId);
+        if (avail && avail.length) {
+            console.warn("Woah it worked", avail);
+        }
     }
 
 
