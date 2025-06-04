@@ -465,6 +465,15 @@ html .ui-dialog {
             }
         }
     }
+
+    ul.changes {
+        &,
+        li {
+            padding: revert;
+            margin: revert;
+            list-style: revert;
+        }
+    }
 }
 
 

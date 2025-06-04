@@ -549,6 +549,12 @@ export async function getAthlete(id) {
 sauce.proxy.export(getAthlete, {namespace});
 
 
+export async function deleteAthlete(id) {
+    return await athletesStore.delete(id);
+}
+sauce.proxy.export(deleteAthlete, {namespace});
+
+
 export async function getEnabledAthletes() {
     const athletes = await athletesStore.getEnabled();
     athletes.sort((a, b) => {
@@ -643,12 +649,27 @@ export async function exportMetaDataToStrava(athleteId) {
         file = await meta.create(filename);
     }
     file = await meta.save(file.id, data);
-    const receipts = new Map(athlete.syncSettingsReceipts || []);
-    receipts.set(sauce.deviceId, {updated: file.updated, hash: file.hash});
-    await updateAthlete(athleteId, {syncSettingsReceipts: Array.from(receipts.entries())});
+    addMetaDataImportReceipt(athleteId, file);
     syncLogsStore.logInfo(athleteId, 'Exported meta-data to Strava gear file:', filename);
 }
 sauce.proxy.export(exportMetaDataToStrava, {namespace});
+
+
+async function addMetaDataImportReceipt(athleteId, file) {
+    await syncManager._athleteLock.acquire();
+    try {
+        const athlete = await athletesStore.get(athleteId, {model: true});
+        if (!athlete) {
+            throw new Error('Athlete not found: ' + athleteId);
+        }
+        const receipts = new Map(athlete.get('syncSettingsReceipts') || []);
+        receipts.set(file.data.deviceId, {updated: file.updated, hash: file.hash});
+        await athlete.save({syncSettingsReceipts: Array.from(receipts.entries())});
+    } finally {
+        syncManager._athleteLock.release();
+    }
+}
+sauce.proxy.export(addMetaDataImportReceipt, {namespace});
 
 
 function diffHistories(to, from) {
@@ -770,9 +791,7 @@ export async function importMetaDataFromStrava(athleteId, deviceId, {replace, dr
         } else {
             console.info("No differences found");
         }
-        const receipts = new Map(athlete.get('syncSettingsReceipts') || []);
-        receipts.set(deviceId, {updated: file.updated, hash: file.hash});
-        await athlete.save('syncSettingsReceipts', Array.from(receipts.entries()));
+        await addMetaDataImportReceipt(athleteId, file);
         if (edited) {
             await invalidateAthleteSyncState(athleteId, 'local');
         }

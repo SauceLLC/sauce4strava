@@ -1,0 +1,10 @@
+<h5>{{{intro}}}</h5>
+
+<p>{{{instruction}}}</p>
+
+<b>{{{proposed_changeset}}}</b>
+<ul class="changes">
+    <% for (const x of dryrun) { %>
+        <li><code>{{x}}</code></li>
+    <% } %>
+</ul>

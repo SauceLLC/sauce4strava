@@ -330,6 +330,12 @@
     "sync_control_panel_synchronize_settings": {"message": "Synchronize settings between devices"},
     "sync_control_panel_synchronize_settings_tooltip": {"message": "If you use Sauce Performance on multiple devices this option will enable synchronization of settings between them.  i.e. FTP history, weight history, TSS overrides, etc..  This works by storing meta data in a hidden Strava Gear entry (a retired shoe)."},
     "sync_control_panel_disable_run_watts_tooltip": {"message": "Exclude the use of native watts data from runs.  Recommended for cases where erroneous watt values are included by the source device such as a Garmin."},
+    "sync_settings_title": {"message": "Apply these athlete settings updates?"},
+    "sync_settings_intro": {"message": "Unapplied athlete settings were found."},
+    "sync_settings_instruction": {"message": "Please review the changes below and decide if you would like to apply them."},
+    "sync_settings_proposed_changeset": {"message": "Proposed changeset:"},
+    "sync_settings_apply": {"message": "Apply"},
+    "sync_settings_skip": {"message": "Skip forever"},
 
     "mutable_data_add_entry_tooltip": {"message": "Add a new entry"},
     "mutable_data_delete_entry_tooltip": {"message": "Delete this entry"},

@@ -277,9 +277,11 @@ sauce.ns('sync', ns => {
             }
             await activitySyncDialog(id, controllers.get(id));
         });
-        if (athlete && athlete.sync && athlete.syncSettings) {
-            setTimeout(() => checkForSyncSettingsUpdates(id), 1000);
-        }
+        setTimeout(async () => {
+            if (athlete && athlete.sync && athlete.syncSettings && !await controller.isSyncActive()) {
+                await checkForSyncSettingsUpdates(id);
+            }
+        } , 1000);
         return $btn;
     }
 
@@ -287,7 +289,36 @@ sauce.ns('sync', ns => {
     async function checkForSyncSettingsUpdates(athleteId) {
         const avail = await sauce.hist.scanAvailableMetaDataFromStrava(athleteId);
         if (avail && avail.length) {
-            console.warn("Woah it worked", avail);
+            for (const x of avail) {
+                const dryrun = await sauce.hist.importMetaDataFromStrava(athleteId, x.data.deviceId,
+                                                                         {dryrun: true});
+                if (!dryrun.length) {
+                    await sauce.hist.addMetaDataImportReceipt(athleteId, x);
+                    continue;
+                }
+                const tpl = await sauce.template.getTemplate('sync-settings-update.html', 'sync_settings');
+                const $dialog = sauce.ui.dialog({
+                    title: await L.getMessage('sync_settings_title'),
+                    icon: await sauce.ui.getImage('fa/sync-alt-duotone.svg'),
+                    dialogClass: 'sauce-info-dialog',
+                    body: await tpl({dryrun}),
+                    width: 600,
+                    extraButtons: [{
+                        text: await L.getMessage('sync_settings_apply'),
+                        class: 'btn btn-primary',
+                        click: async () => {
+                            $dialog.dialog('close');
+                            await sauce.hist.importMetaDataFromStrava(athleteId, x.data.deviceId);
+                        },
+                    }, {
+                        text: await L.getMessage('sync_settings_skip'),
+                        click: async () => {
+                            $dialog.dialog('close');
+                            await sauce.hist.addMetaDataImportReceipt(athleteId, x);
+                        },
+                    }]
+                });
+            }
         }
     }
 
