@@ -701,6 +701,11 @@ function diffHistories(to, from) {
 }
 
 
+function toLocaleDateString(ts) {
+    return new Date(ts).toLocaleDateString();
+}
+
+
 export async function importMetaDataFromStrava(athleteId, deviceId, {replace, dryrun}={}) {
     // XXX Should probably take a lock for this whole thing...
     const filename = `hist-md-${athleteId}/${deviceId}`;
@@ -723,9 +728,11 @@ export async function importMetaDataFromStrava(athleteId, deviceId, {replace, dr
         const diffs = diffHistories(data.ftpHistory, athlete.get('ftpHistory') || []);
         if (diffs.length) {
             for (const x of diffs) {
-                const action = {added: 'Added', removed: 'Removed', changed: 'Changed'}[x.type];
-                logs.push(`${action} FTP: ${new Date(x.entry.ts).toLocaleDateString()}, ` +
-                          `type: ${x.entry.type || '*'}, power: ${x.entry.value}`);
+                const value = x.type === 'changed' ?
+                    `${x.from.value}w ⇾ ${x.entry.value}w` :
+                    `${x.entry.value}w`;
+                const type = x.entry.type ? `(${x.entry.type}) ` : '';
+                logs.push(`FTP ${x.type} [${toLocaleDateString(x.entry.ts)}]: ${type}${value}`);
             }
             if (!dryrun) {
                 await athlete.save({ftpHistory: data.ftpHistory});
@@ -737,9 +744,11 @@ export async function importMetaDataFromStrava(athleteId, deviceId, {replace, dr
         const diffs = diffHistories(data.weightHistory, athlete.get('weightHistory') || []);
         if (diffs.length) {
             for (const x of diffs) {
-                const action = {added: 'Added', removed: 'Removed', changed: 'Changed'}[x.type];
-                logs.push(`${action} weight: ${(new Date(x.entry.ts)).toLocaleDateString()}, ` +
-                          `type: ${x.entry.type || '*'}, weight: ${x.entry.value.toFixed(2)} kg`);
+                const value = x.type === 'changed' ?
+                    `${x.from.value?.toFixed(2)}kg ⇾ ${x.entry.value?.toFixed(2)}kg` :
+                    `${x.entry.value.toFixed(2)}kg`;
+                const type = x.entry.type ? `(${x.entry.type}) ` : '';
+                logs.push(`Weight ${x.type} [${toLocaleDateString(x.entry.ts)}]: ${type}${value}`);
             }
             if (!dryrun) {
                 await athlete.save({weightHistory: data.weightHistory});
@@ -754,7 +763,7 @@ export async function importMetaDataFromStrava(athleteId, deviceId, {replace, dr
                 if (!replace && v === undefined) {
                     continue;
                 }
-                logs.push(`Athlete setting changed [${k}]: ${athlete.get(k)} -> ${v}`);
+                logs.push(`Athlete setting: (${k}) ${athlete.get(k)} -> ${v}`);
                 if (!dryrun) {
                     athlete.set(k, v);
                     settingsEdited = true;
@@ -775,7 +784,13 @@ export async function importMetaDataFromStrava(athleteId, deviceId, {replace, dr
                 if (!replace && suggested === undefined) {
                     continue;
                 }
-                logs.push(`Activity setting changed ${x.pk} [${key}]: ${existing} -> ${suggested}`);
+                const localeDate = (new Date(x.get('ts'))).toLocaleDateString();
+                let name = x.get('name');
+                if (name.length > 12) {
+                    name = name.substr(0, 7) + '…' + name.substr(-5);
+                }
+                logs.push(`Activity [${localeDate}, ${name}]: ` +
+                          `(${key}) ${existing ?? '<unset>'} ⇾ ${suggested ?? '<unset>'}`);
                 if (!dryrun) {
                     x.set(key, suggested);
                     toSave.add(x);
