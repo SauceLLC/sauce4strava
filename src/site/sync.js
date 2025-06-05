@@ -294,7 +294,7 @@ sauce.ns('sync', ns => {
                                                                          {dryrun: true});
                 if (!dryrun.length) {
                     console.info("Ignoring empty sync settings changeset");
-                    //await sauce.hist.addMetaDataImportReceipt(athleteId, x);
+                    await sauce.hist.addMetaDataImportReceipt(athleteId, x);
                     continue;
                 }
                 const tpl = await sauce.template.getTemplate('sync-settings-update.html', 'sync_settings');
