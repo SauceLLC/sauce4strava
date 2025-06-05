@@ -301,7 +301,6 @@ sauce.ns('sync', ns => {
                 const $dialog = sauce.ui.dialog({
                     title: await L.getMessage('sync_settings_title'),
                     icon: await sauce.ui.getImage('fa/sync-alt-duotone.svg'),
-                    dialogClass: 'sauce-info-dialog',
                     body: await tpl({dryrun}),
                     width: 600,
                     extraButtons: [{
