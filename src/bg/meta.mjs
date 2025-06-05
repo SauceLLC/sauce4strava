@@ -97,17 +97,29 @@ async function fetchGear(resource, options={}, _allowRetry) {
     }
     const resp = await fetch(`https://www.strava.com/athletes/${_athleteId}/gear${urn}`, {
         ...options,
+        redirect: 'manual',
         headers: {
             'x-requested-with': 'XMLHttpRequest',
             'x-csrf-token': _csrfToken,
         }
     });
+    let needSessionRefresh;
     if (!resp.ok) {
-        console.error(`fetchGear error [${resp.status}]:`, await resp.text());
-        throw new Error("Gear Fetch Error");
+        if (resp.type === 'opaqueredirect') {
+            needSessionRefresh = true;
+        } else {
+            console.error(`fetchGear error [${resp.status}]:`, await resp.text());
+            throw new Error("Gear Fetch Error");
+        }
+    } else {
+        const data = await resp.json();
+        if (data && data.pathType === 'session_expired') {
+            needSessionRefresh = true;
+        } else {
+            return data;
+        }
     }
-    const data = await resp.json();
-    if (data && data.pathType === 'session_expired') {
+    if (needSessionRefresh) {
         _csrfToken = null;
         if (_allowRetry !== false) {
             return await fetchGear(resource, options, false);
@@ -116,7 +128,6 @@ async function fetchGear(resource, options={}, _allowRetry) {
             throw new Error("Gear Fetch Loop Error");
         }
     }
-    return data;
 }
 
 
