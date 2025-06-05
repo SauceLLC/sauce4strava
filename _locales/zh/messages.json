@@ -1251,6 +1251,30 @@
     "sync_control_panel_disable_run_watts_tooltip": {
         "message": "从运行中排除使用本机瓦数数据。建议用于 Garmin 等源设备包含错误瓦特值的情况。"
     },
+    "sync_control_panel_synchronize_settings": {
+        "message": "在设备之间同步设置"
+    },
+    "sync_control_panel_synchronize_settings_tooltip": {
+        "message": "如果您在多个设备上使用 Sauce Performance，此选项将启用它们之间的设置同步。例如 FTP 历史记录、重量历史记录、TSS 覆盖等。这是通过将元数据存储在隐藏的 Strava Gear 条目（退役鞋）中来实现的。"
+    },
+    "sync_settings_title": {
+        "message": "应用这些运动员设置更新？"
+    },
+    "sync_settings_intro": {
+        "message": "发现来自另一台设备的更改。"
+    },
+    "sync_settings_instruction": {
+        "message": "请查看以下更改并决定是否要应用它们。"
+    },
+    "sync_settings_proposed_changeset": {
+        "message": "建议的变更集："
+    },
+    "sync_settings_apply": {
+        "message": "申请"
+    },
+    "sync_settings_skip": {
+        "message": "跳过"
+    },
     "mutable_data_add_entry_tooltip": {
         "message": "添加一个新条目",
         "description": "IMMUTABLE"

@@ -1000,6 +1000,30 @@
     "sync_control_panel_disable_run_watts_tooltip": {
         "message": "Excluez l’utilisation des données de watts natives des exécutions. Recommandé dans les cas où des valeurs de watts erronées sont incluses par l'appareil source tel qu'un Garmin."
     },
+    "sync_control_panel_synchronize_settings": {
+        "message": "Synchroniser les paramètres entre les appareils"
+    },
+    "sync_control_panel_synchronize_settings_tooltip": {
+        "message": "Si vous utilisez Sauce Performance sur plusieurs appareils, cette option permettra la synchronisation des paramètres entre eux, c'est-à-dire l'historique FTP, l'historique du poids, les remplacements TSS, etc. Cela fonctionne en stockant les métadonnées dans une entrée Strava Gear cachée (une chaussure retirée)."
+    },
+    "sync_settings_title": {
+        "message": "Appliquer ces mises à jour des paramètres de l'athlète ?"
+    },
+    "sync_settings_intro": {
+        "message": "Des modifications provenant d'un autre appareil ont été détectées."
+    },
+    "sync_settings_instruction": {
+        "message": "Veuillez examiner les modifications ci-dessous et décider si vous souhaitez les appliquer."
+    },
+    "sync_settings_proposed_changeset": {
+        "message": "Ensemble de modifications proposé :"
+    },
+    "sync_settings_apply": {
+        "message": "Appliquer"
+    },
+    "sync_settings_skip": {
+        "message": "Sauter"
+    },
     "mutable_data_add_entry_tooltip": {
         "message": "Ajouter une nouvelle entrée"
     },
