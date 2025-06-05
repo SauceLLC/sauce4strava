@@ -613,7 +613,7 @@ async function getActivitiesForAthlete(athleteId, options={}) {
 sauce.proxy.export(getActivitiesForAthlete, {namespace});
 
 
-export async function exportMetaDataToStrava(athleteId) {
+export async function exportSyncChangeset(athleteId) {
     const athlete = await athletesStore.get(athleteId);
     const activities = await actsStore.getAllForAthlete(athleteId);
     const settings = [
@@ -649,13 +649,13 @@ export async function exportMetaDataToStrava(athleteId) {
         file = await meta.create(filename);
     }
     file = await meta.save(file.id, data);
-    addMetaDataImportReceipt(athleteId, file);
-    syncLogsStore.logInfo(athleteId, 'Exported meta-data to Strava gear file:', filename);
+    addSyncChangesetReceipt(athleteId, file);
+    syncLogsStore.logInfo(athleteId, 'Exported settings changeset to Strava gear file:', filename);
 }
-sauce.proxy.export(exportMetaDataToStrava, {namespace});
+sauce.proxy.export(exportSyncChangeset, {namespace});
 
 
-async function addMetaDataImportReceipt(athleteId, file) {
+async function addSyncChangesetReceipt(athleteId, changeset) {
     await syncManager._athleteLock.acquire();
     try {
         const athlete = await athletesStore.get(athleteId, {model: true});
@@ -663,13 +663,13 @@ async function addMetaDataImportReceipt(athleteId, file) {
             throw new Error('Athlete not found: ' + athleteId);
         }
         const receipts = new Map(athlete.get('syncSettingsReceipts') || []);
-        receipts.set(file.data.deviceId, {updated: file.updated, hash: file.hash});
+        receipts.set(changeset.data.deviceId, {updated: changeset.updated, hash: changeset.hash});
         await athlete.save({syncSettingsReceipts: Array.from(receipts.entries())});
     } finally {
         syncManager._athleteLock.release();
     }
 }
-sauce.proxy.export(addMetaDataImportReceipt, {namespace});
+sauce.proxy.export(addSyncChangesetReceipt, {namespace});
 
 
 function diffHistories(to, from) {
@@ -706,16 +706,11 @@ function toLocaleDateString(ts) {
 }
 
 
-export async function importMetaDataFromStrava(athleteId, deviceId, {replace, dryrun}={}) {
+export async function applySyncChangeset(athleteId, changeset, {replace, dryrun}={}) {
     // XXX Should probably take a lock for this whole thing...
-    const filename = `hist-md-${athleteId}/${deviceId}`;
-    const file = (await meta.get(filename))[0];
-    if (!file) {
-        throw new Error("File not found");
-    }
-    const data = file.data;
+    const data = changeset.data;
     if (!data || data.version !== 1) {
-        throw new TypeError("Unsupported meta data file");
+        throw new TypeError("Unsupported changeset version");
     }
     const athlete = await athletesStore.get(athleteId, {model: true});
     if (!athlete) {
@@ -781,6 +776,7 @@ export async function importMetaDataFromStrava(athleteId, deviceId, {replace, dr
         for (const key of ['tssOverride', 'peaksExclude']) {
             const suggested = (data.activityOverrides[x.pk] ?? {})[key];
             const existing = x.get(key);
+            //if (suggested !== existing && (suggested != null || existing != null)) {
             if (suggested !== existing) {
                 if (!replace && suggested === undefined) {
                     console.debug("Ignore unsetting of activity override:", key);
@@ -808,21 +804,21 @@ export async function importMetaDataFromStrava(athleteId, deviceId, {replace, dr
         } else {
             console.info("No differences found");
         }
-        await addMetaDataImportReceipt(athleteId, file);
+        await addSyncChangesetReceipt(athleteId, changeset);
         if (edited) {
             await invalidateAthleteSyncState(athleteId, 'local');
         }
         for (const x of logs) {
             syncLogsStore.logInfo(athleteId, x);
         }
-        schedMetaDataExport(athleteId);
+        schedSyncChangesetExport(athleteId);
     }
     return logs;
 }
-sauce.proxy.export(importMetaDataFromStrava, {namespace});
+sauce.proxy.export(applySyncChangeset, {namespace});
 
 
-export async function scanAvailableMetaDataFromStrava(athleteId) {
+export async function getAvailableSyncChangesets(athleteId) {
     const athlete = await athletesStore.get(athleteId);
     if (!athlete || !athlete.syncSettings) {
         return [];
@@ -830,16 +826,16 @@ export async function scanAvailableMetaDataFromStrava(athleteId) {
     const receipts = new Map(athlete.syncSettingsReceipts || []);
     const dir = `hist-md-${athleteId}/`;
     await meta.load({forceFetch: true}); // XXX for testing and demo...
-    const files = (await meta.get(dir)).filter(x => {
+    const changesets = (await meta.get(dir)).filter(x => {
         return x.data?.version === 1 && (
             !receipts.has(x.data.deviceId) ||
             receipts.get(x.data.deviceId).hash !== x.hash
         );
     });
-    files.sort((a, b) => a.updated - b.updated);
-    return files;
+    changesets.sort((a, b) => b.updated - a.updated);  // newest -> oldest
+    return changesets;
 }
-sauce.proxy.export(scanAvailableMetaDataFromStrava, {namespace});
+sauce.proxy.export(getAvailableSyncChangesets, {namespace});
 
 
 // EXPERIMENT
@@ -1016,28 +1012,28 @@ async function setAthleteHistoryValues(athleteId, key, data) {
     const processor = key === 'weight' ? 'extra-streams' : 'athlete-settings';
     await invalidateAthleteSyncState(athleteId, 'local', processor);
     if (athlete.get('syncSettings')) {
-        schedMetaDataExport(athlete.pk);
+        schedSyncChangesetExport(athlete.pk);
     }
     return clean;
 }
 sauce.proxy.export(setAthleteHistoryValues, {namespace});
 
 
-const _pendingMetaDataExports = new Map();
-async function schedMetaDataExport(athleteId) {
-    clearTimeout(_pendingMetaDataExports.get(athleteId));
+const _pendingSyncChangesetExports = new Map();
+async function schedSyncChangesetExport(athleteId) {
+    clearTimeout(_pendingSyncChangesetExports.get(athleteId));
     const athlete = await athletesStore.get(athleteId);
     if (!athlete || !athlete.syncSettings) {
         return;
     }
     await updateAthlete(athleteId, {syncSettingsTS: null});
-    clearTimeout(_pendingMetaDataExports.get(athleteId));
-    _pendingMetaDataExports.set(athleteId, setTimeout(async () => {
+    clearTimeout(_pendingSyncChangesetExports.get(athleteId));
+    _pendingSyncChangesetExports.set(athleteId, setTimeout(async () => {
         await updateAthlete(athleteId, {syncSettingsTS: Date.now()});
-        await exportMetaDataToStrava(athleteId);
+        await exportSyncChangeset(athleteId);
     }, 5000));
 }
-sauce.proxy.export(schedMetaDataExport, {namespace});
+sauce.proxy.export(schedSyncChangesetExport, {namespace});
 
 
 export async function disableAthlete(id) {
@@ -2425,7 +2421,7 @@ class SyncManager extends EventTarget {
             for (const x of athletes) {
                 syncLogsStore.write('debug', x.id, msg);
                 if (x.syncSettings && Date.now() - (x.syncSettingsTS || 0) > 86400_000) {
-                    schedMetaDataExport(x.id);
+                    schedSyncChangesetExport(x.id);
                 }
             }
         });

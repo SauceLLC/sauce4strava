@@ -113,7 +113,7 @@ export async function editActivityDialogXXX(activity, pageView) {
                 try {
                     await sauce.hist.updateActivity(activity.id, updates);
                     await sauce.hist.invalidateActivitySyncState(activity.id, 'local', null);
-                    await sauce.hist.schedMetaDataExport(activity.athlete);
+                    await sauce.hist.schedSyncChangesetExport(activity.athlete);
                 } finally {
                     ev.currentTarget.classList.remove('sauce-loading');
                     ev.currentTarget.disabled = false;
@@ -721,7 +721,7 @@ export class BulkActivityEditDialog extends PerfView {
                             }
                             for (const x of this.athletes) {
                                 await sauce.hist.syncAthlete(x);
-                                await sauce.hist.schedMetaDataExport(x);
+                                await sauce.hist.schedSyncChangesetExport(x);
                             }
                         } finally {
                             ev.currentTarget.classList.remove('sauce-loading');

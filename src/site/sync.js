@@ -287,39 +287,38 @@ sauce.ns('sync', ns => {
 
 
     async function checkForSyncSettingsUpdates(athleteId) {
-        const avail = await sauce.hist.scanAvailableMetaDataFromStrava(athleteId);
-        if (avail && avail.length) {
-            for (const x of avail) {
-                const dryrun = await sauce.hist.importMetaDataFromStrava(athleteId, x.data.deviceId,
-                                                                         {dryrun: true});
-                if (!dryrun.length) {
-                    console.info("Ignoring empty sync settings changeset");
-                    await sauce.hist.addMetaDataImportReceipt(athleteId, x);
-                    continue;
-                }
-                const tpl = await sauce.template.getTemplate('sync-settings-update.html', 'sync_settings');
-                const $dialog = sauce.ui.dialog({
-                    title: await L.getMessage('sync_settings_title'),
-                    icon: await sauce.ui.getImage('fa/sync-alt-duotone.svg'),
-                    body: await tpl({dryrun}),
-                    width: 600,
-                    extraButtons: [{
-                        text: await L.getMessage('sync_settings_apply'),
-                        class: 'btn btn-primary',
-                        click: async () => {
-                            $dialog.dialog('close');
-                            await sauce.hist.importMetaDataFromStrava(athleteId, x.data.deviceId);
-                        },
-                    }, {
-                        text: await L.getMessage('sync_settings_skip'),
-                        click: async () => {
-                            $dialog.dialog('close');
-                            await sauce.hist.addMetaDataImportReceipt(athleteId, x);
-                        },
-                    }]
-                });
-            }
+        const avail = await sauce.hist.getAvailableSyncChangesets(athleteId);
+        if (!avail || !avail.length) {
+            return;
         }
+        const changeset = avail[0];
+        const dryrun = await sauce.hist.applySyncChangeset(athleteId, changeset, {dryrun: true});
+        if (!dryrun.length) {
+            console.info("Ignoring empty sync settings changeset");
+            await sauce.hist.addSyncChangesetReceipt(athleteId, changeset);
+            return;
+        }
+        const tpl = await sauce.template.getTemplate('sync-settings-update.html', 'sync_settings');
+        const $dialog = sauce.ui.dialog({
+            title: await L.getMessage('sync_settings_title'),
+            icon: await sauce.ui.getImage('fa/sync-alt-duotone.svg'),
+            body: await tpl({dryrun}),
+            width: 600,
+            extraButtons: [{
+                text: await L.getMessage('sync_settings_apply'),
+                class: 'btn btn-primary',
+                click: async () => {
+                    $dialog.dialog('close');
+                    await sauce.hist.applySyncChangeset(athleteId, changeset);
+                },
+            }, {
+                text: await L.getMessage('sync_settings_skip'),
+                click: async () => {
+                    $dialog.dialog('close');
+                    await sauce.hist.addSyncChangesetReceipt(athleteId, changeset);
+                },
+            }]
+        });
     }
 
 
@@ -674,7 +673,7 @@ sauce.ns('sync', ns => {
                 ];
                 const proc = affectsStreams.some(x => edited.has(x)) ? 'extra-streams' : 'athlete-settings';
                 await sauce.hist.invalidateAthleteSyncState(athlete.id, 'local', proc);
-                await sauce.hist.schedMetaDataExport(athlete.id);
+                await sauce.hist.schedSyncChangesetExport(athlete.id);
             }
         });
         if (initiallyEnabled) {
