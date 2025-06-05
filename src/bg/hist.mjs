@@ -776,11 +776,13 @@ export async function applySyncChangeset(athleteId, changeset, {replace, dryrun}
         for (const key of ['tssOverride', 'peaksExclude']) {
             const suggested = (data.activityOverrides[x.pk] ?? {})[key];
             const existing = x.get(key);
-            //if (suggested !== existing && (suggested != null || existing != null)) {
             if (suggested !== existing) {
                 if (!replace && suggested === undefined) {
                     console.debug("Ignore unsetting of activity override:", key);
                     continue;
+                }
+                if (suggested == null && existing == null) {
+                    continue;  // Only one side is null but the operation is still a no-op
                 }
                 const localeDate = (new Date(x.get('ts'))).toLocaleDateString();
                 let name = x.get('name');
