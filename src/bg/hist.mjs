@@ -324,7 +324,7 @@ class SauceRateLimiter extends jobs.RateLimiter {
     async getState() {
         const storeKey = `hist-rate-limiter-${this.label}`;
         const state = await sauce.storage.get(storeKey);
-        if (!state.bucket) {
+        if (state && !state.bucket) {
             console.warn("Healing migration from buggy rate limiter state");
             state.bucket = [];
         }
