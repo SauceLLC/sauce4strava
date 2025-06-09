@@ -827,7 +827,7 @@ export async function getAvailableSyncChangesets(athleteId) {
     }
     const receipts = new Map(athlete.syncSettingsReceipts || []);
     const dir = `hist-md-${athleteId}/`;
-    await meta.load({forceFetch: true}); // XXX for testing and demo...
+    //await meta.load({forceFetch: true}); // XXX for testing and demo...
     const changesets = (await meta.get(dir)).filter(x => {
         return x.data?.version === 1 && (
             !receipts.has(x.data.deviceId) ||
