@@ -1446,45 +1446,58 @@ export class ActivityTablePanelView extends ResizablePerfView {
     onActivitySearch(ev) {
         const el = ev.currentTarget;
         const rawValue = el.value;
-        const parts = rawValue.toLowerCase().split(/(type:[a-z]+)|(is:[a-z]+)|(name:".*?")/);
+        const typeRe = 'type:(?<type>[a-z]{3,})';
+        const isRe = 'is:(?<is>[a-z]{3,})';
+        const nameRe = 'name:(?<name>"(?<quoted>.+?)"|\\w{2,})';
+        const formalExp = new RegExp(`(?<neg>!)?(?:${typeRe}|${isRe}|${nameRe})`, 'g');
+        const matches = Array.from(rawValue.matchAll(formalExp)).reverse();
         const types = [];
+        const notTypes = [];
         const ises = [];
-        let name;
-        const texts = [];
-        for (const part of parts) {
-            if (!part || !part.match(/[a-zA-Z0-9]/)) {
-                continue;
-            }
-            if (part.match(/^type:[a-z]+$/)) {
-                const type = part.split('type:')[1];
-                if (['ride', 'run', 'swim', 'workout'].includes(type)) {
-                    types.push(type);
+        const notIses = [];
+        const names = [];
+        const notNames = [];
+        let plaintext = rawValue;
+        for (const x of matches) {
+            plaintext = plaintext.substring(0, x.index) + plaintext.substring(x.index + x[0].length);
+            if (x.groups.type) {
+                if (['ride', 'run', 'swim', 'workout'].includes(x.groups.type)) {
+                    (x.groups.neg ? notTypes : types).push(x.groups.type);
                 }
-            } else if (part.match(/^is:[a-z]+$/)) {
-                const is = part.split('is:')[1];
-                if (['virtual', 'commute'].includes(is)) {
-                    ises.push(is);
+            } else if (x.groups.is) {
+                if (['virtual', 'commute'].includes(x.groups.is)) {
+                    (x.groups.neg ? notIses : ises).push(x.groups.is);
                 }
-            } else if (part.match(/^name:".*?"$/)) {
-                name = part.split('name:')[1].slice(1, -1);
+            } else if (x.groups.name) {
+                (x.groups.neg ? notNames : names).push((x.groups.quoted || x.groups.name).toLowerCase());
             } else {
-                if (part && part.trim().length >= 2) {
-                    texts.push(part);
-                }
+                throw new Error("Internal Error");
             }
         }
+        plaintext = plaintext.trim();
         const filterFns = [];
         if (types.length) {
             filterFns.push(activity => types.includes(activity.basetype));
         }
+        if (notTypes.length) {
+            filterFns.push(activity => !notTypes.includes(activity.basetype));
+        }
         if (ises.length) {
             filterFns.push(activity => ises.some(x => activity[x] === true));
         }
-        if (name && name.length > 3) {
-            filterFns.push(activity => activity.name && activity.name.toLowerCase().includes(name));
+        if (notIses.length) {
+            filterFns.push(activity => notIses.every(x => activity[x] !== true));
         }
-        if (texts.length) {
-            const searchGrams = this.makeTrigrams(texts.join(' '));
+        if (names.length) {
+            filterFns.push(activity => names.some(x =>
+                activity.name && activity.name.toLowerCase().includes(x)));
+        }
+        if (notNames.length) {
+            filterFns.push(activity => notNames.every(x =>
+                !activity.name || !activity.name.toLowerCase().includes(x)));
+        }
+        if (plaintext.length > 2) {
+            const searchGrams = this.makeTrigrams(plaintext);
             const similarity = 0.8;
             const similaritySize = Math.round(searchGrams.size * similarity);
             filterFns.push(activity => {
