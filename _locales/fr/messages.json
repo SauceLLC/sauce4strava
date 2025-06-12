@@ -1010,7 +1010,10 @@
         "message": "Appliquer ces mises à jour des paramètres de l'athlète ?"
     },
     "sync_settings_intro": {
-        "message": "Des modifications provenant d'un autre appareil ont été détectées."
+        "message": "Des modifications provenant d'un autre appareil ont été détectées..."
+    },
+    "sync_settings_time_of_change": {
+        "message": "L'heure du changement"
     },
     "sync_settings_instruction": {
         "message": "Veuillez examiner les modifications ci-dessous et décider si vous souhaitez les appliquer."

@@ -1003,7 +1003,10 @@
         "message": "Applicare questi aggiornamenti alle impostazioni dell'atleta?"
     },
     "sync_settings_intro": {
-        "message": "Sono state trovate modifiche da un altro dispositivo."
+        "message": "Sono state trovate modifiche da un altro dispositivo..."
+    },
+    "sync_settings_time_of_change": {
+        "message": "Tempo di cambiamento"
     },
     "sync_settings_instruction": {
         "message": "Si prega di esaminare le modifiche riportate di seguito e decidere se applicarle."

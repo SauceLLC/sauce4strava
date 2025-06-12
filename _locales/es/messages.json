@@ -1027,7 +1027,10 @@
         "message": "¿Aplicar estas actualizaciones de configuración del atleta?"
     },
     "sync_settings_intro": {
-        "message": "Se encontraron cambios de otro dispositivo."
+        "message": "Se encontraron cambios de otro dispositivo..."
+    },
+    "sync_settings_time_of_change": {
+        "message": "Tiempo de cambio"
     },
     "sync_settings_instruction": {
         "message": "Revise los cambios a continuación y decida si desea aplicarlos."

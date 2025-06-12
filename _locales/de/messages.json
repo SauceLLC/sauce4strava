@@ -1016,7 +1016,10 @@
         "message": "Diese Aktualisierungen der Athleteneinstellungen anwenden?"
     },
     "sync_settings_intro": {
-        "message": "Es wurden Änderungen von einem anderen Gerät gefunden."
+        "message": "Es wurden Änderungen von einem anderen Gerät gefunden..."
+    },
+    "sync_settings_time_of_change": {
+        "message": "Zeit der Veränderung"
     },
     "sync_settings_instruction": {
         "message": "Bitte überprüfen Sie die folgenden Änderungen und entscheiden Sie, ob Sie sie anwenden möchten."

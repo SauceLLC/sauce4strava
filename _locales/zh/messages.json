@@ -1261,7 +1261,10 @@
         "message": "应用这些运动员设置更新？"
     },
     "sync_settings_intro": {
-        "message": "发现来自另一台设备的更改。"
+        "message": "发现来自另一台设备的更改..."
+    },
+    "sync_settings_time_of_change": {
+        "message": "变革时间"
     },
     "sync_settings_instruction": {
         "message": "请查看以下更改并决定是否要应用它们。"
