@@ -298,11 +298,13 @@ sauce.ns('sync', ns => {
             await sauce.hist.addSyncChangesetReceipt(athleteId, changeset);
             return;
         }
+        const deviceInfo = await sauce.hist.getDeviceMetaData(changeset.deviceId);
+        debugger;
         const tpl = await sauce.template.getTemplate('sync-settings-update.html', 'sync_settings');
         const $dialog = sauce.ui.dialog({
             title: await L.getMessage('sync_settings_title'),
             icon: await sauce.ui.getImage('fa/sync-alt-duotone.svg'),
-            body: await tpl({dryrun}),
+            body: await tpl({dryrun, deviceInfo}),
             width: 600,
             extraButtons: [{
                 text: await L.getMessage('sync_settings_apply'),

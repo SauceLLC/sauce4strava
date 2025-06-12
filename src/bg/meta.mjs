@@ -163,26 +163,36 @@ export async function load({forceFetch}={}) {
                     return entry;
                 }));
             }
-            return _get();
+            return _getAll();
         } finally {
             loadLock.release();
         }
     }
-    return await get();
+    return await getAll();
 }
 
 
 export async function get(...args) {
     await loadLock.acquire();
     try {
-        return _get(...args);
+        return _getAll(...args)[0];
     } finally {
         loadLock.release();
     }
 }
 
 
-function _get(name, {corrupt}={}) {
+export async function getAll(...args) {
+    await loadLock.acquire();
+    try {
+        return _getAll(...args);
+    } finally {
+        loadLock.release();
+    }
+}
+
+
+function _getAll(name, {corrupt}={}) {
     if (!_loadData) {
         return [];
     } else {
@@ -240,6 +250,50 @@ async function _create(name, data) {
 }
 
 
+export async function set(...args) {
+    await loadLock.acquire();
+    try {
+        return await _set(...args);
+    } finally {
+        loadLock.release();
+    }
+}
+
+
+async function _set(entry, data) {
+    if (data === undefined) {
+        data = entry.data;
+    } else {
+        entry.data = data;
+    }
+    entry.updated = Date.now();
+    if (entry.corrupt) {
+        console.warn("Repairing corrupt file:", entry.id);
+        entry.corrupt = false;
+        if (!entry.created) {
+            entry.created = entry.updated;
+        }
+    }
+    const {encoded, hash} = await encode(entry.data, {created: entry.created, updated: entry.updated});
+    if (encoded.length > maxGearDescSize) {
+        throw new Error("File too large");
+    }
+    entry.hash = hash;
+    entry._pendingEncoded = encoded;
+    if (_loadData.indexOf(entry) === -1) {
+        const priorIdx = _loadData.findIndex(x => x.id === entry.id);
+        if (priorIdx === -1) {
+            console.warn("Calling update() with a new object is not recommended");
+            _loadData.push(entry);
+        } else {
+            console.warn("Replacing existing meta object with out-of-band object");
+            _loadData.splice(priorIdx, 1, entry);
+        }
+    }
+    return entry;
+}
+
+
 export async function save(...args) {
     await loadLock.acquire();
     try {
@@ -250,35 +304,19 @@ export async function save(...args) {
 }
 
 
-async function _save(id, data) {
-    console.debug("Saving meta gear file:", id, data);
-    const entry = _loadData && _loadData.find(x => x.id === id);
-    if (!entry) {
-        throw new Error("Invalid ID");
-    }
-    entry.data = data;
-    entry.updated = Date.now();
-    if (entry.corrupt) {
-        console.warn("Repairing corrupt file:", id);
-        entry.corrupt = false;
-        if (!entry.created) {
-            entry.created = entry.updated;
-        }
-    }
-    const {encoded, hash} = await encode(data, {created: entry.created, updated: entry.updated});
-    entry.hash = hash;
-    if (encoded.length > maxGearDescSize) {
-        throw new Error("File too large");
-    }
-    await fetchGear(id, {
+async function _save(entry, data) {
+    console.debug("Saving meta gear file:", entry.id);
+    await _set(entry, data);
+    await fetchGear(entry.id, {
         method: 'PATCH',
         body: new URLSearchParams({
             brandName: sauceBrandName,
             modelName: sauceModelName,
-            description: encoded,
-            shoeId: id
+            description: entry._pendingEncoded,
+            shoeId: entry.id
         })
     });
+    entry._pendingEncoded = undefined;
     return entry;
 }
 
@@ -301,7 +339,9 @@ export async function remove(id) {
 export function initProxyExports() {
     sauce.proxy.export(load, {namespace: 'meta'});
     sauce.proxy.export(get, {namespace: 'meta'});
+    sauce.proxy.export(getAll, {namespace: 'meta'});
     sauce.proxy.export(create, {namespace: 'meta'});
+    sauce.proxy.export(set, {namespace: 'meta'});
     sauce.proxy.export(save, {namespace: 'meta'});
     sauce.proxy.export(remove, {namespace: 'meta'});
 }

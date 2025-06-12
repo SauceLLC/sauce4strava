@@ -644,13 +644,22 @@ export async function exportSyncChangeset(athleteId) {
         }
     }
     const filename = `hist-md-${athleteId}/${sauce.deviceId}`;
-    let file = (await meta.get(filename))[0];
+    let file = await meta.get(filename);
+    const priorHash = file && file.hash;
     if (!file) {
-        file = await meta.create(filename);
+        file = await meta.create(filename, data);
+    } else {
+        await meta.set(file, data);
+        if (priorHash === file.hash) {
+            console.debug("Skipping no-op sync changeset");
+        } else {
+            await meta.save(file);
+        }
     }
-    file = await meta.save(file.id, data);
-    addSyncChangesetReceipt(athleteId, file);
-    syncLogsStore.logInfo(athleteId, 'Exported settings changeset to Strava gear file:', filename);
+    await addSyncChangesetReceipt(athleteId, file);
+    if (priorHash !== file.hash) {
+        syncLogsStore.logInfo(athleteId, 'Exported settings changeset:', filename);
+    }
 }
 sauce.proxy.export(exportSyncChangeset, {namespace});
 
@@ -828,7 +837,7 @@ export async function getAvailableSyncChangesets(athleteId) {
     const receipts = new Map(athlete.syncSettingsReceipts || []);
     const dir = `hist-md-${athleteId}/`;
     //await meta.load({forceFetch: true}); // XXX for testing and demo...
-    const changesets = (await meta.get(dir)).filter(x => {
+    const changesets = (await meta.getAll(dir)).filter(x => {
         return x.data?.version === 1 && (
             !receipts.has(x.data.deviceId) ||
             receipts.get(x.data.deviceId).hash !== x.hash
@@ -1033,6 +1042,10 @@ async function schedSyncChangesetExport(athleteId) {
     _pendingSyncChangesetExports.set(athleteId, setTimeout(async () => {
         await updateAthlete(athleteId, {syncSettingsTS: Date.now()});
         await exportSyncChangeset(athleteId);
+        const f = await meta.get(`device-meta/${sauce.deviceId}`);
+        if (!f || Date.now() - f.updated > 86400_000 * 7) {
+            await updateDeviceMetaData();
+        }
     }, 5000));
 }
 sauce.proxy.export(schedSyncChangesetExport, {namespace});
@@ -2845,6 +2858,47 @@ class SyncController extends sauce.proxy.Eventing {
     }
 }
 sauce.proxy.export(SyncController, {namespace});
+
+
+export async function updateDeviceMetaData() {
+    debugger;
+    let location;
+    try {
+        const iploc = await (await fetch('https://ipapi.co/json')).json();
+        location = {
+            city: iploc.city,
+            region: iploc.region,
+            country: iploc.country,
+            network: iploc.org,
+        };
+    } catch(e) {
+        console.warn("Failed to get rough location via IP address", e);
+    }
+    const data = {
+        location,
+        ...sauce.deviceInfo(),
+    };
+    const filename = `device-meta/${sauce.deviceId}`;
+    const file = await meta.get(filename);
+    if (!file) {
+        await meta.create(filename, data);
+    } else {
+        await meta.save(file, data);
+    }
+}
+sauce.proxy.export(updateDeviceMetaData, {namespace});
+
+
+export async function getDevicesMetaData() {
+    return await meta.getAll('device-meta/');
+}
+sauce.proxy.export(getDevicesMetaData, {namespace});
+
+
+export async function getDeviceMetaData(deviceId) {
+    return await meta.get(`device-meta/${deviceId}`);
+}
+sauce.proxy.export(getDeviceMetaData, {namespace});
 
 
 export function startSyncManager(id) {
