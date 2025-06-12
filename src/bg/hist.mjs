@@ -655,6 +655,33 @@ export async function exportSyncChangeset(athleteId) {
 sauce.proxy.export(exportSyncChangeset, {namespace});
 
 
+export async function updateDeviceMetaData() {
+    const filename = `device-meta/${sauce.deviceId}`;
+    let file = (await meta.get(filename))[0];
+    if (!file) {
+        file = await meta.create(filename);
+    }
+    let location;
+    try {
+        const iploc = await (await fetch('https://ipapi.co/json')).json();
+        location = {
+            city: iploc.city,
+            region: iploc.region,
+            country: iploc.country,
+            network: iploc.org,
+        };
+    } catch(e) {
+        console.warn("Failed to get rough location via IP address", e);
+    }
+    await meta.save(file.id, {
+        location,
+        platform: {
+        }
+        
+    });
+}
+
+
 async function addSyncChangesetReceipt(athleteId, changeset) {
     await syncManager._athleteLock.acquire();
     try {

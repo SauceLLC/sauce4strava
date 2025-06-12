@@ -153,6 +153,60 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, name, version) {
     };
 
 
+    sauce.deviceInfo = function() {
+        if (navigator.userAgentData && navigator.userAgentData.platform) {
+            const validBrands = navigator.userAgentData.brands.filter(x => !x.brand.match(/brand/i));
+            if (validBrands.length) {
+                validBrands.sort((a, b) => a.brand === 'Chromium' ? 1 : b.brand === 'Chromium' ? -1 : 0);
+                return {
+                    platform: navigator.userAgentData.platform,
+                    browser: validBrands[0].brand,
+                    browserVersion: validBrands[0].version,
+                };
+            }
+        }
+        const ua = navigator.userAgent;
+        let platform = navigator.userAgentData?.platform;
+        if (!platform) {
+            const osChecks = {
+                iPad: /iPad/,
+                iPhone: /iPhone/,
+                Android: /Android/,
+                "Chrome OS": /CrOS/,
+                Linux: /Linux/,
+                Windows: /Win/,
+                Mac: /Macintosh/,
+            };
+            for (const [ident, re] of Object.entries(osChecks)) {
+                if (ua.match(re)) {
+                    platform = ident;
+                    break;
+                }
+            }
+        }
+        let browser, browserVersion;
+        const browserChecks = {
+            SafariEdge: /\b(?:iPhone|iPad|Mac)\b.*?EdgiOS\/(?<ver>(?:[0-9]\.?)+)\b.*?Safari\//,
+            Edge: /\sEdg\w*\/(?<ver>(?:[0-9]\.?)+)(?:\s|$)/,
+            Opera: /\sOPR\/(?<ver>(?:[0-9]\.?)+)(?:\s|$)/,
+            Chrome: /\sChrome\/(?<ver>(?:[0-9]\.?)+)(?:\s|$)/,
+            Firefox: /\sFirefox\/(?<ver>(?:[0-9]\.?)+)(?:\s|$)/,
+            Safari: /\b(?:iPhone|iPad|Mac)\b.*?Version\/(?<ver>(?:[0-9]\.?)+)\b.*?Safari\//,
+            SafariChrome: /\b(?:iPhone|iPad|Mac)\b.*?CriOS\/(?<ver>(?:[0-9]\.?)+)\b.*?Safari\//,
+            SafariFirefox: /\b(?:iPhone|iPad|Mac)\b.*?FxiOS\/(?<ver>(?:[0-9]\.?)+)\b/,
+        };
+        for (const [ident, re] of Object.entries(browserChecks)) {
+            const m = ua.match(re);
+            if (m) {
+                browser = ident;
+                browserVersion = m.groups.ver.replace(/(?:\.0)+$/, '');
+                break;
+            }
+        }
+        return {platform, browser, browserVersion};
+    };
+
+
     const _maxTimeout = 0x7fffffff;  // `setTimeout` max valid value.
     sauce.sleep = async function(ms) {
         while (ms > _maxTimeout) {
