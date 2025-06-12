@@ -2861,18 +2861,15 @@ sauce.proxy.export(SyncController, {namespace});
 
 
 export async function updateDeviceMetaData() {
-    debugger;
     let location;
     try {
         const iploc = await (await fetch('https://ipapi.co/json')).json();
         location = {
-            city: iploc.city,
             region: iploc.region,
             country: iploc.country,
-            network: iploc.org,
         };
     } catch(e) {
-        console.warn("Failed to get rough location via IP address", e);
+        console.warn("Failed to get geoip info", e);
     }
     const data = {
         location,

@@ -1,5 +1,20 @@
 <h5>{{{intro}}}</h5>
 
+<div class="source-of-change">
+    {{=icon laptop-house-duotone=}}
+    <div class="rows">
+        <% if (obj.deviceInfo) { %>
+            <div>
+                {{deviceInfo.browser}} {{deviceInfo.browserVersion}} - {{deviceInfo.platform}}
+                <% if (deviceInfo.location) { %>
+                    - {{deviceInfo.location.region}}, {{deviceInfo.location.country}}
+                <% } %>
+            </div>
+        <% } %>
+        <div>{{{time_of_change}}}: {{humanDateTime(changeset.updated)}}</div>
+    </div>
+</div>
+
 <p>{{{instruction}}}</p>
 
 <b>{{{proposed_changeset}}}</b>

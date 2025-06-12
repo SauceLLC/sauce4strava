@@ -474,6 +474,34 @@ html .ui-dialog {
             list-style: revert;
         }
     }
+
+    .source-of-change {
+        margin: 0.8em 1em;
+        border: 1px solid color.shade(bg, 20%);
+        border-radius: 0.28em;
+        background-color: color.shade(bg, 7%);
+        display: flex;
+        align-items: center;
+
+        [data-icon] {
+            height: 2.2em;
+            margin: 0 0.8em;
+        }
+
+        .rows {
+            flex: 1;
+
+            > * {
+                padding: 0.4em 0.6em;
+            }
+            > :nth-child(even) {
+                background-color: color.shade(bg, 10%);
+            }
+            > :nth-child(odd) {
+                background-color: color.shade(bg, 13%);
+            }
+        }
+    }
 }
 
 
