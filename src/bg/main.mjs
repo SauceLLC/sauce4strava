@@ -39,7 +39,11 @@ async function start() {
     sauce.proxy.startBackgroundHandler();
     if (self.currentUser) {
         meta.init({athleteId: self.currentUser});
-        meta.load();  // bg okay
+        await meta.load();
+        const f = (await meta.get(`device-meta/${sauce.deviceId}`))?.[0];
+        if (!f || Date.now() - f.updated > 86400_000 * 7) {
+            await updateDeviceMetaData();
+        }
     }
 }
 
@@ -53,6 +57,31 @@ async function setStoragePersistent() {
             await navigator.storage.persist();
         }
     }
+}
+
+
+async function updateDeviceMetaData() {
+    const filename = `device-meta/${sauce.deviceId}`;
+    let file = (await meta.get(filename))[0];
+    if (!file) {
+        file = await meta.create(filename);
+    }
+    let location;
+    try {
+        const iploc = await (await fetch('https://ipapi.co/json')).json();
+        location = {
+            city: iploc.city,
+            region: iploc.region,
+            country: iploc.country,
+            network: iploc.org,
+        };
+    } catch(e) {
+        console.warn("Failed to get rough location via IP address", e);
+    }
+    await meta.save(file.id, {
+        location,
+        ...sauce.deviceInfo(),
+    });
 }
 
 
@@ -148,7 +177,7 @@ browser.runtime.onMessage.addListener(async msg => {
                 await hist.restartSyncManager(id);
                 if (id) {
                     meta.init({athleteId: id});
-                    meta.load({forceFetch: true});  // bg okay
+                    await meta.load({forceFetch: true});
                 }
             }
         }
