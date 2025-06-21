@@ -5,7 +5,8 @@ Sauce for Strava™
 Sauce for Strava™ is a browser extension that upgrades strava.com with more stats,
 features and themes (e.g. dark-mode).
 
-It's lightweight, powerful and completely open source!
+It's lightweight, powerful and open source!
+
 
 [![become a patron](images/become_a_patron_button.png)](https://www.patreon.com/bePatron?u=32064618)
 
@@ -13,8 +14,15 @@ Installation
 --------
 #### Official versions:
 [![chrome web store](assets/images/ChromeWebStore_Badge_v2_206x58.png)](https://chrome.google.com/webstore/detail/eigiefcapdcdmncdghkeahgfmnobigha)
-[![firefox add on](assets/images/AMO-button_1.png)](https://addons.mozilla.org/addon/sauce4strava)
+    ![Stars](https://img.shields.io/chrome-web-store/stars/eigiefcapdcdmncdghkeahgfmnobigha)
+    ![Version](https://img.shields.io/chrome-web-store/v/eigiefcapdcdmncdghkeahgfmnobigha)
+    ![Users](https://img.shields.io/chrome-web-store/users/eigiefcapdcdmncdghkeahgfmnobigha)
+    ![Users](https://img.shields.io/chrome-web-store/dw/eigiefcapdcdmncdghkeahgfmnobigha)
 
+[![firefox add on](assets/images/AMO-button_1.png)](https://addons.mozilla.org/addon/sauce4strava)
+    ![Stars](https://img.shields.io/amo/stars/sauce4strava)
+    ![Version](https://img.shields.io/amo/v/sauce4strava)
+    ![Users](https://img.shields.io/amo/users/sauce4strava)
 
 ![slideshow](assets/images/screenshots/slideshow.gif)
 
