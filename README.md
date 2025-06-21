@@ -15,15 +15,15 @@ Installation
 #### Official versions:
  > [![chrome web store](assets/images/ChromeWebStore_Badge_v2_206x58.png)](https://chrome.google.com/webstore/detail/eigiefcapdcdmncdghkeahgfmnobigha)
  > 
- > ![Stars](https://img.shields.io/chrome-web-store/stars/eigiefcapdcdmncdghkeahgfmnobigha?color=darkgreen)
- > ![Version](https://img.shields.io/chrome-web-store/v/eigiefcapdcdmncdghkeahgfmnobigha?label=version)
- > ![Users](https://img.shields.io/chrome-web-store/users/eigiefcapdcdmncdghkeahgfmnobigha?color=orange)
+ > [![Stars](https://img.shields.io/chrome-web-store/stars/eigiefcapdcdmncdghkeahgfmnobigha?color=darkgreen)](https://chrome.google.com/webstore/detail/eigiefcapdcdmncdghkeahgfmnobigha)
+ > [![Version](https://img.shields.io/chrome-web-store/v/eigiefcapdcdmncdghkeahgfmnobigha?label=version)](https://chrome.google.com/webstore/detail/eigiefcapdcdmncdghkeahgfmnobigha)
+ > [![Users](https://img.shields.io/chrome-web-store/users/eigiefcapdcdmncdghkeahgfmnobigha?color=orange)](https://chrome.google.com/webstore/detail/eigiefcapdcdmncdghkeahgfmnobigha)
 
  > [![firefox add on](assets/images/AMO-button_1.png)](https://addons.mozilla.org/addon/sauce4strava)
  > 
- > ![Stars](https://img.shields.io/amo/stars/sauce4strava?label=rating&color=darkgreen)
- > ![Version](https://img.shields.io/amo/v/sauce4strava?label=version)
- > ![Users](https://img.shields.io/amo/users/sauce4strava?color=orange)
+ > [![Stars](https://img.shields.io/amo/stars/sauce4strava?label=rating&color=darkgreen)](https://addons.mozilla.org/addon/sauce4strava)
+ > [![Version](https://img.shields.io/amo/v/sauce4strava?label=version)](https://addons.mozilla.org/addon/sauce4strava)
+ > [![Users](https://img.shields.io/amo/users/sauce4strava?color=orange)](https://addons.mozilla.org/addon/sauce4strava)
 
 --------
 ![slideshow](assets/images/screenshots/slideshow.gif)
