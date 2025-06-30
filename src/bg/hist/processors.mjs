@@ -513,11 +513,10 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
                         // Use internal interface for iteration as it's much faster on FF.
                         for (let i = corrected._offt; i < corrected._length; i++) {
                             const t = corrected._times[i];
-                            const w = corrected._values[i];
+                            const w = +corrected._values[i];
                             const gap = t - prevT;
                             prevT = t;
-                            if (gap && gap > 0 && w) {  // !!w is because z1 is "active" recovery
-                                // Unrolled for speed, make sure we have enough for all systems.
+                            if (gap && gap > 0 && w) {
                                 if (w <= powerZones.z1) {
                                     stats.powerZonesTime[0] += gap;
                                 } else if (w <= powerZones.z2) {

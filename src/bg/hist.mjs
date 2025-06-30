@@ -89,7 +89,7 @@ db.ActivityModel.addSyncManifest({
 db.ActivityModel.addSyncManifest({
     processor: 'local',
     name: 'activity-stats',
-    version: 6,  // Fix disableRunWatts causing eTSS use bug
+    version: 7,  // Fix powerZones accumulator (don't include zero pads)
     depends: ['extra-streams', 'athlete-settings', 'run-power'],
     storageOptionTriggers: ['analysis-prefer-estimated-power-tss'],
     data: {processor: processors.activityStatsProcessor}
