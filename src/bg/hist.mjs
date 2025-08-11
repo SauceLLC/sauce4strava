@@ -126,7 +126,7 @@ db.ActivityModel.addSyncManifest({
 class OffscreenDocumentRPC {
 
     constructor() {
-        this.idleTimeout = 15000;
+        this.idleTimeout = 60000;
         this._pending = new Map();
         this._callIdCounter = 1;
         this._connecting = null;
@@ -2282,7 +2282,7 @@ class SyncJob extends EventTarget {
                 }
             }
             await this._localDrainOffloaded(offloaded, batch);
-            this.batchLimit = Math.min(300, Math.ceil(this.batchLimit * 1.5));
+            this.batchLimit = Math.min(200, Math.ceil(this.batchLimit * 1.5));
             while (batch.size && !this._cancelEvent.isSet()) {
                 const manifestBatches = new Map();
                 for (const a of batch) {

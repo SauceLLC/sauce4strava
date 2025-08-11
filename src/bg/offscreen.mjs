@@ -6,6 +6,9 @@ self.sauce = self.sauce || {};
 
 const idleWorkers = [];
 const workers = new Set();
+// We breach mem limits in chromium with more than 32.  Does not seem to matter what
+// the host platform capabilities are either sadly.
+const maxWorkers = Math.min(28, navigator.hardwareConcurrency || 1);
 
 
 function _setConfig({options, deviceId}) {
@@ -21,14 +24,13 @@ function _setConfig({options, deviceId}) {
     }
 }
 
-
 async function peaksProcessor(athlete, activities, options) {
     let worker;
     while (!worker) {
         if (idleWorkers.length) {
             console.debug("Claiming idle web worker", idleWorkers.length);
             worker = idleWorkers.shift();
-        } else if (workers.size >= navigator.hardwareConcurrency * 2) {
+        } else if (workers.size >= maxWorkers) {
             // Cheapout on sleep lock..
             await new Promise(r => setTimeout(r, 200));
             continue;
@@ -79,13 +81,14 @@ async function peaksProcessor(athlete, activities, options) {
                 worker.terminate();
                 workers.delete(worker);
                 console.info(`Terminating idle web worker: idle:${idleWorkers.length} total:${workers.size}`);
-            }, 5000);
+            }, 15000);
             idleWorkers.push(worker);
         }
         return ret;
     } catch(e) {
         worker.terminate();
         workers.delete(worker);
+        console.error("Offscreen worker errror:", e);
         throw e;
     } finally {
         ourPort.close();
