@@ -35,11 +35,16 @@ async function start() {
     sauce.options = config.options;
     sauce.deviceId = config.deviceId;
     self.currentUser = config.currentUser || null;
+    // NOTE: currentUser might be stale if we are logged out but not aware of it yet.
     await hist.startSyncManager(self.currentUser);
     sauce.proxy.startBackgroundHandler();
     if (self.currentUser) {
-        meta.init({athleteId: self.currentUser});
-        await meta.load();
+        try {
+            meta.init({athleteId: self.currentUser});
+            await meta.load();
+        } catch(e) {
+            console.warn("Meta init failure (probably logged out):", e);
+        }
     }
 }
 
