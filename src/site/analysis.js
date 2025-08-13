@@ -22,7 +22,7 @@ sauce.ns('analysis', ns => {
     const minWattEstTime = 300;
     const minSeaPowerElevation = 328;  // About 1000ft or 1% power
     const prefetchStreams = [
-        'time', 'heartrate', 'altitude', 'distance', 'moving',
+        'timer_time', 'time', 'heartrate', 'altitude', 'distance', 'moving',
         'velocity_smooth', 'cadence', 'latlng', 'watts', 'watts_calc',
         'grade_adjusted_distance'
     ];

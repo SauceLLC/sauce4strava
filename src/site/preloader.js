@@ -7,7 +7,6 @@ self.saucePreloaderInit = function saucePreloaderInit() {
     self.sauce = self.sauce || {};
     sauce.reactComponents = {};
 
-    const cacheRefreshThreshold = 120 * 1000;
     const maybeRequestIdleCallback = self.requestIdleCallback || (fn => fn());  // Safari
     const booted = document.documentElement.classList.contains('sauce-booted') ?
         Promise.resolve() :
@@ -573,7 +572,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
 
 
     // Provide race-free detection of pending requests.
-    sauce.propDefined('Strava.Labs.Activities.StreamsRequest', Model => {
+    sauce.propDefined('Strava.Streams.StreamsRequest', Model => {
         const requireSave = Model.prototype.require;
         Model.prototype.require = function() {
             const ret = requireSave.apply(this, arguments);
@@ -740,6 +739,24 @@ self.saucePreloaderInit = function saucePreloaderInit() {
         };
     });
 
+
+    // TimerTimeStreamTransform.transform has side effects making it subject to errors when
+    // called with some orderings of arguments.  If the tranform() is called with 'distance' or
+    // 'grade_adjusted_distance' before 'timer_time' then subsequent calls with arguments
+    // 'pace', 'grade_adjusted_pace' or 'velocity' will fail.
+    // NOTE: Efforts are made to keep this ordering "safe" but as a fallback we're patching
+    // this code allthesame as it is buggy.
+    sauce.propDefined('Strava.Streams.Transforms.TimerTimeStreamTransform', Klass => {
+        const transform = Klass.prototype.transform;
+        Klass.prototype.transform = function(type, stream) {
+            if (this[type] === undefined && ['distance', 'grade_adjusted_distance'].includes(type)) {
+                this[type] = stream;
+            }
+            return transform.apply(this, arguments);
+        };
+    }, {multiple: true});
+
+
     async function fetchLikeXHR(url, query) {
         /* This fetch technique is required for several API endpoints. */
         const q = new URLSearchParams();
@@ -801,16 +818,16 @@ self.saucePreloaderInit = function saucePreloaderInit() {
 
 
     let _streamsCache;
-    sauce.propDefined('Strava.Labs.Activities.Streams', Klass => {
+    sauce.propDefined('Strava.Streams.Streams', Klass => {
         if (!_streamsCache) {
-            _streamsCache = new sauce.cache.TTLCache('streams', 180 * 86400 * 1000);
+            _streamsCache = new sauce.cache.TTLCache('streams', 30 * 86400_000);
         }
+
         Klass.prototype._cacheKey = function(key) {
             const keyPrefix = this.activityId;
             return `${keyPrefix}-${key}`;
         };
-        const pendingStale = new Set();
-        let pendingFill;
+
         async function fillCache(options, streams) {
             const query = Array.from(streams).map(value => ({key: 'stream_types[]', value}));
             const data = await fetchLikeXHR(options.url, query);
@@ -824,9 +841,12 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                 await booted;
                 await sauce.proxy.connected;
                 sauce.hist.incrementStreamsUsage();
-            }, 1000);
+            }, 200);
             return data;
         }
+
+        const pendingStale = new Set();
+        let pendingFill;
         async function getStreams(options) {
             if (!pageView) {
                 // File uploads use Streams class but don't have a pageView.
@@ -845,7 +865,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                 if (!cacheEntry) {
                     missing.add(key);
                 } else {
-                    if (Date.now() - cacheEntry.created > cacheRefreshThreshold) {
+                    if (Date.now() - cacheEntry.created > 300_000) {
                         stale.add(key);
                     }
                     if (cacheEntry.value !== null) {
@@ -865,10 +885,11 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                     const streams = Array.from(pendingStale);
                     pendingStale.clear();
                     await fillCache.call(this, options, streams);
-                }), 1000);
+                }), 2500);
             }
             return streamsObj;
         }
+
         Klass.prototype.fetch = interceptModelFetch(Klass.prototype.fetch, getStreams);
     }, {multiple: true});
 
@@ -876,13 +897,15 @@ self.saucePreloaderInit = function saucePreloaderInit() {
     let _segmentEffortCache;
     sauce.propDefined('Strava.Models.SegmentEffortDetail', Klass => {
         if (!_segmentEffortCache) {
-            _segmentEffortCache = new sauce.cache.TTLCache('segment-effort', 1 * 86400 * 1000);
+            _segmentEffortCache = new sauce.cache.TTLCache('segment-effort', 7 * 86400_000);
         }
+
         async function fillCache(options, key) {
             const data = await fetchLikeXHR(options.url);
             await _segmentEffortCache.set(key, data);
             return data;
         }
+
         async function getSegmentEffort(options) {
             const key = options.url.match(/segment_efforts\/([0-9]+)/)[1];
             if (isNaN(Number(key))) {
@@ -890,13 +913,14 @@ self.saucePreloaderInit = function saucePreloaderInit() {
             }
             const cachedEntry = await _segmentEffortCache.getEntry(key);
             if (cachedEntry) {
-                if (Date.now() - cachedEntry.created > cacheRefreshThreshold) {
+                if (Date.now() - cachedEntry.created > 120_000) {
                     setTimeout(() => maybeRequestIdleCallback(() => fillCache(options, key)), 1000);
                 }
                 return cachedEntry.value;
             }
             return await fillCache(options, key);
         }
+
         Klass.prototype.fetch = interceptModelFetch(Klass.prototype.fetch, getSegmentEffort);
     });
 
@@ -904,7 +928,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
     let _segmentLeaderboardCache;
     sauce.propDefined('Strava.Models.SegmentLeaderboard', Klass => {
         if (!_segmentLeaderboardCache) {
-            _segmentLeaderboardCache = new sauce.cache.TTLCache('segment-leaderboard', 1 * 86400 * 1000);
+            _segmentLeaderboardCache = new sauce.cache.TTLCache('segment-leaderboard', 7 * 86400_000);
         }
 
         async function fillCache(options, key) {
@@ -968,7 +992,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
             let data;
             const cachedEntry = await _segmentLeaderboardCache.getEntry(key);
             if (cachedEntry) {
-                if (Date.now() - cachedEntry.created > cacheRefreshThreshold) {
+                if (Date.now() - cachedEntry.created > 120_000) {
                     setTimeout(() => maybeRequestIdleCallback(() => fillCache(options, key)), 1000);
                 }
                 data = cachedEntry.value;
