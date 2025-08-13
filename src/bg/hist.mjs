@@ -1702,9 +1702,6 @@ class SyncJob extends EventTarget {
                 empty = 0;
                 for (const x of data) {
                     if (!known.has(x.id) || x.hash !== known.get(x.id)) {
-                        if (batch.find(xx => xx.id === x.id)) {
-                            debugger;
-                        }
                         batch.push(x);
                     }
                 }
@@ -2026,15 +2023,6 @@ class SyncJob extends EventTarget {
             if (rawProps) {
                 const data = await this.parseRawReactProps(rawProps[1]);
                 feedEntries = data.appContext.preFetchedEntries;
-            } else {
-                debugger;
-                // Legacy as of 03-2023, remove in future release.
-                const legacyRawProps = raw.match(
-                    /data-react-class=\\['"]FeedRouter\\['"] data-react-props=\\['"](.+?)\\['"]/);
-                if (legacyRawProps) {
-                    const data = await this.parseRawReactProps(legacyRawProps[1]);
-                    feedEntries = data.preFetchedEntries;
-                }
             }
         } catch(e) {
             this.logError('Parse activity feed props error:', e);

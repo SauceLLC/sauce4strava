@@ -59,7 +59,6 @@ async function decode(raw) {
     const dataBuf = sauce.data.fromBase64(b64Data);
     const hashBuf = await computeHash(dataBuf);
     if (b64Hash !== sauce.data.toBase64(hashBuf)) {
-        debugger;
         throw new Error("Hash Mismatch");
     }
     const data = await decompress(dataBuf);
