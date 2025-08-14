@@ -1043,7 +1043,7 @@ async function schedSyncChangesetExport(athleteId) {
         await updateAthlete(athleteId, {syncSettingsTS: Date.now()});
         await exportSyncChangeset(athleteId);
         const f = await meta.get(`device-meta/${sauce.deviceId}`);
-        if (!f || Date.now() - f.updated > 86400_000 * 7) {
+        if (!f || Date.now() - f.updated > 7 * 86400_000) {
             await updateDeviceMetaData();
         }
     }, 5000));
