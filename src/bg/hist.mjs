@@ -710,8 +710,8 @@ function diffHistories(to, from) {
 }
 
 
-function toLocaleDateString(ts) {
-    return new Date(ts).toLocaleDateString();
+function toUTCLocaleDateString(ts) {
+    return new Date(ts).toLocaleDateString(undefined, {timeZone: 'UTC'});
 }
 
 
@@ -736,7 +736,7 @@ export async function applySyncChangeset(athleteId, changeset, {replace, dryrun}
                     `${x.from.value}w ⇾ ${x.entry.value}w` :
                     `${x.entry.value}w`;
                 const type = x.entry.type ? `(${x.entry.type}) ` : '';
-                logs.push(`FTP ${x.type} [${toLocaleDateString(x.entry.ts)}]: ${type}${value}`);
+                logs.push(`FTP ${x.type} [${toUTCLocaleDateString(x.entry.ts)}]: ${type}${value}`);
             }
             if (!dryrun) {
                 await athlete.save({ftpHistory: data.ftpHistory});
@@ -752,7 +752,7 @@ export async function applySyncChangeset(athleteId, changeset, {replace, dryrun}
                     `${x.from.value?.toFixed(2)}kg ⇾ ${x.entry.value?.toFixed(2)}kg` :
                     `${x.entry.value.toFixed(2)}kg`;
                 const type = x.entry.type ? `(${x.entry.type}) ` : '';
-                logs.push(`Weight ${x.type} [${toLocaleDateString(x.entry.ts)}]: ${type}${value}`);
+                logs.push(`Weight ${x.type} [${toUTCLocaleDateString(x.entry.ts)}]: ${type}${value}`);
             }
             if (!dryrun) {
                 await athlete.save({weightHistory: data.weightHistory});
@@ -836,7 +836,7 @@ export async function getAvailableSyncChangesets(athleteId) {
     }
     const receipts = new Map(athlete.syncSettingsReceipts || []);
     const dir = `hist-md-${athleteId}/`;
-    //await meta.load({forceFetch: true}); // XXX for testing and demo...
+    await meta.load({forceFetch: true}); // XXX for testing and demo...
     const changesets = (await meta.getAll(dir)).filter(x => {
         return x.data?.version === 1 && (
             !receipts.has(x.data.deviceId) ||
