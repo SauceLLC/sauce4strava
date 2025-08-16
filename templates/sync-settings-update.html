@@ -1,8 +1,16 @@
 <h5>{{{intro}}}</h5>
 
 <div class="source-of-change">
-    {{=icon laptop-house-duotone=}}
+    {{=icon file-export-duotone=}}
     <div class="rows">
+        <div>
+            <% if (obj.deviceInfo?.name) { %>
+                Device: {{deviceInfo.name}}
+            <% } else { %>
+                Device ID: {{deviceId.split('-')[0]}}
+            <% } %>
+            <a class="device-name-edit">{{=icon edit-duotone=}}</a>
+        </div>
         <% if (obj.deviceInfo) { %>
             <div>
                 {{deviceInfo.browser}} {{deviceInfo.browserVersion}} - {{deviceInfo.platform}}

@@ -483,13 +483,22 @@ html .ui-dialog {
         display: flex;
         align-items: center;
 
-        [data-icon] {
+        > [data-icon] {
             height: 2.2em;
             margin: 0 0.8em;
         }
 
         .rows {
             flex: 1;
+
+            [data-icon] {
+                height: 0.9em;
+                margin: 0 0.3em;
+            }
+
+            a {
+                cursor: pointer;
+            }
 
             > * {
                 padding: 0.4em 0.6em;

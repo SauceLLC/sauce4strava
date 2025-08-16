@@ -336,6 +336,7 @@
     "sync_settings_proposed_changeset": {"message": "Proposed changeset:"},
     "sync_settings_apply": {"message": "Apply"},
     "sync_settings_skip": {"message": "Skip"},
+    "sync_settings_edit_device_name": {"message": "Edit Device Name"},
 
     "mutable_data_add_entry_tooltip": {"message": "Add a new entry"},
     "mutable_data_delete_entry_tooltip": {"message": "Delete this entry"},

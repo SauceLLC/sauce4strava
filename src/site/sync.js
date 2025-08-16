@@ -298,28 +298,53 @@ sauce.ns('sync', ns => {
             await sauce.hist.addSyncChangesetReceipt(athleteId, changeset);
             return;
         }
-        const deviceMeta = await sauce.hist.getDeviceMetaData(changeset.data.deviceId);
+        const deviceId = changeset.data.deviceId;
+        let deviceMeta = await sauce.hist.getDeviceMetaData(deviceId);
         const tpl = await sauce.template.getTemplate('sync-settings-update.html', 'sync_settings');
-        const $dialog = sauce.ui.dialog({
-            title: await L.getMessage('sync_settings_title'),
-            icon: await sauce.ui.getImage('fa/sync-alt-duotone.svg'),
-            body: await tpl({changeset, dryrun, deviceInfo: deviceMeta?.data}),
-            width: 600,
-            extraButtons: [{
-                text: await L.getMessage('sync_settings_apply'),
-                class: 'btn btn-primary',
-                click: async () => {
-                    $dialog.dialog('close');
-                    await sauce.hist.applySyncChangeset(athleteId, changeset);
-                },
-            }, {
-                text: await L.getMessage('sync_settings_skip'),
-                click: async () => {
-                    $dialog.dialog('close');
-                    await sauce.hist.addSyncChangesetReceipt(athleteId, changeset);
-                },
-            }]
-        });
+        const render = async () => {
+            const $dialog = sauce.ui.dialog({
+                title: await L.getMessage('sync_settings_title'),
+                icon: await sauce.ui.getImage('fa/sync-alt-duotone.svg'),
+                body: await tpl({changeset, dryrun, deviceId, deviceInfo: deviceMeta?.data}),
+                width: 600,
+                extraButtons: [{
+                    text: await L.getMessage('sync_settings_apply'),
+                    class: 'btn btn-primary',
+                    click: async () => {
+                        $dialog.dialog('close');
+                        await sauce.hist.applySyncChangeset(athleteId, changeset);
+                    },
+                }, {
+                    text: await L.getMessage('sync_settings_skip'),
+                    click: async () => {
+                        $dialog.dialog('close');
+                        await sauce.hist.addSyncChangesetReceipt(athleteId, changeset);
+                    },
+                }]
+            });
+            $dialog.on('click', '.device-name-edit', async () => {
+                const $editNameModal = sauce.ui.modal({
+                    title: await L.getMessage('sync_settings_edit_device_name'),
+                    width: '20em',
+                    body: `<input type="text" placeholder="name..." name="device-name"
+                                  value="${deviceMeta?.data?.name || ''}"/>`,
+                    extraButtons: [{
+                        text: await L.getMessage('save'),
+                        class: 'btn btn-primary',
+                        click: async ev => {
+                            ev.currentTarget.classList.add('disabled');
+                            const name = $editNameModal.find('input[name="device-name"]').val() || null;
+                            await sauce.hist.updateDeviceMetaData(deviceId, {name});
+                            deviceMeta = await sauce.hist.getDeviceMetaData(deviceId);
+                            $editNameModal.dialog('close');
+                            $dialog.dialog('close');
+                            await render();
+                        },
+                    }]
+                });
+            });
+        };
+        await render();
     }
 
 

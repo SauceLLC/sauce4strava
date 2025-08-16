@@ -1044,7 +1044,7 @@ async function schedSyncChangesetExport(athleteId) {
         await exportSyncChangeset(athleteId);
         const f = await meta.get(`device-meta/${sauce.deviceId}`);
         if (!f || Date.now() - f.updated > 7 * 86400_000) {
-            await updateDeviceMetaData();
+            return await updateDeviceMetaData(sauce.deviceId, sauce.deviceInfo());
         }
     }, 5000));
 }
@@ -2848,27 +2848,13 @@ class SyncController extends sauce.proxy.Eventing {
 sauce.proxy.export(SyncController, {namespace});
 
 
-export async function updateDeviceMetaData() {
-    let location;
-    try {
-        const iploc = await (await fetch('https://ipapi.co/json')).json();
-        location = {
-            region: iploc.region,
-            country: iploc.country,
-        };
-    } catch(e) {
-        console.warn("Failed to get geoip info", e);
-    }
-    const data = {
-        location,
-        ...sauce.deviceInfo(),
-    };
-    const filename = `device-meta/${sauce.deviceId}`;
+export async function updateDeviceMetaData(deviceId, updates) {
+    const filename = `device-meta/${deviceId}`;
     const file = await meta.get(filename);
     if (!file) {
-        await meta.create(filename, data);
+        await meta.create(filename, updates);
     } else {
-        await meta.save(file, data);
+        await meta.save(file, Object.assign(file.data || {}, updates));
     }
 }
 sauce.proxy.export(updateDeviceMetaData, {namespace});
