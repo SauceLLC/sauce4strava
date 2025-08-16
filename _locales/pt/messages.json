@@ -1108,6 +1108,9 @@
     "sync_settings_skip": {
         "message": "Pular"
     },
+    "sync_settings_edit_device_name": {
+        "message": "Editar nome do dispositivo"
+    },
     "mutable_data_add_entry_tooltip": {
         "message": "Adicionar uma nova entrada"
     },

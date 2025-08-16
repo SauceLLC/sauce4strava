@@ -1020,6 +1020,9 @@
     "sync_settings_skip": {
         "message": "Saltare"
     },
+    "sync_settings_edit_device_name": {
+        "message": "Modifica nome dispositivo"
+    },
     "mutable_data_add_entry_tooltip": {
         "message": "Aggiungi una nuova voce"
     },

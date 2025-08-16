@@ -1044,6 +1044,9 @@
     "sync_settings_skip": {
         "message": "Saltar"
     },
+    "sync_settings_edit_device_name": {
+        "message": "Editar el nombre del dispositivo"
+    },
     "mutable_data_add_entry_tooltip": {
         "message": "Agregar una nueva entrada"
     },

@@ -1278,6 +1278,9 @@
     "sync_settings_skip": {
         "message": "跳过"
     },
+    "sync_settings_edit_device_name": {
+        "message": "编辑设备名称"
+    },
     "mutable_data_add_entry_tooltip": {
         "message": "添加一个新条目",
         "description": "IMMUTABLE"
