@@ -645,21 +645,42 @@ export async function exportSyncChangeset(athleteId) {
     }
     const filename = `hist-md-${athleteId}/${sauce.deviceId}`;
     let file = await meta.get(filename);
-    const priorHash = file && file.hash;
     if (!file) {
         file = await meta.create(filename, data);
     } else {
+        const priorHash = file.hash;
+        const priorData = file.data;
         await meta.set(file, data);
         if (priorHash === file.hash) {
             console.debug("Skipping no-op sync changeset");
+            return;
         } else {
             await meta.save(file);
+            let a, b;
+            a = JSON.stringify(priorData.settings);
+            b = JSON.stringify(data.settings);
+            if (a !== b) {
+                syncLogsStore.logWarn(athleteId, 'DEBUG: athlete settings changed', a, b);
+            }
+            a = JSON.stringify(priorData.activityOverrides);
+            b = JSON.stringify(data.activityOverrides);
+            if (a !== b) {
+                syncLogsStore.logWarn(athleteId, 'DEBUG: activity overrides changed', a, b);
+            }
+            a = JSON.stringify(priorData.ftpHistory);
+            b = JSON.stringify(data.ftpHistory);
+            if (a !== b) {
+                syncLogsStore.logWarn(athleteId, 'DEBUG: FTP-hist changed', a, b);
+            }
+            a = JSON.stringify(priorData.weightHistory);
+            b = JSON.stringify(data.weightHistory);
+            if (a !== b) {
+                syncLogsStore.logWarn(athleteId, 'DEBUG: Weight-hist changed', a, b);
+            }
         }
     }
     await addSyncChangesetReceipt(athleteId, file);
-    if (priorHash !== file.hash) {
-        syncLogsStore.logInfo(athleteId, 'Exported settings changeset:', filename);
-    }
+    syncLogsStore.logInfo(athleteId, 'Exported sync changeset:', filename);
 }
 sauce.proxy.export(exportSyncChangeset, {namespace});
 
@@ -786,12 +807,12 @@ export async function applySyncChangeset(athleteId, changeset, {replace, dryrun}
             const suggested = (data.activityOverrides[x.pk] ?? {})[key];
             const existing = x.get(key);
             if (suggested !== existing) {
-                if (!replace && suggested === undefined) {
-                    console.debug("Ignore unsetting of activity override:", key);
+                if (suggested == null && existing == null) {
                     continue;
                 }
-                if (suggested == null && existing == null) {
-                    continue;  // Only one side is null but the operation is still a no-op
+                if (!replace && suggested === undefined) {
+                    console.warn("Ignore unsetting of activity override:", key, x.pk);
+                    continue;
                 }
                 const localeDate = (new Date(x.get('ts'))).toLocaleDateString();
                 let name = x.get('name');
@@ -2423,7 +2444,8 @@ class SyncManager extends EventTarget {
         getEnabledAthletes().then(athletes => {
             for (const x of athletes) {
                 syncLogsStore.write('debug', x.id, msg);
-                if (x.syncSettings && Date.now() - (x.syncSettingsTS || 0) > 86400_000) {
+                //if (x.syncSettings && Date.now() - (x.syncSettingsTS || 0) > 86400_000) {
+                if (x.syncSettings && Date.now() - (x.syncSettingsTS || 0) > 1_000) {
                     schedSyncChangesetExport(x.id);
                 }
             }
