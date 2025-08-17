@@ -684,21 +684,29 @@ export async function exportSyncChangeset(athleteId) {
 sauce.proxy.export(exportSyncChangeset, {namespace});
 
 
-async function addSyncChangesetReceipt(athleteId, changeset) {
+async function addSyncChangesetReceipt(...args) {
     await syncManager._athleteLock.acquire();
     try {
-        const athlete = await athletesStore.get(athleteId, {model: true});
-        if (!athlete) {
-            throw new Error('Athlete not found: ' + athleteId);
-        }
-        const receipts = new Map(athlete.get('syncSettingsReceipts') || []);
-        receipts.set(changeset.data.deviceId, {updated: changeset.updated, hash: changeset.hash});
-        await athlete.save({syncSettingsReceipts: Array.from(receipts.entries())});
+        return await _addSyncChangesetReceipt(...args);
     } finally {
         syncManager._athleteLock.release();
     }
 }
 sauce.proxy.export(addSyncChangesetReceipt, {namespace});
+
+
+async function _addSyncChangesetReceipt(athleteId, changeset) {
+    const athlete = await athletesStore.get(athleteId, {model: true});
+    if (!athlete) {
+        throw new Error('Athlete not found: ' + athleteId);
+    }
+    const receipts = new Map(athlete.get('syncSettingsReceipts') || []);
+    receipts.set(changeset.data.deviceId, {
+        updated: changeset.updated,
+        hash: changeset.hash,
+    });
+    await athlete.save({syncSettingsReceipts: Array.from(receipts.entries())});
+}
 
 
 function diffHistories(to, from) {
@@ -735,8 +743,18 @@ function toUTCLocaleDateString(ts) {
 }
 
 
-export async function applySyncChangeset(athleteId, changeset, {replace, dryrun}={}) {
-    // XXX Should probably take a lock for this whole thing...
+export async function applySyncChangeset(...args) {
+    await syncManager._athleteLock.acquire();
+    try {
+        return await _applySyncChangeset(...args);
+    } finally {
+        syncManager._athleteLock.release();
+    }
+}
+sauce.proxy.export(applySyncChangeset, {namespace});
+
+
+async function _applySyncChangeset(athleteId, changeset, {replace, dryrun}={}) {
     const data = changeset.data;
     if (!data || data.version !== 1) {
         throw new TypeError("Unsupported changeset version");
@@ -746,11 +764,12 @@ export async function applySyncChangeset(athleteId, changeset, {replace, dryrun}
         throw new Error("Athlete not found");
     }
     const activities = await actsStore.getAllForAthlete(athleteId, {models: true});
-    let edited = false;
+    let changed = false;
     const logs = [];
     if (data.ftpHistory && data.ftpHistory.length) {
         const diffs = diffHistories(data.ftpHistory, athlete.get('ftpHistory') || []);
         if (diffs.length) {
+            changed = true;
             for (const x of diffs) {
                 const value = x.type === 'changed' ?
                     `${x.from.value}w ⇾ ${x.entry.value}w` :
@@ -760,13 +779,13 @@ export async function applySyncChangeset(athleteId, changeset, {replace, dryrun}
             }
             if (!dryrun) {
                 await athlete.save({ftpHistory: data.ftpHistory});
-                edited = true;
             }
         }
     }
     if (data.weightHistory && data.weightHistory.length) {
         const diffs = diffHistories(data.weightHistory, athlete.get('weightHistory') || []);
         if (diffs.length) {
+            changed = true;
             for (const x of diffs) {
                 const value = x.type === 'changed' ?
                     `${x.from.value?.toFixed(2)}kg ⇾ ${x.entry.value?.toFixed(2)}kg` :
@@ -776,7 +795,6 @@ export async function applySyncChangeset(athleteId, changeset, {replace, dryrun}
             }
             if (!dryrun) {
                 await athlete.save({weightHistory: data.weightHistory});
-                edited = true;
             }
         }
     }
@@ -788,6 +806,7 @@ export async function applySyncChangeset(athleteId, changeset, {replace, dryrun}
                     console.debug("Ignore unsetting of athlete setting:", k);
                     continue;
                 }
+                changed = true;
                 logs.push(`Athlete setting: (${k}) ${athlete.get(k) ?? '<unset>'} ⇾ ${v ?? '<unset>'}`);
                 if (!dryrun) {
                     athlete.set(k, v);
@@ -797,13 +816,15 @@ export async function applySyncChangeset(athleteId, changeset, {replace, dryrun}
         }
         if (settingsEdited) {
             await athlete.save();
-            edited = true;
         }
     }
     const toSave = new Set();
+    const actOverrides = new Map(Object.entries(data.activityOverrides));
     for (const x of activities) {
+        const override = actOverrides.get(x.pk.toString());
+        actOverrides.delete(x.pk.toString());
         for (const key of ['tssOverride', 'peaksExclude']) {
-            const suggested = (data.activityOverrides[x.pk] ?? {})[key];
+            const suggested = (override ?? {})[key];
             const existing = x.get(key);
             if (suggested !== existing) {
                 if (suggested == null && existing == null) {
@@ -813,6 +834,7 @@ export async function applySyncChangeset(athleteId, changeset, {replace, dryrun}
                     console.warn("Ignore unsetting of activity override:", key, x.pk);
                     continue;
                 }
+                changed = true;
                 const localeDate = (new Date(x.get('ts'))).toLocaleDateString();
                 let name = x.get('name');
                 if (name.length > 12) {
@@ -827,26 +849,34 @@ export async function applySyncChangeset(athleteId, changeset, {replace, dryrun}
             }
         }
     }
+    if (actOverrides.size) {
+        logs.push(`${actOverrides.size} updates for activities not yet found`);
+        console.warn('Unmatched activity overrides:', Array.from(actOverrides.keys).join(', '));
+    }
     if (!dryrun) {
-        if (toSave.size) {
-            await Promise.all(Array.from(toSave).map(x => x.save()));
-            console.info(`Updated: ${toSave.size} models`);
-            edited = true;
-        } else {
-            console.info("No differences found");
-        }
-        await addSyncChangesetReceipt(athleteId, changeset);
-        if (edited) {
-            await invalidateAthleteSyncState(athleteId, 'local');
+        await _addSyncChangesetReceipt(athleteId, changeset);
+        if (actOverrides.size) {
+            const overrides = athlete.get('pendingActivityOverrides') || [];
+            for (const x of actOverrides) {
+                overrides.push(x);
+            }
+            await athlete.save({pendingActivityOverrides: overrides});
         }
         for (const x of logs) {
             syncLogsStore.logInfo(athleteId, x);
         }
+        if (toSave.size) {
+            await Promise.all(Array.from(toSave).map(x => x.save()));
+            await invalidateAthleteSyncState(athleteId, 'local');
+        }
         schedSyncChangesetExport(athleteId);
     }
-    return logs;
+    return {
+        changed,
+        unmatched: !!actOverrides.size,
+        logs,
+    };
 }
-sauce.proxy.export(applySyncChangeset, {namespace});
 
 
 export async function getAvailableSyncChangesets(athleteId) {
@@ -857,13 +887,22 @@ export async function getAvailableSyncChangesets(athleteId) {
     const receipts = new Map(athlete.syncSettingsReceipts || []);
     const dir = `hist-md-${athleteId}/`;
     await meta.load({forceFetch: true}); // XXX for testing and demo...
-    const changesets = (await meta.getAll(dir)).filter(x =>
-        x.data?.version === 1 &&
-        x.data?.deviceId !== sauce.deviceId && (
-            !receipts.has(x.data.deviceId) ||
-            receipts.get(x.data.deviceId).hash !== x.hash
-        ));
-    changesets.sort((a, b) => b.updated - a.updated);  // newest -> oldest
+    const changesets = [];
+    for (const changeset of await meta.getAll(dir)) {
+        if (changeset.data?.version !== 1 ||
+            changeset.data.deviceId === sauce.deviceId ||
+            !receipts.has(changeset.data.deviceId)) {
+            continue;
+        }
+        const r = receipts.get(changeset.data.deviceId);
+        if (r.hash !== changeset.hash) {
+            const dryrun = await applySyncChangeset(athleteId, changeset, {dryrun: true});
+            if (dryrun.changed || dryrun.pending) {
+                changesets.push({changeset, dryrun});
+            }
+        }
+    }
+    changesets.sort((a, b) => b.changeset.updated - a.changeset.updated);  // newest -> oldest
     return changesets;
 }
 sauce.proxy.export(getAvailableSyncChangesets, {namespace});

@@ -82,17 +82,17 @@ function getPeaksValueFormatter(streamType) {
 export async function editActivityDialogXXX(activity, pageView) {
     // XXX replace this trash with a view and module
     console.debug("Activity:", activity);
-    const tss = sauce.model.getActivityTSS(activity);
+    const tssDefault = sauce.model.getActivityTSS({...activity, tssOverride: null});
     const $modal = await sauce.ui.modal({
-        title: 'Edit Activity', // XXX localize
+        title: await L.getMessage('performance_edit_activity'),
         width: '28em',
         icon: await sauce.ui.getImage('fa/edit-duotone.svg'),
         body: `
             <b>${activity.name}</b><hr/>
             <label>TSS® Override:
-                <input name="tss-override" type="number"
+                <input name="tss-override" type="number" min="0"
                        value="${activity.tssOverride != null ? activity.tssOverride : ''}"
-                       placeholder="${tss != null ? Math.round(tss) : ''}"/>
+                       placeholder="${tssDefault != null ? Math.round(tssDefault) : ''}"/>
             </label>
             <hr/>
             <label>Exclude this activity from peak performances:
@@ -101,27 +101,38 @@ export async function editActivityDialogXXX(activity, pageView) {
             </label>
         `,
         extraButtons: [{
-            text: 'Save', // XXX localize
+            text: await L.getMessage('save'),
             click: async ev => {
-                const tss = Number($modal.find('input[name="tss-override"]').val() || NaN);
-                const updates = {
-                    tssOverride: isNaN(tss) ? null : tss,
-                    peaksExclude: $modal.find('input[name="peaks-exclude"]').is(':checked'),
-                };
-                ev.currentTarget.disabled = true;
-                ev.currentTarget.classList.add('sauce-loading');
-                try {
-                    await sauce.hist.updateActivity(activity.id, updates);
-                    await sauce.hist.invalidateActivitySyncState(activity.id, 'local', null);
-                    await sauce.hist.schedSyncChangesetExport(activity.athlete);
-                } finally {
-                    ev.currentTarget.classList.remove('sauce-loading');
-                    ev.currentTarget.disabled = false;
+                const updates = {};
+                const strTss = $modal[0].querySelector('input[name="tss-override"]').value;
+                const tssOverride = strTss ? Number(strTss) : null;
+                if (Number.isNaN(tssOverride) || (typeof tssOverride === 'number' && tssOverride < 0)) {
+                    alert(`Invalid TSS Value: ${tssOverride}`);
+                    return;
+                }
+                if (tssOverride !== (activity.tssOverride ?? null)) {
+                    updates.tssOverride = tssOverride;
+                }
+                const peaksExclude = $modal[0].querySelector('input[name="peaks-exclude"]').checked;
+                if (peaksExclude !== !!activity.peaksExclude) {
+                    updates.peaksExclude = peaksExclude;
+                }
+                if (Object.keys(updates).length) {
+                    ev.currentTarget.disabled = true;
+                    ev.currentTarget.classList.add('sauce-loading');
+                    try {
+                        await sauce.hist.updateActivity(activity.id, updates);
+                        await sauce.hist.invalidateActivitySyncState(activity.id, 'local', null);
+                        await sauce.hist.schedSyncChangesetExport(activity.athlete);
+                    } finally {
+                        ev.currentTarget.classList.remove('sauce-loading');
+                        ev.currentTarget.disabled = false;
+                    }
                 }
                 $modal.dialog('destroy');
             }
         }, {
-            text: 'Reimport', // XXX localize
+            text: await L.getMessage('performance_edit_activity_reimport'),
             click: async ev => {
                 ev.currentTarget.disabled = true;
                 ev.currentTarget.classList.add('sauce-loading');
@@ -134,7 +145,7 @@ export async function editActivityDialogXXX(activity, pageView) {
                 $modal.dialog('destroy');
             }
         }, {
-            text: 'Delete', // XXX localize
+            text: await L.getMessage('delete'),
             class: 'btn sauce-negative',
             click: async ev => {
                 // XXX See: https://github.com/SauceLLC/sauce4strava/issues/55
@@ -665,7 +676,7 @@ export class BulkActivityEditDialog extends PerfView {
             labelKey: '/tss',
             format: x => {
                 const tss = sauce.model.getActivityTSS(x);
-                return `<input type="number" style="width: 6ch" name="tss-override"
+                return `<input type="number" style="width: 6ch" min="0" name="tss-override"
                                value="${x.tssOverride || ''}"
                                placeholder="${tss != null ? Math.round(tss) : ''}"/>`;
             },
@@ -700,9 +711,13 @@ export class BulkActivityEditDialog extends PerfView {
                     for (const tr of this.$('table tbody tr[data-id]')) {
                         const tssEl = tr.querySelector('input[name="tss-override"]');
                         if (tssEl.getAttribute('value') !== tssEl.value) {
-                            updates[tr.dataset.id] = {
-                                tssOverride: Number(tssEl.value) || null
-                            };
+                            const tssOverride = tssEl.value ? Number(tssEl.value) : null;
+                            if (Number.isNaN(tssOverride) ||
+                                (typeof tssOverride === 'number' && tssOverride < 0)) {
+                                alert(`Invalid TSS Value: ${tssOverride}`);
+                                return;
+                            }
+                            updates[tr.dataset.id] = {tssOverride};
                         }
                         const peaksEl = tr.querySelector('input[name="peaks-exclude"]');
                         if (peaksEl.hasAttribute('checked') !== peaksEl.checked) {

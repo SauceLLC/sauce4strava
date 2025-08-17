@@ -5,7 +5,7 @@
     <div class="rows">
         <div>
             <% if (obj.deviceInfo?.name) { %>
-                Device: {{deviceInfo.name}}
+                Device Name: {{deviceInfo.name}}
             <% } else { %>
                 Device ID: {{deviceId.split('-')[0]}}
             <% } %>
@@ -27,7 +27,7 @@
 
 <b>{{{proposed_changeset}}}</b>
 <ul class="changes">
-    <% for (const x of dryrun) { %>
+    <% for (const x of dryrun.logs) { %>
         <li><code>{{x}}</code></li>
     <% } %>
 </ul>

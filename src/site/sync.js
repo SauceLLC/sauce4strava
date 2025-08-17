@@ -291,17 +291,9 @@ sauce.ns('sync', ns => {
         if (!avail || !avail.length) {
             return;
         }
-        const changeset = avail[0];
+        const {changeset, dryrun} = avail[0];
         const deviceId = changeset.data.deviceId;
         let deviceMeta = await sauce.hist.getDeviceMetaData(deviceId);
-        const dryrun = await sauce.hist.applySyncChangeset(athleteId, changeset, {dryrun: true});
-        if (!dryrun.length) {
-            console.info("Ignoring empty sync settings changeset from:", deviceMeta?.data?.name || deviceId);
-            console.debug({changeset, deviceMeta});
-            debugger;
-            //await sauce.hist.addSyncChangesetReceipt(athleteId, changeset);
-            return;
-        }
         const tpl = await sauce.template.getTemplate('sync-settings-update.html', 'sync_settings');
         const render = async () => {
             const $dialog = sauce.ui.dialog({
