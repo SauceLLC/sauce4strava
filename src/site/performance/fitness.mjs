@@ -240,10 +240,10 @@ export class TrainingChartView extends charts.ActivityTimeRangeChartView {
                 segment: {
                     borderColor: ifFuture('#000a'),
                     borderDash: ifFuture([3, 3]),
-                    overBackgroundColorMax: ifFuture('#afba'),
-                    overBackgroundColorMin: ifFuture('#df82'),
-                    underBackgroundColorMin: ifFuture('#f922'),
-                    underBackgroundColorMax: ifFuture('#d22b'),
+                    overBackgroundColorMax: ifFuture('#aaffbbaa'),
+                    overBackgroundColorMin: ifFuture('#ddf08822'),
+                    underBackgroundColorMin: ifFuture('#ff992222'),
+                    underBackgroundColorMax: ifFuture('#dd2222bb'),
                 },
                 data: buckets.map((b, i) => ({
                     b,
