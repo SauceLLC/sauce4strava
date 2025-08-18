@@ -1033,6 +1033,12 @@
     "sync_settings_skip": {
         "message": "Überspringen"
     },
+    "sync_settings_exclude": {
+        "message": "Ausschließen"
+    },
+    "sync_settings_maybe_later": {
+        "message": "Vielleicht später"
+    },
     "sync_settings_edit_device_name": {
         "message": "Gerätenamen bearbeiten"
     },
@@ -1235,8 +1241,14 @@
         "message": "Höhenmeter",
         "description": "IMMUTABLE"
     },
+    "performance_edit_activity": {
+        "message": "Aktivität bearbeiten"
+    },
     "performance_edit_activity_tooltip": {
         "message": "Aktivität bearbeiten"
+    },
+    "performance_edit_activity_reimport": {
+        "message": "Wiedereinfuhr"
     },
     "performance_edit_activities": {
         "message": "Aktivitäten bearbeiten"

@@ -1027,6 +1027,12 @@
     "sync_settings_skip": {
         "message": "Sauter"
     },
+    "sync_settings_exclude": {
+        "message": "Exclure"
+    },
+    "sync_settings_maybe_later": {
+        "message": "Peut-être plus tard"
+    },
     "sync_settings_edit_device_name": {
         "message": "Modifier le nom de l'appareil"
     },
@@ -1231,8 +1237,14 @@
     "performance_elevation_gain": {
         "message": "Gain d'altitude"
     },
+    "performance_edit_activity": {
+        "message": "Modifier l'activité"
+    },
     "performance_edit_activity_tooltip": {
         "message": "Modifier l'activité"
+    },
+    "performance_edit_activity_reimport": {
+        "message": "Réimportation"
     },
     "performance_edit_activities": {
         "message": "Modifier les activités"

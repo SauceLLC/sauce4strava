@@ -1020,6 +1020,12 @@
     "sync_settings_skip": {
         "message": "Saltare"
     },
+    "sync_settings_exclude": {
+        "message": "Escludere"
+    },
+    "sync_settings_maybe_later": {
+        "message": "Forse più tardi"
+    },
     "sync_settings_edit_device_name": {
         "message": "Modifica nome dispositivo"
     },
@@ -1223,8 +1229,14 @@
     "performance_elevation_gain": {
         "message": "Dislivello"
     },
+    "performance_edit_activity": {
+        "message": "Modifica attività"
+    },
     "performance_edit_activity_tooltip": {
         "message": "Modifica attività"
+    },
+    "performance_edit_activity_reimport": {
+        "message": "Reimportare"
     },
     "performance_edit_activities": {
         "message": "Modifica attività"
