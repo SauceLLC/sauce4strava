@@ -292,16 +292,14 @@ sauce.ns('sync', ns => {
             return;
         }
         const tpl = await sauce.template.getTemplate('sync-settings-update.html', 'sync_settings');
-        const render = async (changeset, dryrun, extraTitle) => {
+        const askUser = async (changeset, dryrun) => {
             const deviceId = changeset.data.deviceId;
             const deviceMeta = (await sauce.hist.getDeviceMetaData(deviceId)) || {};
-            let title = await L.getMessage('sync_settings_title');
-            if (extraTitle) {
-                title += ` - ${extraTitle}`;
-            }
             const makeBody = () => tpl({changeset, dryrun, deviceId, deviceInfo: deviceMeta.data});
+            let resolveDone;
+            const donePromise = new Promise(r => resolveDone = r);
             const $dialog = sauce.ui.dialog({
-                title,
+                title: await L.getMessage('sync_settings_title'),
                 icon: await sauce.ui.getImage('fa/sync-alt-duotone.svg'),
                 body: await makeBody(),
                 width: 600,
@@ -346,12 +344,11 @@ sauce.ns('sync', ns => {
                     }]
                 });
             });
+            $dialog.on('dialogclose', () => void resolveDone());
+            await donePromise;
         };
-        for (let i = 0; i < avail.length; i++) {
-            const {changeset, dryrun} = avail[i];
-            const extraTitle = avail.length > 1 ? `Changeset ${i+1}/${avail.length}` : undefined;
-            await render(changeset, dryrun, extraTitle);
-        }
+        const {changeset, dryrun} = avail[0];
+        await askUser(changeset, dryrun);
     }
 
 
