@@ -291,25 +291,34 @@ sauce.ns('sync', ns => {
         if (!avail || !avail.length) {
             return;
         }
-        const {changeset, dryrun} = avail[0];
-        const deviceId = changeset.data.deviceId;
-        let deviceMeta = await sauce.hist.getDeviceMetaData(deviceId);
         const tpl = await sauce.template.getTemplate('sync-settings-update.html', 'sync_settings');
-        const render = async () => {
+        const render = async (changeset, dryrun, extraTitle) => {
+            const deviceId = changeset.data.deviceId;
+            const deviceMeta = (await sauce.hist.getDeviceMetaData(deviceId)) || {};
+            let title = await L.getMessage('sync_settings_title');
+            if (extraTitle) {
+                title += ` - ${extraTitle}`;
+            }
+            const makeBody = () => tpl({changeset, dryrun, deviceId, deviceInfo: deviceMeta.data});
             const $dialog = sauce.ui.dialog({
-                title: await L.getMessage('sync_settings_title'),
+                title,
                 icon: await sauce.ui.getImage('fa/sync-alt-duotone.svg'),
-                body: await tpl({changeset, dryrun, deviceId, deviceInfo: deviceMeta?.data}),
+                body: await makeBody(),
                 width: 600,
-                extraButtons: [{
+                buttons: [{
+                    text: await L.getMessage('sync_settings_maybe_later'),
+                    class: 'btn',
+                    click: () => void $dialog.dialog('close'),
+                }, {
                     text: await L.getMessage('sync_settings_apply'),
-                    class: 'btn btn-primary',
+                    class: 'btn sauce-positive',
                     click: async () => {
                         $dialog.dialog('close');
                         await sauce.hist.applySyncChangeset(athleteId, changeset);
                     },
                 }, {
-                    text: await L.getMessage('sync_settings_skip'),
+                    text: await L.getMessage('sync_settings_exclude'),
+                    class: 'btn sauce-negative',
                     click: async () => {
                         $dialog.dialog('close');
                         await sauce.hist.addSyncChangesetReceipt(athleteId, changeset);
@@ -321,7 +330,7 @@ sauce.ns('sync', ns => {
                     title: await L.getMessage('sync_settings_edit_device_name'),
                     width: '20em',
                     body: `<input type="text" placeholder="name..." name="device-name"
-                                  value="${deviceMeta?.data?.name || ''}"/>`,
+                                  value="${deviceMeta.data?.name || ''}"/>`,
                     extraButtons: [{
                         text: await L.getMessage('save'),
                         class: 'btn btn-primary',
@@ -329,16 +338,20 @@ sauce.ns('sync', ns => {
                             ev.currentTarget.classList.add('disabled');
                             const name = $editNameModal.find('input[name="device-name"]').val() || null;
                             await sauce.hist.updateDeviceMetaData(deviceId, {name});
-                            deviceMeta = await sauce.hist.getDeviceMetaData(deviceId);
+                            deviceMeta.data = deviceMeta.data ?? {};
+                            deviceMeta.data.name = name;
                             $editNameModal.dialog('close');
-                            $dialog.dialog('close');
-                            await render();
+                            $dialog.html(await makeBody());
                         },
                     }]
                 });
             });
         };
-        await render();
+        for (let i = 0; i < avail.length; i++) {
+            const {changeset, dryrun} = avail[i];
+            const extraTitle = avail.length > 1 ? `Changeset ${i+1}/${avail.length}` : undefined;
+            await render(changeset, dryrun, extraTitle);
+        }
     }
 
 
