@@ -864,22 +864,23 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, name, version) {
             const idbStore = this._getIDBStore('readwrite', options);
             const ifc = options.index ? idbStore.index(options.index) : idbStore;
             if (options.index) {
-                console.warn("DEPRECATED use of index for DB update", this, ifc, idbStore);
+                console.error("DEPRECATED use of index for DB update", this, ifc, idbStore);
             }
-            const data = await this._request(ifc.get(query));
-            const updated = {...data, ...updates};
-            const p = this._request(idbStore.put(updated));
+            const original = await this._request(ifc.get(query));
+            const data = {...original, ...updates};
+            const p = this._request(idbStore.put(data));
             idbStore.commitOwn();
             await p;
-            return updated;
+            return data;
         }
 
         async updateMany(updatesMap, options={}) {
             if (!(updatesMap instanceof Map)) {
                 throw new TypeError('updatesMap must be Map type');
             }
+            const datas = new Array(updatesMap.size);
             if (!updatesMap.size) {
-                return;
+                return datas;
             }
             if (!this._started) {
                 await this._start();
@@ -890,7 +891,7 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, name, version) {
                 const idbStore = this._getIDBStore('readwrite', options);
                 const ifc = options.index ? idbStore.index(options.index) : idbStore;
                 if (options.index) {
-                    console.warn("DEPRECATED use of index for DB updateMany", this, ifc, idbStore);
+                    console.error("DEPRECATED use of index for DB updateMany", this, ifc, idbStore);
                 }
                 const onAnyError = ev => reject(ev.target.error);
                 const onPutSuccess = () => {
@@ -898,11 +899,16 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, name, version) {
                         resolve();
                     }
                 };
+                let i = 0;
                 for (const [key, updates] of updatesMap.entries()) {
+                    const idx = i;
+                    i++;
                     const get = ifc.get(key);
                     get.addEventListener('error', onAnyError);
                     get.addEventListener('success', () => {
-                        const put = idbStore.put({...get.result, ...updates});
+                        const data = {...get.result, ...updates};
+                        datas[idx] = data;
+                        const put = idbStore.put(data);
                         put.addEventListener('error', onAnyError);
                         put.addEventListener('success', onPutSuccess);
                         if (!--getsRemaining) {
@@ -912,12 +918,10 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, name, version) {
                 }
             });
             await p;
+            return datas;
         }
 
         async put(data, options={}) {
-            if (options.index) {
-                throw new Error("DEPRECATED");
-            }
             if (!this._started) {
                 await this._start();
             }
@@ -928,9 +932,6 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, name, version) {
         }
 
         async putMany(datas, options={}) {
-            if (options.index) {
-                throw new Error("DEPRECATED");
-            }
             if (!datas.length) {
                 return;
             }
@@ -1084,9 +1085,6 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, name, version) {
             // Callbacks won't invoke until we release control of the event loop, so this is safe..
             req.addEventListener('error', ev => reject(req.error));
             req.addEventListener('success', ev => resolve(req.result));
-            if (options.filter) {
-                throw new TypeError('deprecated');
-            }
             let count = 0;
             const limit = options.limit || Infinity;
             while (count < limit) {
