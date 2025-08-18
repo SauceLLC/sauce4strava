@@ -851,7 +851,7 @@ async function _applySyncChangeset(athleteId, changeset, {replace, dryrun}={}) {
     }
     if (actOverrides.size) {
         logs.push(`${actOverrides.size} updates for activities not yet found`);
-        console.warn('Unmatched activity overrides:', Array.from(actOverrides.keys).join(', '));
+        console.warn('Unmatched activity overrides:', Array.from(actOverrides.keys()).join(', '));
     }
     if (!dryrun) {
         await _addSyncChangesetReceipt(athleteId, changeset);
@@ -902,7 +902,7 @@ export async function getAvailableSyncChangesets(athleteId) {
             }
         }
     }
-    changesets.sort((a, b) => b.changeset.updated - a.changeset.updated);  // newest -> oldest
+    changesets.sort((a, b) => a.changeset.updated - b.changeset.updated);
     return changesets;
 }
 sauce.proxy.export(getAvailableSyncChangesets, {namespace});
@@ -1034,14 +1034,20 @@ sauce.proxy.export(getActivitySyncManifests, {namespace});
 
 
 export async function updateActivity(id, updates) {
-    return await actsStore.update(id, updates);
+    const data = await actsStore.update(id, updates);
+    schedSyncChangesetExport(data.athlete);
+    return data;
 }
 sauce.proxy.export(updateActivity, {namespace});
 
 
 async function updateActivities(updates) {
     const updateMap = new Map(Object.entries(updates).map(([id, data]) => [Number(id), data]));
-    await actsStore.updateMany(updateMap);
+    const datas = await actsStore.updateMany(updateMap);
+    const athleteIds = new Set(datas.map(x => x.athlete));
+    for (const x of athleteIds) {
+        schedSyncChangesetExport(x);
+    }
 }
 sauce.proxy.export(updateActivities, {namespace});
 
@@ -1096,15 +1102,10 @@ async function schedSyncChangesetExport(athleteId) {
     if (!athlete || !athlete.syncSettings) {
         return;
     }
-    await updateAthlete(athleteId, {syncSettingsTS: null});
     clearTimeout(_pendingSyncChangesetExports.get(athleteId));
     _pendingSyncChangesetExports.set(athleteId, setTimeout(async () => {
         await updateAthlete(athleteId, {syncSettingsTS: Date.now()});
         await exportSyncChangeset(athleteId);
-        const f = await meta.get(`device-meta/${sauce.deviceId}`);
-        if (!f || Date.now() - f.updated > 7 * 86400_000) {
-            return await updateDeviceMetaData(sauce.deviceId, sauce.deviceInfo());
-        }
     }, 5000));
 }
 sauce.proxy.export(schedSyncChangesetExport, {namespace});
@@ -2479,12 +2480,21 @@ class SyncManager extends EventTarget {
         super();
         const msg = `Starting Sync Manager (v${sauce.version}): ${currentUser}`;
         console.info(msg);
-        getEnabledAthletes().then(athletes => {
+        getEnabledAthletes().then(async athletes => {
+            let syncEnabled;
             for (const x of athletes) {
                 syncLogsStore.write('debug', x.id, msg);
-                //if (x.syncSettings && Date.now() - (x.syncSettingsTS || 0) > 86400_000) {
-                if (x.syncSettings && Date.now() - (x.syncSettingsTS || 0) > 1_000) {
-                    schedSyncChangesetExport(x.id);
+                if (x.syncSettings) {
+                    syncEnabled = true;
+                    if (Date.now() - (x.syncSettingsTS || 0) > 3600_000) {
+                        schedSyncChangesetExport(x.id);
+                    }
+                }
+            }
+            if (syncEnabled) {
+                const dm = await meta.get(`device-meta/${sauce.deviceId}`);
+                if (!dm || Date.now() - dm.updated > 86400_000) {
+                    await updateDeviceMetaData(sauce.deviceId, sauce.deviceInfo());
                 }
             }
         });

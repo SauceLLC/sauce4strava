@@ -341,7 +341,6 @@ sauce.ns('analysis', ns => {
         async function save(tssOverride) {
             await sauce.hist.updateActivity(pageView.activityId(), {tssOverride});
             await sauce.hist.invalidateActivitySyncState(pageView.activityId(), 'local', 'activity-stats');
-            await sauce.hist.schedSyncChangesetExport(ns.athlete.id);
         }
         editableField($field, {
             validator: rawValue => {
