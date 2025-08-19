@@ -948,7 +948,7 @@ export async function getAvailableSyncChangesets(athleteId) {
             if (dryrun.changed) {
                 changesets.push({changeset, dryrun});
             } else if (!dryrun.unmatched) {
-                await addSyncChangesetReceipt(changeset);
+                await addSyncChangesetReceipt(athleteId, changeset);
             }
         }
     }
