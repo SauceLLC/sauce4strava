@@ -773,6 +773,7 @@ sauce.proxy.export(applySyncChangeset, {namespace});
 
 
 async function _applySyncChangeset(athleteId, changeset, {replace, dryrun}={}) {
+    // XXX: handle queueing unmatched activity updates for later (we might be behind)
     const data = changeset.data;
     if (!data || data.version !== 1) {
         throw new TypeError("Unsupported changeset version");
@@ -944,8 +945,10 @@ export async function getAvailableSyncChangesets(athleteId) {
         const r = receipts.get(changeset.data.deviceId);
         if (!r || r.hash !== changeset.hash) {
             const dryrun = await applySyncChangeset(athleteId, changeset, {dryrun: true});
-            if (dryrun.changed || dryrun.pending) {
+            if (dryrun.changed) {
                 changesets.push({changeset, dryrun});
+            } else if (!dryrun.unmatched) {
+                await addSyncChangesetReceipt(changeset);
             }
         }
     }
