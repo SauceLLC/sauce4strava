@@ -613,8 +613,8 @@ async function getActivitiesForAthlete(athleteId, options={}) {
 sauce.proxy.export(getActivitiesForAthlete, {namespace});
 
 
-export async function exportSyncChangeset(athleteId) {
-    const athlete = await athletesStore.get(athleteId);
+export async function exportSyncChangeset(athleteId, sourceChangeset) {
+    const athlete = await syncManager.updateAthlete(athleteId, {syncSettingsTS: Date.now()});
     const activities = await actsStore.getAllForAthlete(athleteId);
     const settings = [
         'disableRunWatts', 'estRunWatts', 'estCyclingWatts',
@@ -625,12 +625,12 @@ export async function exportSyncChangeset(athleteId) {
         athleteId,
         deviceId: sauce.deviceId,
         settings: {},
-        ftpHistory: athlete.ftpHistory,
-        weightHistory: athlete.weightHistory,
+        ftpHistory: athlete.get('ftpHistory'),
+        weightHistory: athlete.get('weightHistory'),
         activityOverrides: {},
     };
     for (const k of settings) {
-        data.settings[k] = athlete[k];
+        data.settings[k] = athlete.get(k);
     }
     for (const x of activities) {
         if (x.tssOverride !== undefined) {
@@ -655,6 +655,8 @@ export async function exportSyncChangeset(athleteId) {
             console.debug("Skipping no-op sync changeset");
             return;
         } else {
+            const source = sourceChangeset ? syncChangesetReceipt(sourceChangeset) : null;
+            await meta.update(file, undefined, {source});
             await meta.save(file);
             let a, b;
             a = JSON.stringify(priorData.settings);
@@ -684,6 +686,16 @@ export async function exportSyncChangeset(athleteId) {
 sauce.proxy.export(exportSyncChangeset, {namespace});
 
 
+async function deleteSyncChangeset(athleteId) {
+    const filename = `hist-md-${athleteId}/${sauce.deviceId}`;
+    if (await meta.get(filename)) {
+        syncLogsStore.logWarn(athleteId, 'Removing sync changeset');
+        await meta.remove(filename);
+    }
+}
+sauce.proxy.export(deleteSyncChangeset, {namespace});
+
+
 async function addSyncChangesetReceipt(...args) {
     await syncManager._athleteLock.acquire();
     try {
@@ -701,11 +713,17 @@ async function _addSyncChangesetReceipt(athleteId, changeset) {
         throw new Error('Athlete not found: ' + athleteId);
     }
     const receipts = new Map(athlete.get('syncSettingsReceipts') || []);
-    receipts.set(changeset.data.deviceId, {
-        updated: changeset.updated,
-        hash: changeset.hash,
-    });
+    receipts.set(changeset.data.deviceId, syncChangesetReceipt(changeset));
     await athlete.save({syncSettingsReceipts: Array.from(receipts.entries())});
+}
+
+
+function syncChangesetReceipt(changeset) {
+    return {
+        deviceId: changeset.data.deviceId,
+        ts: changeset.updated,
+        hash: changeset.hash,
+    };
 }
 
 
@@ -837,8 +855,8 @@ async function _applySyncChangeset(athleteId, changeset, {replace, dryrun}={}) {
                 changed = true;
                 const localeDate = (new Date(x.get('ts'))).toLocaleDateString();
                 let name = x.get('name');
-                if (name.length > 12) {
-                    name = name.substr(0, 7) + '…' + name.substr(-5);
+                if (name.length > 15) {
+                    name = name.substr(0, 8) + '…' + name.substr(-7);
                 }
                 logs.push(`Activity [${localeDate}, ${name}]: ` +
                           `(${key}) ${existing ?? '<unset>'} ⇾ ${suggested ?? '<unset>'}`);
@@ -869,7 +887,7 @@ async function _applySyncChangeset(athleteId, changeset, {replace, dryrun}={}) {
             await Promise.all(Array.from(toSave).map(x => x.save()));
             await invalidateAthleteSyncState(athleteId, 'local');
         }
-        schedSyncChangesetExport(athleteId);
+        schedSyncChangesetExport(athleteId, changeset);
     }
     return {
         changed,
@@ -879,6 +897,7 @@ async function _applySyncChangeset(athleteId, changeset, {replace, dryrun}={}) {
 }
 
 
+let _lastMetaLoad = 0;
 export async function getAvailableSyncChangesets(athleteId) {
     const athlete = await athletesStore.get(athleteId);
     if (!athlete || !athlete.syncSettings) {
@@ -886,16 +905,40 @@ export async function getAvailableSyncChangesets(athleteId) {
     }
     const receipts = new Map(athlete.syncSettingsReceipts || []);
     const dir = `hist-md-${athleteId}/`;
-    await meta.load({forceFetch: true}); // XXX for testing and demo...
+    if (Date.now() - _lastMetaLoad > 30_000) {
+        console.log('xxx load meta');
+        await meta.load({forceFetch: true});
+        _lastMetaLoad = Date.now();
+    }
+    // .updated is deprecated as of 8.9.3 but present in 8.9.2
+    const mostRecentReceiptTS = Math.max(...athlete.syncSettingsReceipts.map(x => x[1].ts ?? x[1].updated));
     const changesets = [];
     for (const changeset of await meta.getAll(dir)) {
-        if (changeset.data?.version !== 1 ||
-            changeset.data.deviceId === sauce.deviceId ||
-            !receipts.has(changeset.data.deviceId)) {
+        if (changeset?.data?.version !== 1) {
+            console.warn("Skipping unsupported changeset:", changeset);
+            continue;
+        } else if (changeset.data.deviceId === sauce.deviceId) {
             continue;
         }
+        const source = changeset.xattrs?.source;
+        if (source) {
+            if (source.deviceId === sauce.deviceId) {
+                console.debug("Skipping changeset that originated from us:", changeset);
+                continue;
+            }
+            if (mostRecentReceiptTS - source.ts > 999) {
+                debugger;
+                console.warn("XXX too old, any other criteria for skipping?");
+            }
+            const r = receipts.get(source.deviceId);
+            if (r && r.hash === source.hash) {
+                debugger;
+                console.warn("XXX Suwheet, we know this one, skip a bish");
+                continue;
+            }
+        }
         const r = receipts.get(changeset.data.deviceId);
-        if (r.hash !== changeset.hash) {
+        if (!r || r.hash !== changeset.hash) {
             const dryrun = await applySyncChangeset(athleteId, changeset, {dryrun: true});
             if (dryrun.changed || dryrun.pending) {
                 changesets.push({changeset, dryrun});
@@ -1067,13 +1110,23 @@ sauce.proxy.export(getStreamsForActivity, {namespace});
 
 
 export async function enableAthlete(id) {
-    return await syncManager.enableAthlete(id);
+    await syncManager.enableAthlete(id);
+    schedSyncChangesetExport(id);
 }
 sauce.proxy.export(enableAthlete, {namespace});
 
 
+export async function disableAthlete(id) {
+    await syncManager.disableAthlete(id);
+    schedSyncChangesetExport(id);
+}
+sauce.proxy.export(disableAthlete, {namespace});
+
+
 export async function updateAthlete(id, updates) {
-    return await syncManager.updateAthlete(id, updates);
+    const athlete = await syncManager.updateAthlete(id, updates);
+    schedSyncChangesetExport(id);
+    return athlete?.data;
 }
 sauce.proxy.export(updateAthlete, {namespace});
 
@@ -1087,9 +1140,7 @@ async function setAthleteHistoryValues(athleteId, key, data) {
     await athlete.save();
     const processor = key === 'weight' ? 'extra-streams' : 'athlete-settings';
     await invalidateAthleteSyncState(athleteId, 'local', processor);
-    if (athlete.get('syncSettings')) {
-        schedSyncChangesetExport(athlete.pk);
-    }
+    schedSyncChangesetExport(athlete.pk);
     return clean;
 }
 sauce.proxy.export(setAthleteHistoryValues, {namespace});
@@ -1098,23 +1149,21 @@ sauce.proxy.export(setAthleteHistoryValues, {namespace});
 const _pendingSyncChangesetExports = new Map();
 async function schedSyncChangesetExport(athleteId) {
     clearTimeout(_pendingSyncChangesetExports.get(athleteId));
-    const athlete = await athletesStore.get(athleteId);
-    if (!athlete || !athlete.syncSettings) {
+    let athlete = await athletesStore.get(athleteId);
+    if (!athlete) {
         return;
     }
     clearTimeout(_pendingSyncChangesetExports.get(athleteId));
     _pendingSyncChangesetExports.set(athleteId, setTimeout(async () => {
-        await updateAthlete(athleteId, {syncSettingsTS: Date.now()});
-        await exportSyncChangeset(athleteId);
+        athlete = await athletesStore.get(athleteId);
+        if (athlete.sync !== DBTrue || !athlete.syncSettings) {
+            await deleteSyncChangeset(athleteId);
+        } else {
+            await exportSyncChangeset(athleteId);
+        }
     }, 5000));
 }
 sauce.proxy.export(schedSyncChangesetExport, {namespace});
-
-
-export async function disableAthlete(id) {
-    return await syncManager.disableAthlete(id);
-}
-sauce.proxy.export(disableAthlete, {namespace});
 
 
 async function syncAthlete(athleteId, options={}) {
@@ -2487,7 +2536,7 @@ class SyncManager extends EventTarget {
                 if (x.syncSettings) {
                     syncEnabled = true;
                     if (Date.now() - (x.syncSettingsTS || 0) > 3600_000) {
-                        schedSyncChangesetExport(x.id);
+                        setTimeout(() => schedSyncChangesetExport(x.id), 5000);
                     }
                 }
             }
@@ -2498,9 +2547,9 @@ class SyncManager extends EventTarget {
                 }
             }
         });
-        this.refreshInterval = 12 * 3600 * 1000;
-        this.refreshErrorBackoff = 1 * 3600 * 1000;
-        this.syncJobTimeout = 4 * 60 * 60 * 1000;
+        this.refreshInterval = 12 * 3600_000;
+        this.refreshErrorBackoff = 1 * 3600_000;
+        this.syncJobTimeout = 4 * 3600_000;
         this.maxSyncJobs = navigator.hardwareConcurrency >= 8 ? 4 : 2;
         this.currentUser = currentUser;
         this.activeJobs = new Map();
@@ -2759,6 +2808,7 @@ class SyncManager extends EventTarget {
                 throw new Error('Athlete not found: ' + id);
             }
             await athlete.save(obj);
+            return athlete;
         } finally {
             this._athleteLock.release();
         }

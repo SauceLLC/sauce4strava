@@ -153,6 +153,7 @@ export async function load({forceFetch}={}) {
                             created: attrs.created,
                             updated: attrs.updated,
                             data,
+                            attrs,
                             hash,
                         });
                     } catch(e) {
@@ -222,10 +223,10 @@ export async function create(...args) {
 }
 
 
-async function _create(name, data) {
-    console.debug("Creating meta gear file (name):", name, data);
+async function _create(name, data, xattrs) {
+    console.debug("Creating meta gear file:", name);
     const created = Date.now();
-    const {encoded, hash} = await encode(data, {created, updated: created});
+    const {encoded, hash} = await encode(data, {created, updated: created, xattrs});
     if (encoded.length > maxGearDescSize) {
         throw new Error("Data too large");
     }
@@ -238,7 +239,7 @@ async function _create(name, data) {
             description: encoded,
         })
     });
-    const entry = {id: r.id, name, created, updated: created, data, hash};
+    const entry = {id: r.id, name, created, updated: created, data, xattrs, hash};
     if (!_loadData) {
         console.warn("meta.load() not called prior to create()");
         _loadData = [];
@@ -259,11 +260,12 @@ export async function set(...args) {
 }
 
 
-async function _set(entry, data) {
-    if (data === undefined) {
-        data = entry.data;
-    } else {
+async function _set(entry, data, xattrs) {
+    if (data !== undefined) {
         entry.data = data;
+    }
+    if (xattrs !== undefined) {
+        entry.xattrs = xattrs;
     }
     entry.updated = Date.now();
     if (entry.corrupt) {
@@ -273,7 +275,11 @@ async function _set(entry, data) {
             entry.created = entry.updated;
         }
     }
-    const {encoded, hash} = await encode(entry.data, {created: entry.created, updated: entry.updated});
+    const {encoded, hash} = await encode(entry.data, {
+        created: entry.created,
+        updated: entry.updated,
+        xattrs: entry.xattrs,
+    });
     if (encoded.length > maxGearDescSize) {
         throw new Error("File too large");
     }
@@ -293,6 +299,28 @@ async function _set(entry, data) {
 }
 
 
+export async function update(...args) {
+    await loadLock.acquire();
+    try {
+        return await _update(...args);
+    } finally {
+        loadLock.release();
+    }
+}
+
+
+async function _update(entry, data, xattrs) {
+    if (data !== undefined) {
+        entry.data = entry.data || {};
+        Object.assign(entry.data, data);
+    }
+    if (xattrs !== undefined) {
+        entry.xattrs = entry.xattrs || {};
+        Object.assign(entry.xattrs, xattrs);
+    }
+    return await _set(entry);
+}
+
 export async function save(...args) {
     await loadLock.acquire();
     try {
@@ -303,9 +331,9 @@ export async function save(...args) {
 }
 
 
-async function _save(entry, data) {
+async function _save(entry, data, xattrs) {
     console.debug("Saving meta gear file:", entry.id);
-    await _set(entry, data);
+    await _set(entry, data, xattrs);
     await fetchGear(entry.id, {
         method: 'PATCH',
         body: new URLSearchParams({

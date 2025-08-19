@@ -703,7 +703,6 @@ sauce.ns('sync', ns => {
                 ];
                 const proc = affectsStreams.some(x => edited.has(x)) ? 'extra-streams' : 'athlete-settings';
                 await sauce.hist.invalidateAthleteSyncState(athlete.id, 'local', proc);
-                await sauce.hist.schedSyncChangesetExport(athlete.id);
             }
         });
         if (initiallyEnabled) {
