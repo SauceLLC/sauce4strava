@@ -153,7 +153,7 @@ export async function load({forceFetch}={}) {
                             created: attrs.created,
                             updated: attrs.updated,
                             data,
-                            attrs,
+                            xattrs: attrs?.xattrs,
                             hash,
                         });
                     } catch(e) {

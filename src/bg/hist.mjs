@@ -920,15 +920,19 @@ export async function getAvailableSyncChangesets(athleteId) {
         } else if (changeset.data.deviceId === sauce.deviceId) {
             continue;
         }
+        if (mostRecentReceiptTS - changeset.updated > 86400_000) {
+            console.warn("XXX changeset too old, any other criteria for skipping?", changeset);
+            continue;
+        }
         const source = changeset.xattrs?.source;
         if (source) {
             if (source.deviceId === sauce.deviceId) {
-                console.debug("Skipping changeset that originated from us:", changeset);
+                console.debug("shd Skipping changeset that originated from us:", changeset);
                 continue;
             }
             if (mostRecentReceiptTS - source.ts > 999) {
                 debugger;
-                console.warn("XXX too old, any other criteria for skipping?");
+                console.warn("XXX SOURCE too old, any other criteria for skipping?");
             }
             const r = receipts.get(source.deviceId);
             if (r && r.hash === source.hash) {
