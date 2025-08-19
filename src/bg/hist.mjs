@@ -888,7 +888,7 @@ async function _applySyncChangeset(athleteId, changeset, {replace, dryrun}={}) {
             await Promise.all(Array.from(toSave).map(x => x.save()));
             await invalidateAthleteSyncState(athleteId, 'local');
         }
-        schedSyncChangesetExport(athleteId, changeset);
+        await exportSyncChangeset(athleteId, changeset);
     }
     return {
         changed,
