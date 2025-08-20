@@ -1470,4 +1470,86 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, name, version) {
             return findAll && Object.is(tree, _treeExclude) ? undefined : tree;
         }
     };
+
+
+    function sntp(offsets, forceAnswer) {
+        if (offsets.length > 5 || forceAnswer) {
+            offsets.sort((a, b) => a.latency - b.latency);
+            const mean = offsets.reduce((a, x) => a + x.latency, 0) / offsets.length;
+            const variance = offsets.map(x => (mean - x.latency) ** 2);
+            const stddev = Math.sqrt(variance.reduce((a, x) => a + x, 0) / variance.length);
+            const median = offsets[offsets.length / 2 | 0].latency;
+            const valids = offsets.filter(x => Math.abs(x.latency - median) < stddev);
+            if (valids.length > 4 || forceAnswer) {
+                const offt = valids.reduce((a, x) => a + x.offt, 0) / valids.length;
+                console.debug("Sauce Time offset:", offt, 'latency:', median);
+                return offt;
+            }
+        }
+    }
+
+
+    let _sauceTimeOfft;
+    sauce.initSauceTime = async function() {
+        const ws = new WebSocket('wss://time.sauce-llc.workers.dev');
+        await new Promise((resolve, reject) => {
+            ws.addEventListener('open', resolve);
+            ws.addEventListener('error', reject);
+        });
+        let localSendTime;
+        let resolve, reject;
+        ws.addEventListener('error', ev => {
+            console.error('Time server WebSocket error:', ev);
+            reject(new Error('WebSocket Error'));
+        });
+        ws.addEventListener('close', ev => resolve());
+        ws.addEventListener('message', ev => {
+            const localRecvTime = Date.now();
+            const serverTime = Number(ev.data);
+            const latency = (localRecvTime - localSendTime) / 2;
+            const offt = localRecvTime - (serverTime + latency);
+            resolve({offt, latency});
+        });
+        const offsets = [];
+        let offt;
+        for (let i = 0; i < 10; i++) {
+            const p = new Promise((_resolve, _reject) => {
+                resolve = _resolve;
+                reject = _reject;
+            });
+            localSendTime = Date.now();
+            ws.send('GET_TIME');
+            const r = await p;
+            if (!r) {
+                break;
+            } else if (i > 0) { // ignore first rtt
+                offsets.push(r);
+                offt = sntp(offsets);
+                if (offt !== undefined) {
+                    break;
+                }
+            }
+        }
+        if (ws.readyState < 2) {
+            ws.send('CLOSE'); // cloudflare workers don't like us calling ws.close() (generates error logs)
+        }
+        if (offt === undefined) {
+            if (offsets.length) {
+                console.warn("substandard sntp offset estimation");
+                offt = sntp(offsets, /*force*/ true);
+            } else {
+                console.error("Unable to get sauce time");
+                offt = 0;
+            }
+        }
+        _sauceTimeOfft = Math.round(offt);
+    };
+
+
+    sauce.getSauceTime = function() {
+        if (_sauceTimeOfft === undefined) {
+            throw new Error("use initSauceTime() first");
+        }
+        return Date.now() - _sauceTimeOfft;
+    };
 };

@@ -614,7 +614,8 @@ sauce.proxy.export(getActivitiesForAthlete, {namespace});
 
 
 export async function exportSyncChangeset(athleteId, sourceChangeset) {
-    const athlete = await syncManager.updateAthlete(athleteId, {syncSettingsTS: Date.now()});
+    const athlete = await athletesStore.get(athleteId, {model: true});
+    await athlete.save({syncSettingsTS: Date.now()});
     const activities = await actsStore.getAllForAthlete(athleteId);
     const settings = [
         'disableRunWatts', 'estRunWatts', 'estCyclingWatts',
@@ -915,6 +916,8 @@ export async function getAvailableSyncChangesets(athleteId) {
     const mostRecentReceiptTS = Math.max(...athlete.syncSettingsReceipts.map(x => x[1].ts ?? x[1].updated));
     const changesets = [];
     for (const changeset of await meta.getAll(dir)) {
+        const dev = await getDeviceMetaData(changeset.data.deviceId);
+        console.debug("Eval changeset:", dev?.data?.name || dev?.data, changeset, dev);
         if (changeset?.data?.version !== 1) {
             console.warn("Skipping unsupported changeset:", changeset);
             continue;
@@ -923,7 +926,7 @@ export async function getAvailableSyncChangesets(athleteId) {
         }
         if (mostRecentReceiptTS - changeset.updated > 86400_000) {
             console.warn("XXX changeset too old, any other criteria for skipping?", changeset);
-            continue;
+            //continue;
         }
         const source = changeset.xattrs?.source;
         if (source) {
