@@ -225,7 +225,8 @@ export async function create(...args) {
 
 async function _create(name, data, xattrs) {
     console.debug("Creating meta gear file:", name);
-    const created = Date.now();
+    await sauce.initSauceTime().catch(e => 0);
+    const created = sauce.getSauceTime();
     const {encoded, hash} = await encode(data, {created, updated: created, xattrs});
     if (encoded.length > maxGearDescSize) {
         throw new Error("Data too large");
@@ -267,7 +268,8 @@ async function _set(entry, data, xattrs) {
     if (xattrs !== undefined) {
         entry.xattrs = xattrs;
     }
-    entry.updated = Date.now();
+    await sauce.initSauceTime().catch(e => 0);
+    entry.updated = sauce.getSauceTime();
     if (entry.corrupt) {
         console.warn("Repairing corrupt file:", entry.id);
         entry.corrupt = false;
