@@ -1472,25 +1472,35 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, name, version) {
     };
 
 
-    function sntp(offsets, forceAnswer) {
+    function timeOffsetCalc(offsets, forceAnswer) {
+        // Basically emulate NTP's more macroscopic features...
+        //  * We assume lower latency is reduced error
+        //  * Remove 33% of RTT offsets by latency (toss slowest)
+        //  * Calculate stddev and filter out more outliers
+        //  * Finally calculate a weighted avg for the offsets using latency
         if (offsets.length > 5 || forceAnswer) {
-            offsets.sort((a, b) => a.latency - b.latency);
+            offsets = offsets.toSorted((a, b) => a.latency - b.latency);
+            offsets.length -= offsets.length * 0.333 | 0;
             const mean = offsets.reduce((a, x) => a + x.latency, 0) / offsets.length;
-            const variance = offsets.map(x => (mean - x.latency) ** 2);
-            const stddev = Math.sqrt(variance.reduce((a, x) => a + x, 0) / variance.length);
-            const median = offsets[offsets.length / 2 | 0].latency;
-            const valids = offsets.filter(x => Math.abs(x.latency - median) < stddev);
-            if (valids.length > 4 || forceAnswer) {
-                const offt = valids.reduce((a, x) => a + x.offt, 0) / valids.length;
-                console.debug("Sauce Time offset:", offt, 'latency:', median);
-                return offt;
+            const variance = offsets.reduce((a, x) => a + (mean - x.latency) ** 2, 0) / offsets.length;
+            const stddev = Math.sqrt(variance);
+            const valids = offsets.filter(x => Math.abs(x.latency - mean) <= 4 * stddev);
+            if (valids.length > 0) {
+                const maxLatency = valids.reduce((max, x) => x.latency > max ? x.latency : max, -1e6);
+                const weights = valids.map(x => maxLatency - x.latency + 1);
+                const totalWeight = weights.reduce((a, w) => a + w, 0);
+                return valids.reduce((a, x, i) => a + x.offt * weights[i], 0) / totalWeight;
             }
         }
     }
 
 
     let _sauceTimeOfft;
-    sauce.initSauceTime = async function() {
+    sauce.initSauceTime = async function(force) {
+        if (!force && _sauceTimeOfft != null) {
+            return;
+        }
+        _sauceTimeOfft = null;
         const ws = new WebSocket('wss://time.sauce-llc.workers.dev');
         await new Promise((resolve, reject) => {
             ws.addEventListener('open', resolve);
@@ -1499,10 +1509,15 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, name, version) {
         let localSendTime;
         let resolve, reject;
         ws.addEventListener('error', ev => {
-            console.error('Time server WebSocket error:', ev);
+            console.error('Time server error:', ev);
             reject(new Error('WebSocket Error'));
         });
-        ws.addEventListener('close', ev => resolve());
+        ws.addEventListener('close', ev => {
+            if (ev.code !== 1000) {
+                console.warn('Time server abnormal close:', ev.code, ev.reason);
+            }
+            resolve();
+        });
         ws.addEventListener('message', ev => {
             const localRecvTime = Date.now();
             const serverTime = Number(ev.data);
@@ -1512,7 +1527,7 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, name, version) {
         });
         const offsets = [];
         let offt;
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 12; i++) {
             const p = new Promise((_resolve, _reject) => {
                 resolve = _resolve;
                 reject = _reject;
@@ -1522,26 +1537,25 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, name, version) {
             const r = await p;
             if (!r) {
                 break;
-            } else if (i > 0) { // ignore first rtt
-                offsets.push(r);
-                offt = sntp(offsets);
-                if (offt !== undefined) {
-                    break;
-                }
+            }
+            offsets.push(r);
+            offt = timeOffsetCalc(offsets);
+            if (offt !== undefined) {
+                break;
             }
         }
         if (ws.readyState < 2) {
-            ws.send('CLOSE'); // cloudflare workers don't like us calling ws.close() (generates error logs)
+            ws.send('CLOSE'); // cloudflare workers don't like us calling ws.close()
         }
         if (offt === undefined) {
             if (offsets.length) {
-                console.warn("substandard sntp offset estimation");
-                offt = sntp(offsets, /*force*/ true);
+                console.warn("Substandard time protocol offset estimation");
+                offt = timeOffsetCalc(offsets, /*force*/ true);
             } else {
                 console.error("Unable to get sauce time");
-                offt = 0;
             }
         }
+        console.debug('Clock offset:', offt);
         _sauceTimeOfft = Math.round(offt);
     };
 
