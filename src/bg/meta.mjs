@@ -35,8 +35,8 @@ async function decompress(buf) {
 
 async function encode(data, attrs) {
     const dataBuf = await compress(data);
-    const attrsBuf = attrs ? await compress(attrs) : undefined;
     const hashBuf = await computeHash(dataBuf);
+    const attrsBuf = attrs ? await compress(attrs) : undefined;
     const encoded = [
         metaVersion,
         sauce.data.toBase64(dataBuf),
@@ -268,8 +268,6 @@ async function _set(entry, data, xattrs) {
     if (xattrs !== undefined) {
         entry.xattrs = xattrs;
     }
-    await sauce.initSauceTime().catch(e => 0);
-    entry.updated = sauce.getSauceTime();
     if (entry.corrupt) {
         console.warn("Repairing corrupt file:", entry.id);
         entry.corrupt = false;
@@ -335,6 +333,8 @@ export async function save(...args) {
 
 async function _save(entry, data, xattrs) {
     console.debug("Saving meta gear file:", entry.id);
+    await sauce.initSauceTime().catch(e => 0);
+    entry.updated = sauce.getSauceTime();
     await _set(entry, data, xattrs);
     await fetchGear(entry.id, {
         method: 'PATCH',
