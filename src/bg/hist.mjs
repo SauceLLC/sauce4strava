@@ -673,8 +673,8 @@ export async function exportSyncChangeset(athleteId, sourceChangeset) {
                     .map(x => `[${x[0]}] ${JSON.stringify(x[1])}`));
                 const cur = new Set(Object.entries(data.activityOverrides)
                     .map(x => `[${x[0]}] ${JSON.stringify(x[1])}`));
-                const added = Array.from(prior.difference(cur));
-                const removed = Array.from(cur.difference(prior));
+                const added = Array.from(cur.difference(prior));
+                const removed = Array.from(prior.difference(cur));
                 syncLogsStore.logDebug(athleteId, 'Activity overrides changed', {added, removed});
                 console.warn(athleteId, 'DEBUG: Activity overrides changed', {added, removed});
             }
@@ -965,8 +965,13 @@ export async function getAvailableSyncChangesets(athleteId) {
         const dryrun = await applySyncChangeset(athleteId, changeset, {dryrun: true});
         if (dryrun.changed) {
             changesets.push({changeset, dryrun});
-        } else if (!dryrun.unmatched) {
-            await addSyncChangesetReceipt(athleteId, changeset);
+        } else {
+            if (!dryrun.unmatched) {
+                console.debug("Excluding changeset that has no data changes:", changeset);
+                await addSyncChangesetReceipt(athleteId, changeset);
+            } else {
+                console.debug("Skipping changeset that has no applicable data changes:", changeset);
+            }
         }
     }
     changesets.sort((a, b) => a.changeset.updated - b.changeset.updated);
@@ -2600,7 +2605,7 @@ class SyncManager extends EventTarget {
             }
             if (syncEnabled) {
                 const dm = await meta.get(`device-meta/${sauce.deviceId}`);
-                if (!dm || Date.now() - dm.updated > 86400_000) {
+                if (!dm || Date.now() - dm.updated > 5 * 86400_000) {
                     await updateDeviceMetaData(sauce.deviceId, sauce.deviceInfo());
                 }
             }

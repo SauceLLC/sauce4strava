@@ -224,7 +224,6 @@ export async function create(...args) {
 
 
 async function _create(name, data, xattrs) {
-    console.debug("Creating meta gear file:", name);
     await sauce.initSauceTime().catch(e => 0);
     const created = sauce.getSauceTime();
     const {encoded, hash} = await encode(data, {created, updated: created, xattrs});
@@ -241,6 +240,7 @@ async function _create(name, data, xattrs) {
         })
     });
     const entry = {id: r.id, name, created, updated: created, data, xattrs, hash};
+    console.debug("Created meta gear file:", entry.id, entry.name);
     if (!_loadData) {
         console.warn("meta.load() not called prior to create()");
         _loadData = [];
@@ -332,10 +332,10 @@ export async function save(...args) {
 
 
 async function _save(entry, data, xattrs) {
-    console.debug("Saving meta gear file:", entry.id);
     await sauce.initSauceTime().catch(e => 0);
     entry.updated = sauce.getSauceTime();
     await _set(entry, data, xattrs);
+    console.debug("Saving meta gear file:", entry.id, entry.name);
     await fetchGear(entry.id, {
         method: 'PATCH',
         body: new URLSearchParams({
@@ -351,9 +351,9 @@ async function _save(entry, data, xattrs) {
 
 
 export async function remove(id) {
-    console.debug("Removing meta gear file:", id);
     await loadLock.acquire();
     try {
+        console.debug("Removing meta gear file:", id);
         await fetchGear(id, {method: 'DELETE'});
         const idx = _loadData.findIndex(x => x.id === id);
         if (idx !== -1) {
