@@ -659,6 +659,7 @@ export async function exportSyncChangeset(athleteId, sourceChangeset) {
             const source = sourceChangeset ? syncChangesetReceipt(sourceChangeset) : null;
             await meta.update(file, undefined, {source});
             await meta.save(file);
+            // DEBUG...
             let a, b;
             a = JSON.stringify(priorData.settings);
             b = JSON.stringify(data.settings);
@@ -878,6 +879,17 @@ async function _applySyncChangeset(athleteId, changeset, {replace, dryrun}={}) {
             }
         }
     }
+    let knownActOverrides = athlete.get('pendingActivityOverrides');
+    if (typeof knownActOverrides !== 'object' || knownActOverrides.constructor !== Object) {
+        knownActOverrides = {};
+    }
+    for (const [id, obj] of actOverrides) {
+        if (Object.hasOwn(knownActOverrides, id)) {
+            if (JSON.stringify(obj) === JSON.stringify(knownActOverrides[id])) {
+                actOverrides.delete(id);
+            }
+        }
+    }
     if (actOverrides.size) {
         logs.push(`${actOverrides.size} updates for activities not yet found`);
         console.warn('Unmatched activity overrides:', Array.from(actOverrides.keys()).join(', '));
@@ -885,12 +897,10 @@ async function _applySyncChangeset(athleteId, changeset, {replace, dryrun}={}) {
     if (!dryrun) {
         await _addSyncChangesetReceipt(athleteId, changeset);
         if (actOverrides.size) {
-            // XXX we need to build the consumer side of this on the activity sync side of things...
-            const overrides = athlete.get('pendingActivityOverrides') || [];
-            for (const x of actOverrides) {
-                overrides.push(x);
+            for (const [id, obj] of actOverrides) {
+                knownActOverrides[id] = obj;
             }
-            await athlete.save({pendingActivityOverrides: overrides});
+            await athlete.save({pendingActivityOverrides: knownActOverrides});
         }
         for (const x of logs) {
             syncLogsStore.logInfo(athleteId, x);
@@ -967,10 +977,10 @@ export async function getAvailableSyncChangesets(athleteId) {
             changesets.push({changeset, dryrun});
         } else {
             if (!dryrun.unmatched) {
-                console.debug("Excluding changeset that has no data changes:", changeset);
+                console.debug("Auto-excluding changeset with no changes:", changeset);
                 await addSyncChangesetReceipt(athleteId, changeset);
             } else {
-                console.debug("Skipping changeset that has no applicable data changes:", changeset);
+                console.debug("Skipping changeset with only pending changes:", changeset);
             }
         }
     }
@@ -1711,7 +1721,9 @@ class SyncJob extends EventTarget {
     async _scanActivities() {
         const forceUpdate = this.options.forceActivityUpdate;
         const known = forceUpdate ? new Map() : await actsStore.getAllHashesForAthlete(this.athlete.pk);
+        const pendingOverrides = this.athlete.get('pendingActivityOverrides');
         const iter = this.isSelf ? this._scanSelfActivitiesIter : this._scanPeerActivitiesIter;
+        let saveAthlete;
         for await (const batch of iter.call(this, {known})) {
             let adding = 0;
             let updating = 0;
@@ -1722,6 +1734,19 @@ class SyncJob extends EventTarget {
                     adding++;
                 }
                 known.set(x.id, x.hash);
+                // XXX Build some confidence in this...
+                try {
+                    if (typeof pendingOverrides === 'object' && Object.hasOwn(pendingOverrides, x.id)) {
+                        const overrides = pendingOverrides[x.id];
+                        this.logWarn("Applying previously stored overrides to activity:", x.id, overrides);
+                        Object.assign(x, overrides);
+                        delete pendingOverrides[x.id];
+                        saveAthlete = true;
+                    }
+                } catch(e) {
+                    console.error("Paranoid well founded during activity override application:", e);
+                    debugger;
+                }
             }
             const f = new Intl.DateTimeFormat();
             const range = f.formatRange(
@@ -1732,6 +1757,9 @@ class SyncJob extends EventTarget {
             }
             if (updating) {
                 this.logInfo(`Updating ${updating} activities:`, range);
+            }
+            if (saveAthlete) {
+                await this.athlete.save();
             }
             await actsStore.updateMany(new Map(batch.map(x => [x.id, x])));
             await this.niceSendProgressEvent();
