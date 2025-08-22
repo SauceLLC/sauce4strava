@@ -2,6 +2,7 @@
 /* eslint no-unreachable-loop: off */
 
 const defaultSyncErrorBackoff = 300 * 1000;  // Actual is (<value-ms> * 2^errorCount)
+const TypedArray = Object.getPrototypeOf(Uint8Array);
 
 
 function setUnion(...sets) {
@@ -800,6 +801,7 @@ export class AthletesStore extends sauce.db.DBStore {
 export class SyncLogsStore extends sauce.db.DBStore {
     constructor() {
         super(histDatabase, 'sync-logs');
+        this._eventer = new EventTarget();
     }
 
     async getLogs(athleteId, {limit}={}) {
@@ -833,10 +835,49 @@ export class SyncLogsStore extends sauce.db.DBStore {
         if (!['debug', 'info', 'warn', 'error'].includes(level)) {
             throw new TypeError("Invalid log level argument");
         }
-        const message = messages.join(' ');
+        const strings = new Array(messages.length);
+        for (let i = 0; i < messages.length; i++) {
+            const x = messages[i];
+            const type = typeof x;
+            if (type === 'string') {
+                strings[i] = x;
+            } else if (type === 'number' || x === undefined || x === null ||
+                       type === 'boolean' || type === 'function' || type === 'bigint') {
+                strings[i] = '' + x;
+            } else if (type === 'object') {
+                if (x.constructor === Object || Array.isArray(x) || x.constructor === undefined) {
+                    strings[i] = JSON.stringify(x);
+                } else if (x instanceof TypedArray) {
+                    strings[i] = JSON.stringify(Array.from(x));
+                } else if (x instanceof ArrayBuffer) {
+                    strings[i] = Array.from(new Uint8Array(x))
+                        .map(x => x.toString(16).padStart(2, '0'))
+                        .join('');
+                } else {
+                    strings[i] = '' + x;
+                }
+            } else if (type === 'symbol') {
+                strings[i] = x.toString();
+            } else {
+                console.warn("Unexpected type:", typeof x, x);
+            }
+        }
+        const message = strings.join(' ');
         const record = {athlete: athleteId, ts: Date.now(), message, level};
         this.put(record);  // bg okay
+        const ev = new Event('log');
+        ev.athlete = athleteId;
+        ev.data = record;
+        queueMicrotask(() => this._eventer.dispatchEvent(ev));
         return record;
+    }
+
+    addEventListener(...args) {
+        return this._eventer.addEventListener(...args);
+    }
+
+    rmoeveEventListener(...args) {
+        return this._eventer.removeEventListener(...args);
     }
 
     log(level, athleteId, ...messages) {

@@ -663,22 +663,34 @@ export async function exportSyncChangeset(athleteId, sourceChangeset) {
             a = JSON.stringify(priorData.settings);
             b = JSON.stringify(data.settings);
             if (a !== b) {
-                syncLogsStore.logWarn(athleteId, 'DEBUG: athlete settings changed', a, b);
+                syncLogsStore.logDebug(athleteId, 'Athlete settings changed', a, b);
+                console.warn(athleteId, 'DEBUG: Athlete settings changed', a, b);
             }
             a = JSON.stringify(priorData.activityOverrides);
             b = JSON.stringify(data.activityOverrides);
             if (a !== b) {
-                syncLogsStore.logWarn(athleteId, 'DEBUG: activity overrides changed', a, b);
+                const prior = new Set(Object.entries(priorData.activityOverrides)
+                    .map(x => `[${x[0]}] ${JSON.stringify(x[1])}`));
+                const cur = new Set(Object.entries(data.activityOverrides)
+                    .map(x => `[${x[0]}] ${JSON.stringify(x[1])}`));
+                const added = Array.from(prior.difference(cur));
+                const removed = Array.from(cur.difference(prior));
+                syncLogsStore.logDebug(athleteId, 'Activity overrides changed', {added, removed});
+                console.warn(athleteId, 'DEBUG: Activity overrides changed', {added, removed});
             }
             a = JSON.stringify(priorData.ftpHistory);
             b = JSON.stringify(data.ftpHistory);
             if (a !== b) {
-                syncLogsStore.logWarn(athleteId, 'DEBUG: FTP-hist changed', a, b);
+                const diffs = diffHistories(data.ftpHistory, priorData.ftpHistory);
+                syncLogsStore.logDebug(athleteId, 'FTP history changed', diffs);
+                console.warn(athleteId, 'DEBUG: FTP-hist changed', a, b);
             }
             a = JSON.stringify(priorData.weightHistory);
             b = JSON.stringify(data.weightHistory);
             if (a !== b) {
-                syncLogsStore.logWarn(athleteId, 'DEBUG: Weight-hist changed', a, b);
+                const diffs = diffHistories(data.weightHistory, priorData.weightHistory);
+                syncLogsStore.logDebug(athleteId, 'Weight history changed', diffs);
+                console.warn(athleteId, 'DEBUG: Weight-hist changed', a, b);
             }
         }
     }
@@ -908,7 +920,6 @@ export async function getAvailableSyncChangesets(athleteId) {
     const receipts = new Map(athlete.syncSettingsReceipts || []);
     const dir = `hist-md-${athleteId}/`;
     if (Date.now() - _lastMetaLoad > 30_000) {
-        console.log('xxx load meta');
         await meta.load({forceFetch: true});
         _lastMetaLoad = Date.now();
     }
@@ -916,43 +927,46 @@ export async function getAvailableSyncChangesets(athleteId) {
     const mostRecentReceiptTS = Math.max(...athlete.syncSettingsReceipts.map(x => x[1].ts ?? x[1].updated));
     const changesets = [];
     for (const changeset of await meta.getAll(dir)) {
-        const dev = await getDeviceMetaData(changeset.data.deviceId);
-        console.debug("Eval changeset:", dev?.data?.name || dev?.data, changeset, dev);
         if (changeset?.data?.version !== 1) {
             console.warn("Skipping unsupported changeset:", changeset);
             continue;
         } else if (changeset.data.deviceId === sauce.deviceId) {
             continue;
         }
-        if (mostRecentReceiptTS - changeset.updated > 86400_000) {
-            console.warn("XXX changeset too old, any other criteria for skipping?", changeset);
-            //continue;
+        const r = receipts.get(changeset.data.deviceId);
+        if (r && r.hash === changeset.hash) {
+            console.debug("KNOWN, skip");
+            continue;
         }
         const source = changeset.xattrs?.source;
         if (source) {
             if (source.deviceId === sauce.deviceId) {
-                console.debug("shd Skipping changeset that originated from us:", changeset);
+                console.debug("Skipping changeset that originated from us:", changeset);
                 continue;
-            }
-            if (mostRecentReceiptTS - source.ts > 999) {
-                debugger;
-                console.warn("XXX SOURCE too old, any other criteria for skipping?");
             }
             const r = receipts.get(source.deviceId);
             if (r && r.hash === source.hash) {
-                debugger;
-                console.warn("XXX Suwheet, we know this one, skip a bish");
+                console.debug("Skipping changeset that originated from excluded/applied source:", changeset);
                 continue;
             }
-        }
-        const r = receipts.get(changeset.data.deviceId);
-        if (!r || r.hash !== changeset.hash) {
-            const dryrun = await applySyncChangeset(athleteId, changeset, {dryrun: true});
-            if (dryrun.changed) {
-                changesets.push({changeset, dryrun});
-            } else if (!dryrun.unmatched) {
-                await addSyncChangesetReceipt(athleteId, changeset);
+            if (mostRecentReceiptTS - source.ts > 5000) {
+                debugger;
+                console.warn("XXX SOURCE too old, any other criteria for skipping?");
+                // continue;
             }
+        }
+        if (mostRecentReceiptTS - changeset.updated > 5000) {
+            console.warn("XXX changeset too old, any other criteria for skipping?", changeset);
+            debugger;
+            //continue; // XXX do this after some validation
+        }
+        const dev = await getDeviceMetaData(changeset.data.deviceId);
+        console.debug("Eval changeset:", dev?.data?.name || dev?.data, changeset, dev);
+        const dryrun = await applySyncChangeset(athleteId, changeset, {dryrun: true});
+        if (dryrun.changed) {
+            changesets.push({changeset, dryrun});
+        } else if (!dryrun.unmatched) {
+            await addSyncChangesetReceipt(athleteId, changeset);
         }
     }
     changesets.sort((a, b) => a.changeset.updated - b.changeset.updated);
@@ -1580,10 +1594,7 @@ class SyncJob extends EventTarget {
     }
 
     log(level, ...messages) {
-        const record = syncLogsStore.log(level, this.athlete.pk, ...messages);
-        const ev = new Event('log');
-        ev.data = record;
-        this.dispatchEvent(ev);
+        return syncLogsStore.log(level, this.athlete.pk, ...messages);
     }
 
     logDebug(...messages) {
@@ -2539,24 +2550,6 @@ class SyncManager extends EventTarget {
         super();
         const msg = `Starting Sync Manager (v${sauce.version}): ${currentUser}`;
         console.info(msg);
-        getEnabledAthletes().then(async athletes => {
-            let syncEnabled;
-            for (const x of athletes) {
-                syncLogsStore.write('debug', x.id, msg);
-                if (x.syncSettings) {
-                    syncEnabled = true;
-                    if (Date.now() - (x.syncSettingsTS || 0) > 3600_000) {
-                        setTimeout(() => schedSyncChangesetExport(x.id), 5000);
-                    }
-                }
-            }
-            if (syncEnabled) {
-                const dm = await meta.get(`device-meta/${sauce.deviceId}`);
-                if (!dm || Date.now() - dm.updated > 86400_000) {
-                    await updateDeviceMetaData(sauce.deviceId, sauce.deviceInfo());
-                }
-            }
-        });
         this.refreshInterval = 12 * 3600_000;
         this.refreshErrorBackoff = 1 * 3600_000;
         this.syncJobTimeout = 4 * 3600_000;
@@ -2569,6 +2562,12 @@ class SyncManager extends EventTarget {
         this._refreshRequests = new Map();
         this._refreshEvent = new locks.Event();
         this._refreshLoop = null;
+        syncLogsStore.addEventListener('log', ev => {
+            const clone = new Event(ev.type);
+            clone.athlete = ev.athlete;
+            clone.data = ev.data;
+            this.dispatchEvent(clone);
+        });
         sauce.storage.addListener(async (key, newValue, oldValue) => {
             if (this.stopping || key !== 'options') {
                 return;
@@ -2585,6 +2584,24 @@ class SyncManager extends EventTarget {
                 const athletes = await athletesStore.getEnabled();
                 for (const x of athletes) {
                     this.refreshRequest(x.id, {noActivityScan: true});
+                }
+            }
+        });
+        getEnabledAthletes().then(async athletes => {
+            let syncEnabled;
+            for (const x of athletes) {
+                syncLogsStore.write('debug', x.id, msg);
+                if (x.syncSettings) {
+                    syncEnabled = true;
+                    if (Date.now() - (x.syncSettingsTS || 0) > 3600_000) {
+                        setTimeout(() => schedSyncChangesetExport(x.id), 5000);
+                    }
+                }
+            }
+            if (syncEnabled) {
+                const dm = await meta.get(`device-meta/${sauce.deviceId}`);
+                if (!dm || Date.now() - dm.updated > 86400_000) {
+                    await updateDeviceMetaData(sauce.deviceId, sauce.deviceInfo());
                 }
             }
         });
@@ -2727,7 +2744,6 @@ class SyncManager extends EventTarget {
         syncJob.addEventListener('status', ev => this.emitForAthlete(athlete, 'status', ev.data));
         syncJob.addEventListener('progress', ev => this.emitForAthlete(athlete, 'progress', ev.data));
         syncJob.addEventListener('ratelimiter', ev => this.emitForAthlete(athlete, 'ratelimiter', ev.data));
-        syncJob.addEventListener('log', ev => this.emitForAthlete(athlete, 'log', ev.data));
         syncJob.setStatus('queued');
         this.activeJobs.set(athlete.pk, syncJob);
         this.emitForAthlete(athlete, 'active', {active: true, athlete: athlete.data});

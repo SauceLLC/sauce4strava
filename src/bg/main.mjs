@@ -20,6 +20,10 @@ meta.initProxyExports();
 let _starting = undefined;
 self.currentUser = null;
 
+// Enable some easier debugger interaction...
+self.meta = meta;
+self.hist = hist;
+
 
 async function start() {
     await setStoragePersistent();
