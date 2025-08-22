@@ -962,15 +962,13 @@ export async function getAvailableSyncChangesets(athleteId) {
                 continue;
             }
             if (mostRecentReceiptTS - source.ts > 5000) {
-                debugger;
-                console.warn("XXX SOURCE too old, any other criteria for skipping?");
-                // continue;
+                console.warn("Skipping changeset older than our most recent application:", changeset);
+                continue;
             }
         }
         if (mostRecentReceiptTS - changeset.updated > 5000) {
-            console.warn("XXX changeset too old, any other criteria for skipping?", changeset);
-            debugger;
-            //continue; // XXX do this after some validation
+            console.warn("Skipping changeset older than our most recent application:", changeset);
+            continue;
         }
         const dev = await getDeviceMetaData(changeset.data.deviceId);
         console.debug("Eval changeset:", dev?.data?.name || dev?.data, changeset, dev);
