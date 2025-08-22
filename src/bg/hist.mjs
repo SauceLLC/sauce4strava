@@ -683,14 +683,12 @@ export async function exportSyncChangeset(athleteId, sourceChangeset) {
             if (a !== b) {
                 const diffs = diffHistories(data.ftpHistory, priorData.ftpHistory);
                 syncLogsStore.logDebug(athleteId, 'FTP history changed', diffs);
-                console.warn(athleteId, 'DEBUG: FTP-hist changed', a, b);
             }
             a = JSON.stringify(priorData.weightHistory);
             b = JSON.stringify(data.weightHistory);
             if (a !== b) {
                 const diffs = diffHistories(data.weightHistory, priorData.weightHistory);
                 syncLogsStore.logDebug(athleteId, 'Weight history changed', diffs);
-                console.warn(athleteId, 'DEBUG: Weight-hist changed', a, b);
             }
         }
     }
@@ -786,7 +784,6 @@ sauce.proxy.export(applySyncChangeset, {namespace});
 
 
 async function _applySyncChangeset(athleteId, changeset, {replace, dryrun}={}) {
-    // XXX: handle queueing unmatched activity updates for later (we might be behind)
     const data = changeset.data;
     if (!data || data.version !== 1) {
         throw new TypeError("Unsupported changeset version");
@@ -863,7 +860,7 @@ async function _applySyncChangeset(athleteId, changeset, {replace, dryrun}={}) {
                     continue;
                 }
                 if (!replace && suggested === undefined) {
-                    console.warn("Ignore unsetting of activity override:", key, x.pk);
+                    console.info("Ignore unsetting of activity override:", key, x.pk);
                     continue;
                 }
                 changed = true;
@@ -888,6 +885,7 @@ async function _applySyncChangeset(athleteId, changeset, {replace, dryrun}={}) {
     if (!dryrun) {
         await _addSyncChangesetReceipt(athleteId, changeset);
         if (actOverrides.size) {
+            // XXX we need to build the consumer side of this on the activity sync side of things...
             const overrides = athlete.get('pendingActivityOverrides') || [];
             for (const x of actOverrides) {
                 overrides.push(x);
@@ -899,6 +897,8 @@ async function _applySyncChangeset(athleteId, changeset, {replace, dryrun}={}) {
         }
         if (toSave.size) {
             await Promise.all(Array.from(toSave).map(x => x.save()));
+        }
+        if (changed) {
             await invalidateAthleteSyncState(athleteId, 'local');
         }
         await exportSyncChangeset(athleteId, changeset);
