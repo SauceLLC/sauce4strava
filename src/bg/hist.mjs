@@ -1741,6 +1741,7 @@ class SyncJob extends EventTarget {
                         this.logWarn("Applying previously stored overrides to activity:", x.id, overrides);
                         Object.assign(x, overrides);
                         delete pendingOverrides[x.id];
+                        this.athlete.set('pendingActivityOverrides', pendingOverrides);
                         saveAthlete = true;
                     }
                 } catch(e) {
