@@ -700,9 +700,10 @@ sauce.proxy.export(exportSyncChangeset, {namespace});
 
 async function deleteSyncChangeset(athleteId) {
     const filename = `hist-md-${athleteId}/${sauce.deviceId}`;
-    if (await meta.get(filename)) {
+    const entry = await meta.get(filename);
+    if (entry) {
         syncLogsStore.logWarn(athleteId, 'Removing sync changeset');
-        await meta.remove(filename);
+        await meta.remove(entry.id);
     }
 }
 sauce.proxy.export(deleteSyncChangeset, {namespace});
