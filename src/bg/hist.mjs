@@ -731,9 +731,11 @@ async function _addSyncChangesetReceipt(athleteId, changeset) {
 
 
 function syncChangesetReceipt(changeset) {
+    const source = changeset.xattrs?.source;
+    const ts = source ? source.ts : changeset.updated;
     return {
         deviceId: changeset.data.deviceId,
-        ts: changeset.updated,
+        ts,
         hash: changeset.hash,
     };
 }
