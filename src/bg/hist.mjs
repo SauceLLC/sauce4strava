@@ -946,42 +946,47 @@ export async function getAvailableSyncChangesets(athleteId) {
         } else if (changeset.data.deviceId === sauce.deviceId) {
             continue;
         }
+        const dm = await getDeviceMetaData(changeset.data.deviceId);
+        const devLabel = `${dm?.data?.name || '<unnamed>'}:${changeset.data.deviceId.split(/-/)[0]}`;
         const r = receipts.get(changeset.data.deviceId);
         if (r && r.hash === changeset.hash) {
-            console.debug("KNOWN, skip");
+            console.debug("Skipping applied/rejected changeset:", devLabel, changeset);
             continue;
         }
         const source = changeset.xattrs?.source;
         if (source) {
             if (source.deviceId === sauce.deviceId) {
-                console.debug("Skipping changeset that originated from us:", changeset);
+                console.debug("Skipping changeset that originated from us:", devLabel, changeset);
                 continue;
             }
             const r = receipts.get(source.deviceId);
             if (r && r.hash === source.hash) {
-                console.debug("Skipping changeset that originated from excluded/applied source:", changeset);
+                console.debug("Skipping changeset that originated from applied/rejected source:",
+                              devLabel, changeset);
                 continue;
             }
             if (mostRecentReceiptTS - source.ts > 5000) {
-                console.warn("Skipping changeset older than our most recent application:", changeset);
+                console.warn("Skipping changeset older than our most recent application:",
+                             devLabel, changeset);
                 continue;
             }
         }
         if (mostRecentReceiptTS - changeset.updated > 5000) {
-            console.warn("Skipping changeset older than our most recent application:", changeset);
+            console.warn("Skipping changeset older than our most recent application:",
+                         devLabel, changeset);
             continue;
         }
-        const dev = await getDeviceMetaData(changeset.data.deviceId);
-        console.debug("Eval changeset:", dev?.data?.name || dev?.data, changeset, dev);
+        console.debug("Eval changeset:", devLabel, changeset);
         const dryrun = await applySyncChangeset(athleteId, changeset, {dryrun: true});
         if (dryrun.changed) {
+            console.info("New changeset with affects found:", devLabel, changeset);
             changesets.push({changeset, dryrun});
         } else {
             if (!dryrun.unmatched) {
-                console.debug("Auto-excluding changeset with no changes:", changeset);
+                console.debug("Auto-excluding changeset with no changes:", devLabel, changeset);
                 await addSyncChangesetReceipt(athleteId, changeset);
             } else {
-                console.debug("Skipping changeset with only pending changes:", changeset);
+                console.debug("Skipping changeset with only pending changes:", devLabel, changeset);
             }
         }
     }
