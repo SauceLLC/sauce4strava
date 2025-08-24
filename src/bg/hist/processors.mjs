@@ -471,7 +471,7 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
             stats.activeTime = sauce.data.activeTime(streams.time, streams.active);
             if (streams.altitude && stats.altitudeGain == null) {
                 // Be consistent with analysis stats...
-                const smoothing = 15;
+                const smoothing = 12;
                 let altStream;
                 if (streams.altitude.length > smoothing * 2) {
                     altStream = sauce.data.smooth(smoothing, streams.altitude);

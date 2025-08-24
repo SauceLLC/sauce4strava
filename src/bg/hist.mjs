@@ -89,7 +89,7 @@ db.ActivityModel.addSyncManifest({
 db.ActivityModel.addSyncManifest({
     processor: 'local',
     name: 'activity-stats',
-    version: 7,  // Fix powerZones accumulator (don't include zero pads)
+    version: 8,  // Altitude gain algo change (min variance)
     depends: ['extra-streams', 'athlete-settings', 'run-power'],
     storageOptionTriggers: ['analysis-prefer-estimated-power-tss'],
     data: {processor: processors.activityStatsProcessor}

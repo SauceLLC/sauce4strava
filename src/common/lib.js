@@ -2154,15 +2154,18 @@ sauce.ns('geo', function(ns) {
     function altitudeChanges(stream) {
         let gain = 0;
         let loss = 0;
-        if (stream && stream.length) {
+        if (stream && stream.length > 1) {
+            const minVar = 0.4;
             let last = stream[0];
-            for (const x of stream) {
-                if (x > last) {
-                    gain += x - last;
-                } else {
-                    loss += last - x;
+            for (let i = 1; i < stream.length; i++) {
+                const diff = stream[i] - last;
+                if (diff > minVar) {
+                    gain += diff;
+                    last = stream[i];
+                } else if (diff < -minVar) {
+                    loss += -diff;
+                    last = stream[i];
                 }
-                last = x;
             }
         }
         return {gain, loss};

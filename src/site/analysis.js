@@ -21,6 +21,7 @@ sauce.ns('analysis', ns => {
     const minPowerPotentialTime = 300;
     const minWattEstTime = 300;
     const minSeaPowerElevation = 328;  // About 1000ft or 1% power
+    const altSmoothPeriod = 12;
     const prefetchStreams = [
         'timer_time', 'time', 'heartrate', 'altitude', 'distance', 'moving',
         'velocity_smooth', 'cadence', 'latlng', 'watts', 'watts_calc',
@@ -147,10 +148,12 @@ sauce.ns('analysis', ns => {
         }
         await fetchStreams([name]);
         const rawStream = _getStream(name);
-        if (rawStream && rawStream.length > period * 2) {
-            const smooth = sauce.data.smooth(period, rawStream);
+        if (rawStream) {
+            const smooth = sauce.data.smooth(Math.min(period, rawStream.length / 2 | 0), rawStream);
             pageView.streams().streamData.add(fqName, smooth);
             return _getStream(fqName, start, end);
+        } else {
+            debugger;
         }
     }
 
@@ -795,7 +798,7 @@ sauce.ns('analysis', ns => {
         const wattsStream = realWattsStream || await fetchStream('watts_calc');
         const timeStream = _getStream('time');
         const hrStream = await fetchStream('heartrate');
-        const altStream = await fetchSmoothStream('altitude');
+        const altStream = await fetchSmoothStream('altitude', altSmoothPeriod);
         const distStream = await fetchStream('distance');
         const gradeDistStream = distStream && await fetchGradeDistStream();
         const cadenceStream = await fetchStream('cadence');
@@ -2350,7 +2353,7 @@ sauce.ns('analysis', ns => {
         const timeStream = await fetchStream('time', start, end);
         const distStream = await fetchStream('distance', start, end);
         const hrStream = await fetchStream('heartrate', start, end);
-        const altStream = await fetchSmoothStream('altitude', null, start, end);
+        const altStream = await fetchSmoothStream('altitude', altSmoothPeriod, start, end);
         const powerRoll = await correctedRollTimeRange('watts', getStreamIndexTime(start),
                                                        getStreamIndexTime(end));  // Can be watts_calc too
         const activeTime = getActiveTime(start, end);
@@ -2505,7 +2508,7 @@ sauce.ns('analysis', ns => {
             {name: 'latlng', label: 'lng', formatter: x => x[1]},
             {name: 'temp'},
             {name: 'altitude'},
-            {name: 'altitude_smooth_15', label: 'altitude_smooth'},
+            {name: `altitude_smooth_${altSmoothPeriod}`, label: 'altitude_smooth'},
             {name: 'grade_smooth'},
         ].map(x => ({
             name: x.name,
@@ -2667,7 +2670,7 @@ sauce.ns('analysis', ns => {
         const timeStream = (timeMultiplier && timeMultiplier !== 1) ?
             timeStreamOrig.map(x => x * timeMultiplier) : timeStreamOrig;
         const distStream = await fetchStream('distance', start, end);
-        const altStream = await fetchSmoothStream('altitude', null, start, end);
+        const altStream = await fetchSmoothStream('altitude', altSmoothPeriod, start, end);
         const latlngStream = await fetchStream('latlng', start, end);
         const points = [];
         const distOfft = distStream[0];
@@ -2732,7 +2735,7 @@ sauce.ns('analysis', ns => {
     async function showPerfPredictor(start, end) {
         const timeStream = await fetchStream('time', start, end);
         const distStream = await fetchStream('distance', start, end);
-        const altStream = await fetchSmoothStream('altitude', null, start, end);
+        const altStream = await fetchSmoothStream('altitude', altSmoothPeriod, start, end);
         const powerRoll = await correctedRollTimeRange('watts', getStreamIndexTime(start),
                                                        getStreamIndexTime(end));
         const origTime = streamDelta(timeStream);
