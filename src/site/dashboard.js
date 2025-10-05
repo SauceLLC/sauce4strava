@@ -121,6 +121,8 @@ sauce.ns('dashboard', function(ns) {
             return props.rowData.club_entries.some(x => x.athlete_id === selfId);
         } else if (props.entity === 'Post') {
             return props.post.athlete_id === selfId;
+        } else if (props.entity === 'PerformanceGoalCreated') {
+            return props.rowData.goal_entries.some(x => x.athlete_id === selfId);
         } else if (['SuggestedRoutes', 'FancyPromo', 'SimplePromo'].includes(props.entity)) {
             return false;
         } else {
