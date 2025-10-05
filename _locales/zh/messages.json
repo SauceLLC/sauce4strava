@@ -1708,6 +1708,12 @@
         "message": "根据估算的瓦特排除峰值结果。",
         "description": "IMMUTABLE"
     },
+    "performance_skip_virtual": {
+        "message": "跳过虚拟"
+    },
+    "performance_skip_virtual_tooltip": {
+        "message": "根据虚拟活动排除峰值结果。"
+    },
     "performance_predicted": {
         "message": "预估",
         "description": "IMMUTABLE"

@@ -1382,6 +1382,12 @@
     "performance_skip_estimates_tooltip": {
         "message": "Excluya los resultados máximos en función de los vatios estimados."
     },
+    "performance_skip_virtual": {
+        "message": "Saltar virtuales"
+    },
+    "performance_skip_virtual_tooltip": {
+        "message": "Excluir resultados máximos basados en actividades virtuales."
+    },
     "performance_predicted": {
         "message": "Predicho"
     },

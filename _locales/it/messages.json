@@ -1349,6 +1349,12 @@
     "performance_skip_estimates_tooltip": {
         "message": "Escludi i risultati di picco in base ai watt stimati."
     },
+    "performance_skip_virtual": {
+        "message": "Salta Virtuale"
+    },
+    "performance_skip_virtual_tooltip": {
+        "message": "Escludere i risultati di picco basati sulle attività virtuali."
+    },
     "performance_predicted": {
         "message": "Predetto"
     },

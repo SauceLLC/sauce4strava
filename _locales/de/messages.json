@@ -1361,6 +1361,12 @@
     "performance_skip_estimates_tooltip": {
         "message": "Spitzenergebnisse basierend auf der geschätzten Wattzahl ausschließen."
     },
+    "performance_skip_virtual": {
+        "message": "Virtuell überspringen"
+    },
+    "performance_skip_virtual_tooltip": {
+        "message": "Schließen Sie Spitzenergebnisse aufgrund virtueller Aktivitäten aus."
+    },
     "performance_predicted": {
         "message": "Vorhergesagt"
     },

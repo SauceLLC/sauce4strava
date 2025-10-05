@@ -1357,6 +1357,12 @@
     "performance_skip_estimates_tooltip": {
         "message": "Exclure les résultats de pointe basés sur les watts estimés."
     },
+    "performance_skip_virtual": {
+        "message": "Sauter virtuel"
+    },
+    "performance_skip_virtual_tooltip": {
+        "message": "Exclure les résultats de pointe basés sur des activités virtuelles."
+    },
     "performance_predicted": {
         "message": "Prédit"
     },

@@ -1460,6 +1460,12 @@
     "performance_skip_estimates_tooltip": {
         "message": "Excluir resultados de pico com base em watts estimados."
     },
+    "performance_skip_virtual": {
+        "message": "Pular Virtual"
+    },
+    "performance_skip_virtual_tooltip": {
+        "message": "Exclua resultados de pico com base em atividades virtuais."
+    },
     "performance_predicted": {
         "message": "previsto"
     },
