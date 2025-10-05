@@ -561,6 +561,9 @@ export class PeaksStore extends sauce.db.DBStore {
         if (options.skipEstimates) {
             peaks = peaks.filter(x => !x.estimate);
         }
+        if (options.skipVirtual) {
+            peaks = peaks.filter(x => !x.virtual);
+        }
         if (this.getDirectionForType(type) === 'prev') {
             peaks.sort((a, b) => (b.value || 0) - (a.value || 0));
         } else {

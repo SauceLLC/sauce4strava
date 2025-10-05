@@ -2858,6 +2858,7 @@ sauce.ns('peaks', function() {
             athlete: activity.athlete,
             activity: activity.id,
             activityType: activity.basetype,
+            virtual: activity.virtual,
             ts: activity.ts,
             activeTime: roll.active(),
             ...extra

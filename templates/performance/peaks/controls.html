@@ -58,5 +58,11 @@
                 {{{skip_estimates}}}
             </label>
         <% } %>
+        <% if (!obj.disableSkipVirtual) { %>
+            <label title="{{{skip_virtual_tooltip}}}">
+                <input type="checkbox" class="pref" name="skipVirtual" {{panelPrefs.skipVirtual ? 'checked' : ''}}/>
+                {{{skip_virtual}}}
+            </label>
+        <% } %>
     </div>
 <% } %>

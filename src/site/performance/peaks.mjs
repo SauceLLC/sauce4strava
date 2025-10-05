@@ -55,11 +55,12 @@ function getPeaksValueFormatter(streamType) {
 }
 
 
-async function getPeaks({type, period, activityType, limit, skipEstimates, ...optional}) {
+async function getPeaks({type, period, activityType, limit, skipEstimates, skipVirtual, ...optional}) {
     const options = {
         limit,
         activityType,
         skipEstimates,
+        skipVirtual,
         expandActivities: optional.expandActivities,
         skip: optional.skip,
     };
@@ -158,6 +159,7 @@ export class PeaksTableView extends views.ResizablePerfView {
             includeAllDates: false,
             activityType: null,
             skipEstimates: null,
+            skipVirtual: null,
         };
     }
 
@@ -339,6 +341,7 @@ export class PeaksChartView extends charts.ActivityTimeRangeChartView {
             distance: 10000,
             activityType: null,
             skipEstimates: null,
+            skipVirtual: null,
             disabledDatasets: {
                 // XXX want a small list but we don't know the user's ranges here.. :/
                 p5: false,

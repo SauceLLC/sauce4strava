@@ -447,6 +447,8 @@
     "performance_all_dates": {"message": "All Dates"},
     "performance_skip_estimates": {"message": "Skip Estimates"},
     "performance_skip_estimates_tooltip": {"message": "Exclude peak results based on estimated watts."},
+    "performance_skip_virtual": {"message": "Skip Virtual"},
+    "performance_skip_virtual_tooltip": {"message": "Exclude peak results based on virtual activities."},
     "performance_predicted": {"message": "Predicted"},
     "performance_fitness": {"message": "Fitness"},
     "performance_fatigue": {"message": "Fatigue"},
