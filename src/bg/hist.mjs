@@ -1740,8 +1740,7 @@ class SyncJob extends EventTarget {
                     adding++;
                 }
                 known.set(x.id, x.hash);
-                // XXX Build some confidence in this...
-                try {
+                try { // XXX Build some confidence in this...
                     if (typeof pendingOverrides === 'object' && Object.hasOwn(pendingOverrides, x.id)) {
                         const overrides = pendingOverrides[x.id];
                         this.logWarn("Applying previously stored overrides to activity:", x.id, overrides);
@@ -1751,8 +1750,7 @@ class SyncJob extends EventTarget {
                         saveAthlete = true;
                     }
                 } catch(e) {
-                    console.error("Paranoid well founded during activity override application:", e);
-                    debugger;
+                    console.error("Error during activity override application:", e);
                 }
             }
             const f = new Intl.DateTimeFormat();
@@ -1801,8 +1799,19 @@ class SyncJob extends EventTarget {
                         batch.push(entry);
                     }
                 } else if (x.entity === 'GroupActivity') {
+                    let virtual;
+                    try { // XXX Extra paranoid for first release or two..
+                        if (x.photos && Object.keys(x.photos).length) {
+                            virtual = Object.values(x.photos)
+                                .filter(x => x.photoList?.length)
+                                .some(x => this.inferVirtualFromPhotoList(x.photoList));
+                        }
+                    } catch(e) {
+                        console.error("Failed to infer virtual group activity type:", e);
+                    }
                     for (const a of x.rowData.activities.filter(x => x.athlete_id === this.athlete.pk)) {
-                        const entry = this.activityToDatabase(await this.parseFeedGroupActivity(a));
+                        const entry = this.activityToDatabase(
+                            await this.parseFeedGroupActivity(a, {virtual}));
                         if (entry && (!known.has(entry.id) || known.get(entry.id) !== entry.hash)) {
                             batch.push(entry);
                         }
@@ -2048,7 +2057,13 @@ class SyncJob extends EventTarget {
             (new Date(activity.startDate)).getTime() :
             (cursorData.updated_at - (activity.elapsedTime || 0)) * 1000;
         const media = [];
+        let isVirtual = activity.isVirtual;
         if (activity.mapAndPhotos?.photoList?.length) {
+            try { // XXX Extra paranoid for first release or two..
+                isVirtual = isVirtual || this.inferVirtualFromPhotoList(activity.mapAndPhotos.photoList);
+            } catch(e) {
+                console.error("Failed to infer virtual activity type:", e);
+            }
             for (const x of activity.mapAndPhotos.photoList) {
                 if (!x || !x.thumbnail) {
                     continue;
@@ -2131,8 +2146,7 @@ class SyncJob extends EventTarget {
             description: activity.description ?
                 await specialProxy.stripHTML(activity.description) :
                 undefined,
-            virtual: activity.isVirtual,
-            trainer: activity.isVirtual ? true : undefined,
+            virtual: isVirtual,
             commute: activity.isCommute,
             map: activity.mapAndPhotos?.activityMap ?
                 {url: activity.mapAndPhotos.activityMap.url} :
@@ -2142,15 +2156,14 @@ class SyncJob extends EventTarget {
         };
     }
 
-    async parseFeedGroupActivity(a) {
+    async parseFeedGroupActivity(a, {virtual}={}) {
         return {
             id: a.activity_id,
             ts: (new Date(a.start_date)).getTime(),
             type: a.type,
             name: a.name,
             description: a.description ? await specialProxy.stripHTML(a.description) : undefined,
-            virtual: a.is_virtual,
-            trainer: a.is_virtual ? true : undefined,
+            virtual: a.is_virtual || virtual || false,
             commute: a.is_commute,
             map: a.activity_map ? {url: a.activity_map.url} : undefined,
             media: a.photos?.length ? a.photos.map(x => {
@@ -2163,6 +2176,16 @@ class SyncJob extends EventTarget {
             }) : undefined,
             elapsedTime: a.elapsed_time,
         };
+    }
+
+    inferVirtualFromPhotoList(photoList) {
+        // Similar to src/site/dashboard but for feed API.
+        // Several activity types don't report themselves as virtual but
+        // we can scrap this from the "photoList" object sometimes..
+        const virtIdents = ['zwift', 'trainerroad', 'peloton', 'virtual', 'whoop', 'wahoo systm'];
+        return photoList
+            .filter(x => x.enhanced_photo?.name)
+            .some(x => virtIdents.includes(x.enhanced_photo.name.toLowerCase()));
     }
 
     async _fetchFeedMonth(year, month) {
@@ -2203,8 +2226,19 @@ class SyncJob extends EventTarget {
                     if (x.entity === 'Activity') {
                         batch.push(this.activityToDatabase(await this.parseFeedActivity(x)));
                     } else if (x.entity === 'GroupActivity') {
+                        let virtual;
+                        try { // XXX Extra paranoid for first release or two..
+                            if (x.photos && Object.keys(x.photos).length) {
+                                virtual = Object.values(x.photos)
+                                    .filter(x => x.photoList?.length)
+                                    .some(x => this.inferVirtualFromPhotoList(x.photoList));
+                            }
+                        } catch(e) {
+                            console.error("Failed to infer virtual group activity type:", e);
+                        }
                         for (const a of x.rowData.activities.filter(x => x.athlete_id === this.athlete.pk)) {
-                            batch.push(this.activityToDatabase(await this.parseFeedGroupActivity(a)));
+                            batch.push(
+                                this.activityToDatabase(await this.parseFeedGroupActivity(a, {virtual})));
                         }
                     }
                 }

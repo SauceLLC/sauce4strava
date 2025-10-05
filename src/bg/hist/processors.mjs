@@ -288,7 +288,7 @@ export async function extraStreamsProcessor({manifest, activities, athlete}) {
         if (!streams.moving) {
             continue;
         }
-        const isTrainer = activity.get('trainer');
+        const isTrainer = activity.get('virtual');
         const basetype = activity.get('basetype');
         const isSwim = basetype === 'swim';
         const isRun = basetype === 'run';
