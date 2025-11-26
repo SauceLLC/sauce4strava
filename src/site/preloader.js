@@ -16,6 +16,13 @@ self.saucePreloaderInit = function saucePreloaderInit() {
         new Promise(resolve => document.addEventListener('sauceOptionsSet', resolve));
 
 
+    sauce.propDefined('CookieControl.Cookie', obj => {
+        // cookiebot expects to run the show and it ends up doing horrible things like
+        // loading our scripts multiple times.  It's pretty much impossible to live with it.
+        console.info("Disabling incompatible cookiebot.com");
+        window.CookieControl.Cookie = function() {};
+    });
+
     sauce.propDefined('pageView', view => {
         const assembleSave = view.assemble;
         view.assemble = function(_, weight) {
