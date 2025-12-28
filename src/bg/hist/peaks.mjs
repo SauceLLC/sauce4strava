@@ -14,7 +14,7 @@ function getRankLevel(period, p, wp, weight, athlete) {
 export function peaksProcessor(actStreams, athlete, activities, {periods, distances, disableNP, disableXP}) {
     const upPeaks = [];
     for (const activity of activities) {
-        if (activity.peaksExclude) {
+        if (activity.peaksExclude || activity.fullExclude) {
             continue;  // cleanup happens in finalizer proc.
         }
         const streams = actStreams.get(activity.id);

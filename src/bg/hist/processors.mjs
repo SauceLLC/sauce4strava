@@ -372,7 +372,7 @@ export async function runPowerProcessor({manifest, activities, athlete}) {
                 activity.setManifestSyncError(manifest, e);
             }
         }
-        if (activity.get('peaksExclude')) {
+        if (activity.get('peaksExclude') || activity.get('fullExclude')) {
             continue;
         }
         let watts;
@@ -427,7 +427,8 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
     for (const activity of activities) {
         const streams = actStreams.get(activity.pk);
         const stats = {};
-        if (streams.time && streams.active) {
+        const exclude = activity.get('fullExclude');
+        if (!exclude && streams.time && streams.active) {
             stats.activeTime = sauce.data.activeTime(streams.time, streams.active);
             if (streams.distance && stats.distance == null && streams.distance.length > 1) {
                 stats.distance = streams.distance[streams.distance.length - 1] - streams.distance[0];
@@ -544,7 +545,7 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
                     continue;
                 }
             }
-        } else if (activity.get('statsFallback')) {
+        } else if (!exclude && activity.get('statsFallback')) {
             Object.assign(stats, activity.get('statsFallback'));
         }
         const prevStats = activity.get('stats');
@@ -596,7 +597,7 @@ export async function peaksFinalizerProcessor({manifest, activities, athlete}) {
     for (const [index, activity] of activities.entries()) {
         const actData = activity.data;
         const deleteEstimates = !allowEstPowerPeaks(actData);
-        const deleteAll = actData.peaksExclude;
+        const deleteAll = actData.peaksExclude || actData.fullExclude;
 
         // Cleanup: Remove estimated powers and/or obsolete periods/distances...
         for (const peaks of [powers, nps, xps, wkgs]) {

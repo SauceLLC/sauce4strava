@@ -643,6 +643,12 @@ export async function exportSyncChangeset(athleteId, sourceChangeset) {
             }
             data.activityOverrides[x.id].peaksExclude = x.peaksExclude;
         }
+        if (x.fullExclude !== undefined) {
+            if (!data.activityOverrides[x.id]) {
+                data.activityOverrides[x.id] = {};
+            }
+            data.activityOverrides[x.id].fullExclude = x.fullExclude;
+        }
     }
     const filename = `hist-md-${athleteId}/${sauce.deviceId}`;
     let file = await meta.get(filename);
@@ -856,7 +862,7 @@ async function _applySyncChangeset(athleteId, changeset, {replace, dryrun}={}) {
     for (const x of activities) {
         const override = actOverrides.get(x.pk.toString());
         actOverrides.delete(x.pk.toString());
-        for (const key of ['tssOverride', 'peaksExclude']) {
+        for (const key of ['tssOverride', 'peaksExclude', 'fullExclude']) {
             const suggested = (override ?? {})[key];
             const existing = x.get(key);
             if (suggested !== existing) {

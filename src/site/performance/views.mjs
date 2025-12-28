@@ -99,6 +99,11 @@ export async function editActivityDialogXXX(activity, pageView) {
                 <input name="peaks-exclude" type="checkbox"
                        ${activity.peaksExclude ? 'checked' : ''}/>
             </label>
+            <label title="Ignore this activity's training load, hours, distance, etc"
+                >Exclude this activity from all fitness calculations:
+                <input name="full-exclude" type="checkbox"
+                       ${activity.fullExclude ? 'checked' : ''}/>
+            </label>
         `,
         extraButtons: [{
             text: await L.getMessage('save'),
@@ -116,6 +121,10 @@ export async function editActivityDialogXXX(activity, pageView) {
                 const peaksExclude = $modal[0].querySelector('input[name="peaks-exclude"]').checked;
                 if (peaksExclude !== !!activity.peaksExclude) {
                     updates.peaksExclude = peaksExclude;
+                }
+                const fullExclude = $modal[0].querySelector('input[name="full-exclude"]').checked;
+                if (fullExclude !== !!activity.fullExclude) {
+                    updates.fullExclude = fullExclude;
                 }
                 if (Object.keys(updates).length) {
                     ev.currentTarget.disabled = true;
@@ -660,7 +669,7 @@ export class ActivityTableView extends PerfView {
 
 
 export class BulkActivityEditDialog extends PerfView {
-    static localeKeys = ['/save', 'edit_activities', 'exclude_peaks_tooltip'];
+    static localeKeys = ['/save', 'edit_activities', 'exclude_peaks_tooltip', 'exclude_full_tooltip'];
 
     async init({activities, pageView, ...options}) {
         await super.init({pageView, ...options});
@@ -681,10 +690,16 @@ export class BulkActivityEditDialog extends PerfView {
             },
         }, {
             id: 'peaks-exclude',
-            label: await sauce.ui.getImage('fa/eye-slash-regular.svg'),
+            label: `${await sauce.ui.getImage('fa/eye-slash-regular.svg')} Peaks`,
             align: 'center',
             tooltip: this.LM('exclude_peaks_tooltip'),
             format: x => `<input type="checkbox" name="peaks-exclude" ${x.peaksExclude ? 'checked' : ''}/>`,
+        }, {
+            id: 'full-exclude',
+            label: await sauce.ui.getImage('fa/eye-slash-regular.svg'),
+            align: 'center',
+            tooltip: this.LM('exclude_full_tooltip'),
+            format: x => `<input type="checkbox" name="full-exclude" ${x.fullExclude ? 'checked' : ''}/>`,
         });
         await this.activityTable.setColumns(columns);
         await this.activityTable.setActivities(activities);
@@ -706,8 +721,10 @@ export class BulkActivityEditDialog extends PerfView {
             extraButtons: [{
                 text: this.LM('save'),
                 click: async ev => {
+                    const localActivities = this.activityTable.activities;
                     const updates = {};
                     for (const tr of this.$('table tbody tr[data-id]')) {
+                        const localAct = localActivities.find(x => x.id === +tr.dataset.id);
                         const tssEl = tr.querySelector('input[name="tss-override"]');
                         if (tssEl.getAttribute('value') !== tssEl.value) {
                             const tssOverride = tssEl.value ? Number(tssEl.value) : null;
@@ -717,11 +734,19 @@ export class BulkActivityEditDialog extends PerfView {
                                 return;
                             }
                             updates[tr.dataset.id] = {tssOverride};
+                            localAct.tssOverride = tssOverride;
                         }
-                        const peaksEl = tr.querySelector('input[name="peaks-exclude"]');
-                        if (peaksEl.hasAttribute('checked') !== peaksEl.checked) {
+                        const peaksExcludeEl = tr.querySelector('input[name="peaks-exclude"]');
+                        if (peaksExcludeEl.hasAttribute('checked') !== peaksExcludeEl.checked) {
                             updates[tr.dataset.id] = updates[tr.dataset.id] || {};
-                            updates[tr.dataset.id].peaksExclude = peaksEl.checked;
+                            localAct.peaksExclude = updates[tr.dataset.id].peaksExclude =
+                                peaksExcludeEl.checked;
+                        }
+                        const fullExcludeEl = tr.querySelector('input[name="full-exclude"]');
+                        if (fullExcludeEl.hasAttribute('checked') !== fullExcludeEl.checked) {
+                            updates[tr.dataset.id] = updates[tr.dataset.id] || {};
+                            localAct.fullExclude = updates[tr.dataset.id].fullExclude =
+                                fullExcludeEl.checked;
                         }
                     }
                     if (Object.keys(updates).length) {
