@@ -1834,6 +1834,9 @@
         "message": "从巅峰表现结果中排除此活动",
         "description": "IMMUTABLE"
     },
+    "performance_exclude_full_tooltip": {
+        "message": "将此活动从所有体能计算（小时数、训练负荷等）中排除。"
+    },
     "performance_athlete_chart_name": {
         "message": "运动员信息",
         "description": "IMMUTABLE"

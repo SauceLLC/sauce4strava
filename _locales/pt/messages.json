@@ -1560,6 +1560,9 @@
     "performance_exclude_peaks_tooltip": {
         "message": "Excluir esta atividade dos resultados de desempenho máximo"
     },
+    "performance_exclude_full_tooltip": {
+        "message": "Exclua esta atividade de todos os cálculos de condicionamento físico (horas, carga de treino, etc.)."
+    },
     "performance_athlete_chart_name": {
         "message": "Informações do Atleta"
     },

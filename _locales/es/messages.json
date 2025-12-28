@@ -1478,6 +1478,9 @@
     "performance_exclude_peaks_tooltip": {
         "message": "Excluir esta actividad de los resultados de Peak Performance"
     },
+    "performance_exclude_full_tooltip": {
+        "message": "Excluir esta actividad de todos los cálculos de fitness (horas, carga de entrenamiento, etc.)"
+    },
     "performance_athlete_chart_name": {
         "message": "Información del atleta"
     },
