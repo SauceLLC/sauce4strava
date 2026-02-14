@@ -898,6 +898,16 @@ self.saucePreloaderInit = function saucePreloaderInit() {
         }
 
         Klass.prototype.fetch = interceptModelFetch(Klass.prototype.fetch, getStreams);
+
+        const setStreamsFromResponseSave = Klass.prototype.setStreamsFromResponse;
+        Klass.prototype.setStreamsFromResponse = function(response) {
+            // Starting to see bogus data for watts_calc on runs that poisons our good calcs
+            if (response.watts_calc && !response.watts_calc.some(x => x)) {
+                console.debug("Deleting bogus watts_calc streams returned by Strava");
+                delete response.watts_calc;
+            }
+            return setStreamsFromResponseSave.apply(this, arguments);
+        };
     }, {multiple: true});
 
 

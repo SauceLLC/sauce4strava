@@ -152,8 +152,6 @@ sauce.ns('analysis', ns => {
             const smooth = sauce.data.smooth(Math.min(period, rawStream.length / 2 | 0), rawStream);
             pageView.streams().streamData.add(fqName, smooth);
             return _getStream(fqName, start, end);
-        } else {
-            debugger;
         }
     }
 
