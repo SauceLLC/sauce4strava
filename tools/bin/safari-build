@@ -6,7 +6,7 @@ import shutil
 import subprocess
 
 env = os.environ.copy()
-env['TARGET'] = 'gecko'  # eventually safari when build sys supports it.
+env['TARGET'] = 'safari'
 def sh(*cmds, output=None, **kwargs):
     if output:
         return subprocess.check_output(cmds, env=env, text=True, **kwargs)

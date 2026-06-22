@@ -65,6 +65,8 @@ build-gecko:
 
 build-safari:
 	TARGET=safari $(MAKE) manifest build
+	rm src/site/base.js
+	cp src/common/base.js src/site/base.js  # HACK must be undone
 
 build-safari-release:
 	TARGET=safari $(MAKE) manifest-release build
