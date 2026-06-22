@@ -100,7 +100,6 @@ sauce.ns('proxy', ns => {
                     return;
                 }
                 const p = browser.runtime.connect({name: 'sauce-aggressive-keepalive'});
-                console.debug("Send aggressive keepalive...");
                 const watchdogTimeout = setTimeout(() => {
                     // Actually quite unlikely because the connect revives the background page.
                     // This is probably case of suspended timers.
@@ -115,11 +114,9 @@ sauce.ns('proxy', ns => {
                         // This most likely revive scenerio..
                         console.warn("Background worker reset: revive it..");
                         ns.ensureConnected({forceReconnect: true});
-                    } else {
-                        console.debug("Aggressive keepalive ACK");
                     }
                 });
-            }, 1000);
+            }, 15000);
         }
     };
 
