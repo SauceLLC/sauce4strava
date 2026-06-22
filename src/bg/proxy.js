@@ -27,12 +27,16 @@ sauce.ns('proxy', ns => {
     });
 
     browser.runtime.onConnect.addListener(port => {
+        const tabId = port.sender.tab?.id;
         if (port.name !== 'sauce-proxy-port') {
-            console.warn("Unexpected extension port usage");
+            if (port.name === 'sauce-aggressive-keepalive') {
+                port.postMessage({type: 'sauce-aggressive-keepalive-ack', reset: !connectedTabs.has(tabId)});
+            } else {
+                console.warn("Unexpected extension port usage");
+            }
             return;
         }
         const connId = localConnIdSeq++;
-        const tabId = port.sender.tab?.id;
         const sender = tabId != null ? `tab:${tabId}` : 'non-tab';
         console.debug(`Accepting new proxy connection [${sender}]: ${connId}`);
         if (tabId != null) {

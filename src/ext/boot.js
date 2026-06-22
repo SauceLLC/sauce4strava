@@ -134,7 +134,7 @@ function setCustomFont(options) {
                         return;
                     } else if (msg.op === 'background-sw-revived') {
                         console.info("Background worker revive");
-                        await sauce.proxy.ensureConnected();
+                        await sauce.proxy.ensureConnected({forceReconnect: true});
                     }
                 });
                 sauce.storage.addListener((key, value, oldValue) => {
