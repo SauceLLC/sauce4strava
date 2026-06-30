@@ -28,7 +28,7 @@ body {
 
 /* Use px for media query compat.. */
 $nav-width: 260px;
-$main-width: 600px;
+$main-width: 540px;
 $aside-width: 280px;
 $scrollbar-safety: 25px;
 
@@ -376,6 +376,7 @@ table.activity-table {
     flex-wrap: wrap;
     position: relative;
     min-height: 100vh; // reduce load jank
+    min-height: 100dvh; // reduce load jank
 
     @include buttons.uniform;
 
@@ -524,6 +525,7 @@ table.activity-table {
             position: sticky;
             top: 0;
             min-height: 100vh;
+            min-height: 100dvh;
             background-repeat: no-repeat;
             background-size: cover;
             display: flex;
@@ -1273,6 +1275,7 @@ table.activity-table {
 
         &:has(.sauce-panels .sauce-panel.maximized) {
             height: 100vh !important;
+            height: 100dvh !important;
             overflow: hidden !important;
 
             .sauce-panels {
@@ -1987,12 +1990,14 @@ dialog.modal-media {
             position: sticky;
             top: 0;
             max-height: 100vh;
+            max-height: 100dvh;
         }
 
         > aside.details {
             position: sticky;
             top: 0;
             max-height: 100vh;
+            max-height: 100dvh;
 
             > header {
                 position: sticky;

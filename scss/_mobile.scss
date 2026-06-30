@@ -96,6 +96,7 @@
 
     &, body {
         height: 100vh;
+        height: 100dvh;
     }
 
     .inset {
@@ -335,6 +336,7 @@
                 width: initial;
                 overflow: hidden auto;
                 max-height: calc(100vh - #{defines.$global-header-height});
+                max-height: calc(100dvh - #{defines.$global-header-height});
                 background: color.get(bg);
 
                 ul#pagenav,
@@ -496,6 +498,7 @@
     .ui-dialog.sauce-dialog.sauce-info-dialog {
         width: 100vw !important;
         height: 100vh !important;
+        height: 100dvh !important;
         top: 0 !important;
         left: 0 !important;
         font-size: 1.2em;
