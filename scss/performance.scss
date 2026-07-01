@@ -107,7 +107,7 @@ html.sauce-performance {
     html.sauce-performance {
         header#global-header {
             nav.nav-bar {
-                margin: 0 2.5vw 0 calc(2.5vw + 2em);
+                margin: 0 2.5vw 0 calc(2.5vw + 30px);
 
                 &::before {
                     background-image: url(../images/logo_vert_48x128.png);
@@ -121,7 +121,7 @@ html.sauce-performance {
                     display: block;
                     position: absolute;
                     top: 13%;
-                    left: -25px;
+                    left: -33px;
                     filter: drop-shadow(2px 1px 3px #0003);
                     opacity: 0.82;
                     transition: opacity 200ms;
@@ -131,18 +131,27 @@ html.sauce-performance {
                     opacity: 1;
                 }
 
-                .branding::before {
-                    content: 'SAUCE FOR...';
-                    position: absolute;
-                    top: 5px;
-                    color: color.shade(fg, 35%);
-                    text-shadow: 1px 1px 3px #0001;
-                    font-family: "Boathouse", sans-serif;
-                    font-size: 12px;
-                    line-height: 1.2;
-                    font-weight: 700;
-                    letter-spacing: -0.04em;
-                    transform: scaleY(0.8);
+                .branding-with-echelon {
+                    > a:first-child {
+                        display: none;
+                    }
+                }
+
+                .branding {
+                    margin-top: 5px;
+
+                    &::before {
+                        content: 'SAUCE FOR';
+                        position: absolute;
+                        top: 8px;
+                        color: color.shade(fg, 35%);
+                        text-shadow: 1px 1px 2px #0001;
+                        font-family: "Boathouse", sans-serif;
+                        font-size: 12px;
+                        line-height: 1.2;
+                        font-weight: 700;
+                        transform: scaleY(0.8);
+                    }
                 }
             }
         }
