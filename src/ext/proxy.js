@@ -121,10 +121,9 @@ sauce.ns('proxy', ns => {
     };
 
 
-    class BackgroundProxySubPort extends EventTarget {
+    class BackgroundProxySubPort {
 
         constructor({desc, args, pid, clientPort}) {
-            super();
             this.desc = desc;
             this.args = args;
             this.pid = pid;
@@ -187,9 +186,6 @@ sauce.ns('proxy', ns => {
             if (bgPort) {
                 bgPort.disconnect();
             }
-            const ev = new Event('disconnect');
-            ev.subPort = this;
-            this.dispatchEvent(ev);
         }
     }
 
