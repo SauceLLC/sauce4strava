@@ -34,7 +34,7 @@ export function activitiesByDay(acts, start, end, atl=0, ctl=0) {
             if (a.stats) {
                 const activeTime = a.stats.activeTime || 0;
                 duration += activeTime;
-                intensityTime += a.stats.intensity * activeTime;
+                intensityTime += (a.stats.intensity || 0) * activeTime;
                 altGain += a.stats.altitudeGain || 0;
                 distance += a.stats.distance || 0;
                 kj += a.stats.kj || 0;
@@ -102,7 +102,6 @@ export function aggregateActivitiesByFn(daily, indexFn) {
         } else {
             const entry = metricData[index];
             entry.tss += slot.tss;
-            entry.intensitySum += slot.intensitySum;
             entry.duration += slot.duration;
             entry.intensityTime += slot.intensityTime;
             entry.altGain += slot.altGain;
