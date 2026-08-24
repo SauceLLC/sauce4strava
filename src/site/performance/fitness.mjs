@@ -169,6 +169,7 @@ export class TrainingChartView extends charts.ActivityTimeRangeChartView {
                 tssPred *= 1 + (tssSlope * (1 / (i * decay + 1)));
                 predictions.push({
                     athlete: this.athlete.id,
+                    prediction: true,
                     description: 'Prediction based on recent ATL to CTL ratios',
                     ts: +date,
                     tssOverride: tssPred
