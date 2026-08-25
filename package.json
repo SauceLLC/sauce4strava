@@ -9,7 +9,7 @@
     "jsfit": "https://github.com/mayfield/jsfit.git#c55550a6ad28bff30942eafca3be18cc48f5e304",
     "saucecharts": "https://github.com/SauceLLC/saucecharts.git#92d30a4f602d57437fbdecdf0a8d549f446f9676",
     "sass": "1.83.0",
-    "sauce-chartjs": "https://github.com/SauceLLC/Chart.js.git#79a3f8ed1b1581c35bbae61626f0a453273d0734",
+    "sauce-chartjs": "https://github.com/SauceLLC/Chart.js.git#725a61388dbd6052b9a1028920db288fa4307db3",
     "sauce-terser": "https://github.com/mayfield/terser.git#35dbaf580ac94e1b899314acb9df47b69159c84a",
     "webextension-locale-translator": "0.0.0"
   }

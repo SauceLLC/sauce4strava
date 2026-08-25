@@ -1,8 +1,9 @@
-/* global sauce */
+/* global sauce, jQuery */
 
 import * as views from './views.mjs';
 import * as fitness from './fitness.mjs';
 import * as charts from './charts.mjs';
+import * as Data from './data.mjs';
 
 const L = sauce.locale;
 const H = L.human;
@@ -538,9 +539,188 @@ export class PeaksChartView extends charts.ActivityTimeRangeChartView {
 }
 
 
+class PeaksCurveChart extends charts.SauceChart {
+    constructor(ctx, view, config) {
+        let _this;
+        config.options.scales.xAxes[0].afterBuildTicks = () => _this && _this.view.peakPeriods;
+        super(ctx, view, config);
+        _this = this;
+    }
+
+    updateTooltips(...highlightedTuples) {
+        const labels = [];
+        let title, caretX;
+        for (const [dsIdx, i] of highlightedTuples) {
+            const ds = this.data.datasets[dsIdx];
+            const data = ds.data[i >= 0 ? i : ds.data.length + i];
+            title ??= H.peakPeriod(data.period);
+            caretX ??= ds._meta[0].data[i].getCenterPoint().x;
+            const activity = this.view.activities.find(x => x.id === data.peak.activity);
+            labels.push(`
+                <div class="data-label" data-ds="${ds.id}"
+                     style="--border-color: ${ds.borderColor};
+                            --bg-color: ${ds.backgroundColor};">
+                    <div class="color-bubble"></div>
+                    <div class="lines">
+                        <div class="line">
+                            <span class="label">${ds.label}</span>
+                            <span class="value">${H.number(data.y, {suffix: 'w', html: true})}</span>
+                        </div>
+                        <div class="line extra">${H.date(data.peak.ts, {style: 'weekdayYear'})}</div>
+                        <div class="line extra"><a href="/activities/${activity.id}">${activity.name}</a></div>
+                        <div class="line extra">Rank: ${data.peak.rank}</div>
+                    </div>
+                </div>
+            `);
+        }
+        const $tooltipEl = jQuery(this.canvas).closest('.sauce-panel').find('.chart-tooltip');
+        $tooltipEl[0].classList.toggle('inactive', caretX == null);
+        $tooltipEl[0].style.setProperty('--caret-left', `${caretX || 0}px`);
+        $tooltipEl.html(`
+            <div class="tt-labels axis">${labels.join('')}</div>
+            <div class="tt-horiz axis">
+                <div class="tt-title">${title}</div>
+                <div class="tt-desc">---desc---</div>
+            </div>
+        `);
+    }
+}
+
+export class PeaksCurveView extends charts.ChartView {
+    static uuid = '17e61fd8-3c3e-42c5-885e-5bb7c88e5aaa';
+    static tpl = 'performance/peaks/curve.html';
+    static typeLocaleKey = 'performance_peaks_curve_type';
+    static nameLocaleKey = 'performance_peaks_curve_name';
+    static descLocaleKey = 'performance_peaks_curve_desc';
+    //static localeKeys = [...super.localeKeys];
+
+    get defaultPrefs() {
+        return {
+            skipEstimates: true,
+            skipVirtual: false,
+            powerEstimationModel: 'morton3p',
+        };
+    }
+
+    async init(options) {
+        this.peakPeriods = (await views.getPeakRanges('periods')).map(x => x.value);
+        this.controlsView = new PeaksControlsView({
+            panelView: this,
+            XXXdisableLimit: true,
+            XXXdisableIncludeAllDates: true,
+            XXXdisableIncludeAllAthletes: true,
+            XXXdisablePeriod: true,
+        });
+        const ttAnimation = sauce.ui.throttledAnimationFrame();
+        this.setChartConfig({
+            type: 'line',
+            options: {
+                elements: {
+                    point: {
+                        pointStyle: 'circle',
+                    },
+                },
+                scales: {
+                    yAxes: [{
+                        id: 'values',
+                        ticks: {
+                            beginAtZero: true,
+                            maxTicksLimit: 7,
+                            callback: x => `${getPeaksValueFormatter('power')(x)} ${getPeaksUnit('power')}`,
+                        },
+                    }],
+                    xAxes: [{
+                        id: 'periods',
+                        type: 'logarithmic',
+                        gridLines: {
+                            drawTicks: true,
+                        },
+                        ticks: {
+                            min: this.peakPeriods[0],
+                            max: this.peakPeriods[this.peakPeriods.length - 1],
+                            callback: x => H.peakPeriod(x, {short: true}),
+                        }
+                    }],
+                },
+                tooltips: {
+                    intersect: false,
+                    custom: tt => {
+                        if (tt.dataPoints && tt.dataPoints.length) {
+                            const tuples = tt.dataPoints.map(x => [x.datasetIndex, x.index]);
+                            ttAnimation(() => this.chart.updateTooltips(...tuples));
+                        }
+                    }
+                }
+            }
+        });
+        await super.init({
+            ...options,
+            ChartClass: PeaksCurveChart,
+        });
+    }
+
+    renderAttrs() {
+        return {name: this.name};
+    }
+
+    async updateChart() {
+        const prefs = this.getPrefs();
+        const {start, end} = this.range;
+        const peaks = await Promise.all(this.peakPeriods.map(async period => (await getPeaks({
+            type: 'power',
+            period,
+            start,
+            end,
+            athlete: this.athlete,
+            limit: 1,
+            skipVirtual: prefs.skipVirtual,
+            skipEstimates: prefs.skipEstimates,
+        }))[0]));
+        console.log(peaks);
+        const datasets = [{
+            id: 'current-range',
+            label: 'Current Range', // maybe use actual data values ie. Apr 5th -> June 22nd
+            fill: 'start', // XXX yes
+            borderColor: '#f008',
+            backgroundColor: '#7777',
+            spanGaps: true, // XXX
+            tooltipFormat: x => this.valueFormatter(x),
+            yAxis: 'values',
+            xAxis: 'periods',
+            data: peaks.map(peak => ({
+                peak,
+                x: peak.period,
+                y: peak.value,
+            })),
+        }];
+        console.log({datasets});
+        this.chart.data.datasets = datasets;
+        this.chart.update();
+    }
+
+    async render({update}={}) {
+        this.$('.loading-mask').addClass('loading');
+        this.valueFormatter = x => x != null ?
+            [
+                getPeaksValueFormatter('power')(x), `<abbr class="unit">${getPeaksUnit('power')}</abbr>`
+            ].join(' ') :
+            '-';
+        try {
+            await super.render();
+            await this.controlsView.setElement(this.$('.peaks-controls-view')).render();
+            if (update) {
+                await this.updateChart();
+            }
+        } finally {
+            this.$('.loading-mask').removeClass('loading');
+        }
+    }
+}
+
 export const PanelViews = [
     PeaksTableView,
     PeaksChartView,
+    PeaksCurveView,
 ];
 
 

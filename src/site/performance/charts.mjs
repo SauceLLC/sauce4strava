@@ -237,8 +237,31 @@ Chart.controllers.line.prototype.draw = function(ease) {
 };
 
 
-class SauceChart extends Chart {
+export class SauceChart extends Chart {
+
     constructor(ctx, view, config) {
+        config = config || {};
+        setDefault(config, 'plugins[]', betterTooltipPlugin);
+        setDefault(config, 'options.maintainAspectRatio', false);
+        setDefault(config, 'options.animation.duration', 200);
+        setDefault(config, 'options.layout.padding.top', chartTopPad);
+        setDefault(config, 'options.tooltipLine', true);
+        setDefault(config, 'options.tooltipLineColor', '#07c');
+        setDefault(config, 'options.legend.display', false);
+        setDefault(config, 'options.legend.position', 'bottom');
+        setDefault(config, 'options.legend.labels.padding', 20);
+        setDefault(config, 'options.scales.xAxes[0].gridLines.display', true);
+        setDefault(config, 'options.scales.xAxes[0].gridLines.drawOnChartArea', false);
+        setDefault(config, 'options.scales.xAxes[0].ticks.padding', 4);
+        setDefault(config, 'options.scales.xAxes[0].ticks.minRotation', 30);
+        setDefault(config, 'options.scales.xAxes[0].ticks.maxRotation', 50);
+        setDefault(config, 'options.scales.xAxes[0].ticks.major.enabled', true);
+        setDefault(config, 'options.scales.xAxes[0].ticks.major.fontStyle', 'bold');
+        setDefault(config, 'options.scales.xAxes[0].ticks.major.fontSize', 11);
+        setDefault(config, 'options.scales.xAxes[0].ticks.minor.fontSize', 10);
+        setDefault(config, 'options.scales.xAxes[0].ticks.autoSkipPadding', 20);
+        setDefault(config, 'options.scales.xAxes[0].ticks.sampleSize', 50);
+        setDefault(config, 'options.tooltips.mode', 'index');
         super(ctx, config);
         this.view = view;
     }
@@ -261,35 +284,6 @@ class SauceChart extends Chart {
         }
         return super.getElementsAtEventForMode(ev, mode, options);
     }
-
-    getBucketsAtIndexes(...tuples) {
-        const datasets = this.data.datasets;
-        if (!datasets || !datasets.length) {
-            return [];
-        }
-        const buckets = new Set();
-        for (const [dsIndex, index] of tuples) {
-            const ds = datasets[dsIndex];
-            if (ds && ds.data && ds.data[index]) {
-                if (ds.data[index].b == null) {
-                    console.warn("Missing bucket entry in dataset", ds.data[index]);
-                } else {
-                    buckets.add(ds.data[index].b);
-                }
-            }
-        }
-        return Array.from(buckets);
-    }
-
-    getActivitiesAtIndexes(...tuples) {
-        const acts = new Set();
-        for (const bucket of this.getBucketsAtIndexes(...tuples)) {
-            for (const x of bucket.activities || []) {
-                acts.add(x);
-            }
-        }
-        return Array.from(acts);
-    }
 }
 
 
@@ -299,41 +293,20 @@ export class ActivityTimeRangeChart extends SauceChart {
         config = config || {};
         setDefault(config, 'type', 'line');
         setDefault(config, 'plugins[]', new ChartVisibilityPlugin(config, view));
-        setDefault(config, 'plugins[]', betterTooltipPlugin);
-        setDefault(config, 'options.maintainAspectRatio', false);
         setDefault(config, 'options.elements.point.pointStyle', false);
-        setDefault(config, 'options.layout.padding.top', chartTopPad);
-        setDefault(config, 'options.tooltipLine', true);
-        setDefault(config, 'options.tooltipLineColor', '#07c');
-        setDefault(config, 'options.animation.duration', 200);
-        setDefault(config, 'options.legend.display', false);
-        setDefault(config, 'options.legend.position', 'bottom');
-        setDefault(config, 'options.legend.labels.padding', 20);
         setDefault(config, 'options.legend.labels.usePointStyle', true);
         setDefault(config, 'options.scales.xAxes[0].id', 'days');
         setDefault(config, 'options.scales.xAxes[0].type', 'time');
         setDefault(config, 'options.scales.xAxes[0].distribution', 'series');
-        setDefault(config, 'options.scales.xAxes[0].gridLines.display', true);
-        setDefault(config, 'options.scales.xAxes[0].gridLines.drawOnChartArea', false);
         setDefault(config, 'options.scales.xAxes[0].afterUpdate', scale =>
             _this && _this.onAfterUpdateScale(scale));
         setDefault(config, 'options.scales.xAxes[0].afterBuildTicks', (axis, ticks) =>
             _this && _this.onAfterBuildTicks(axis, ticks));
-        setDefault(config, 'options.scales.xAxes[0].ticks.sampleSize', 50);
-        setDefault(config, 'options.scales.xAxes[0].ticks.padding', 4);
-        setDefault(config, 'options.scales.xAxes[0].ticks.minRotation', 30);
-        setDefault(config, 'options.scales.xAxes[0].ticks.maxRotation', 50);
-        setDefault(config, 'options.scales.xAxes[0].ticks.autoSkipPadding', 20);
         setDefault(config, 'options.scales.xAxes[0].ticks.callback', (_, index, ticks) =>
             _this && _this.formatTickLabel(index, ticks));
-        setDefault(config, 'options.scales.xAxes[0].ticks.major.enabled', true);
-        setDefault(config, 'options.scales.xAxes[0].ticks.major.fontStyle', 'bold');
-        setDefault(config, 'options.scales.xAxes[0].ticks.major.fontSize', 11);
-        setDefault(config, 'options.scales.xAxes[0].ticks.minor.fontSize', 10);
         setDefault(config, 'options.scales.yAxes[0].type', 'linear');
         setDefault(config, 'options.scales.yAxes[0].scaleLabel.display', true);
         setDefault(config, 'options.scales.yAxes[0].ticks.beginAtZero', true);
-        setDefault(config, 'options.tooltips.mode', 'index');
         setDefault(config, 'options.tooltips.enabled', false);  // Use custom html.
         setDefault(config, 'options.tooltips.activitiesFormatter', (...args) =>
             _this.activitiesTooltipFormatter(...args));
@@ -471,6 +444,35 @@ export class ActivityTimeRangeChart extends SauceChart {
         `);
     }
 
+    getBucketsAtIndexes(...tuples) {
+        const datasets = this.data.datasets;
+        if (!datasets || !datasets.length) {
+            return [];
+        }
+        const buckets = new Set();
+        for (const [dsIndex, index] of tuples) {
+            const ds = datasets[dsIndex];
+            if (ds && ds.data && ds.data[index]) {
+                if (ds.data[index].b == null) {
+                    console.warn("Missing bucket entry in dataset", ds.data[index]);
+                } else {
+                    buckets.add(ds.data[index].b);
+                }
+            }
+        }
+        return Array.from(buckets);
+    }
+
+    getActivitiesAtIndexes(...tuples) {
+        const acts = new Set();
+        for (const bucket of this.getBucketsAtIndexes(...tuples)) {
+            for (const x of bucket.activities || []) {
+                acts.add(x);
+            }
+        }
+        return Array.from(acts);
+    }
+
     formatTickLabel(index, ticks) {
         const days = (ticks[ticks.length - 1].value - ticks[0].value) / DAY;
         const data = ticks[index];
@@ -576,12 +578,6 @@ export class ActivityTimeRangeChart extends SauceChart {
 
 
 export class ChartView extends views.PerfView {
-    get events() {
-        return {
-            ...super.events,
-            'click .chart canvas': 'onChartClick',
-        };
-    }
 
     async init({pageView, ChartClass=SauceChart, ...options}) {
         this._ChartClass = ChartClass;
@@ -622,25 +618,6 @@ export class ChartView extends views.PerfView {
         } else if (this._chartConfig) {
             const ctx = this.$('.chart canvas')[0].getContext('2d');
             this.chart = new this._ChartClass(ctx, this, this._chartConfig);
-        }
-    }
-
-    onChartClick(ev) {
-        const box = this.chart.chartArea;
-        if (!box ||
-            ev.offsetX < box.left ||
-            ev.offsetX > box.right ||
-            ev.offsetY < box.top ||
-            ev.offsetY > box.bottom) {
-            return;
-        }
-        const {intersect, axis, mode = 'nearest'} = this.chart.options.tooltips;
-        const elements = this.chart.getElementsAtEventForMode(ev, mode, {intersect, axis});
-        if (elements.length) {
-            const acts = this.chart.getActivitiesAtIndexes(...elements.map(x => [x._datasetIndex, x._index]));
-            if (acts.length) {
-                this.pageView.trigger('select-activities', acts);
-            }
         }
     }
 }
@@ -691,6 +668,7 @@ export class ActivityTimeRangeChartView extends ChartView {
     get events() {
         return {
             ...super.events,
+            'click .chart canvas': 'onChartClick',
             'click .chart-tooltip .data-label': 'onDataLabelClick',
         };
     }
@@ -711,6 +689,25 @@ export class ActivityTimeRangeChartView extends ChartView {
 
     renderAttrs(extra) {
         return {name: this.name, ...extra};
+    }
+
+    onChartClick(ev) {
+        const box = this.chart.chartArea;
+        if (!box ||
+            ev.offsetX < box.left ||
+            ev.offsetX > box.right ||
+            ev.offsetY < box.top ||
+            ev.offsetY > box.bottom) {
+            return;
+        }
+        const {intersect, axis, mode = 'nearest'} = this.chart.options.tooltips;
+        const elements = this.chart.getElementsAtEventForMode(ev, mode, {intersect, axis});
+        if (elements.length) {
+            const acts = this.chart.getActivitiesAtIndexes(...elements.map(x => [x._datasetIndex, x._index]));
+            if (acts.length) {
+                this.pageView.trigger('select-activities', acts);
+            }
+        }
     }
 
     onDataLabelClick(ev) {
