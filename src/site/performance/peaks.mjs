@@ -1,9 +1,8 @@
 /* global sauce, jQuery */
 
-import * as views from './views.mjs';
-import * as fitness from './fitness.mjs';
-import * as charts from './charts.mjs';
-import * as Data from './data.mjs';
+import * as Views from './views.mjs';
+import * as Fitness from './fitness.mjs';
+import * as Charts from './charts.mjs';
 
 const L = sauce.locale;
 const H = L.human;
@@ -84,7 +83,8 @@ async function getPeaks({type, period, activityType, limit, skipEstimates, skipV
 }
 
 
-class PeaksControlsView extends views.PerfView {
+class PeaksControlsView extends Views.PerfView {
+
     static tpl = 'performance/peaks/controls.html';
 
     get events() {
@@ -99,8 +99,8 @@ class PeaksControlsView extends views.PerfView {
         this.panelView = panelView;
         this.attrs = attrs;
         this.peakRanges = {
-            periods: await views.getPeakRanges('periods'),
-            distances: await views.getPeakRanges('distances'),
+            periods: await Views.getPeakRanges('periods'),
+            distances: await Views.getPeakRanges('distances'),
         };
         await super.init();
     }
@@ -132,7 +132,64 @@ class PeaksControlsView extends views.PerfView {
 }
 
 
-export class PeaksTableView extends views.ResizablePerfView {
+class PeaksCurveControlsView extends Views.PerfView {
+
+    static tpl = 'performance/peaks/curve-controls.html';
+
+    get events() {
+        return {
+            ...super.events,
+            'change select[name="compare-picker"]': 'onComparePickerChange',
+            'input input.pref[type="checkbox"]': 'onPrefCheckboxInput',
+        };
+    }
+
+    async init({panelView, ...attrs}) {
+        this.panelView = panelView;
+        this.attrs = attrs;
+        await super.init();
+    }
+
+    renderAttrs() {
+        const curYear = new Date().getFullYear();
+        const oldestYear = new Date(this.panelView.pageView.oldest || `${curYear - 10}-02-02`).getFullYear();
+        const years = [];
+        for (let y = oldestYear; y < curYear; y++) {
+            years.unshift(y);
+        }
+        return {
+            ...this.attrs,
+            years,
+            compareOptions: this.panelView.compareOptions,
+            panelPrefs: this.panelView.getPrefs(),
+        };
+    }
+
+    async updatePanelPref(updates) {
+        await this.panelView.savePrefs(updates);
+        await this.panelView.render({update: true});
+    }
+
+    async onComparePickerChange(ev) {
+        const toggle = ev.currentTarget.value;
+        const compare = this.panelView.getPrefs('compare');
+        if (compare.includes(toggle)) {
+            compare.splice(compare.indexOf(toggle), 1);
+        } else {
+            compare.push(toggle);
+        }
+        await this.updatePanelPref({compare});
+    }
+
+    async onPrefCheckboxInput(ev) {
+        const updates = {[ev.currentTarget.name]: ev.currentTarget.checked};
+        await this.updatePanelPref(updates);
+    }
+}
+
+
+
+export class PeaksTableView extends Views.ResizablePerfView {
     static uuid = '9e0e835b-0d71-4116-9b5a-eb6924386526';
     static tpl = 'performance/peaks/table.html';
     static typeLocaleKey = 'performance_peaks_table_type';
@@ -259,7 +316,7 @@ export class PeaksTableView extends views.ResizablePerfView {
     async onEditActivityClick(ev) {
         const id = Number(ev.currentTarget.closest('[data-id]').dataset.id);
         const activity = await sauce.hist.getActivity(id);
-        views.editActivityDialogXXX(activity, this.pageView);
+        Views.editActivityDialogXXX(activity, this.pageView);
     }
 
     async onLoadMoreClick(ev) {
@@ -326,13 +383,12 @@ export class PeaksTableView extends views.ResizablePerfView {
 }
 
 
-export class PeaksChartView extends charts.ActivityTimeRangeChartView {
+export class PeaksChartView extends Charts.ActivityTimeRangeChartView {
     static uuid = '1479b2a2-c8e3-48f9-bf6f-9acce30b12d8';
     static tpl = 'performance/peaks/chart.html';
     static typeLocaleKey = 'performance_peaks_chart_type';
     static nameLocaleKey = 'performance_peaks_chart_name';
     static descLocaleKey = 'performance_peaks_desc';
-    static localeKeys = [...super.localeKeys];
 
     get defaultPrefs() {
         const mile = 1609.344;
@@ -372,8 +428,8 @@ export class PeaksChartView extends charts.ActivityTimeRangeChartView {
 
     async init(options) {
         this.peakRanges = {
-            periods: await views.getPeakRanges('periods'),
-            distances: await views.getPeakRanges('distances'),
+            periods: await Views.getPeakRanges('periods'),
+            distances: await Views.getPeakRanges('distances'),
         };
         this.controlsView = new PeaksControlsView({
             panelView: this,
@@ -539,7 +595,8 @@ export class PeaksChartView extends charts.ActivityTimeRangeChartView {
 }
 
 
-class PeaksCurveChart extends charts.SauceChart {
+class PeaksCurveChart extends Charts.SauceChart {
+
     constructor(ctx, view, config) {
         let _this;
         config.options.scales.xAxes[0].afterBuildTicks = () => _this && _this.view.peakPeriods;
@@ -552,10 +609,13 @@ class PeaksCurveChart extends charts.SauceChart {
         let title, caretX;
         for (const [dsIdx, i] of highlightedTuples) {
             const ds = this.data.datasets[dsIdx];
+            if (!ds) {
+                continue;
+            }
             const data = ds.data[i >= 0 ? i : ds.data.length + i];
-            title ??= H.peakPeriod(data.period);
-            caretX ??= ds._meta[0].data[i].getCenterPoint().x;
-            const activity = this.view.activities.find(x => x.id === data.peak.activity);
+            title ??= H.peakPeriod(data.x);
+            caretX ??= Object.values(ds._meta)[0].data[i].getCenterPoint().x; // XXX got to be a better way, also does this even make sense?
+            const activity = this.view.getActivity(data.peak.activity);
             labels.push(`
                 <div class="data-label" data-ds="${ds.id}"
                      style="--border-color: ${ds.borderColor};
@@ -567,9 +627,15 @@ class PeaksCurveChart extends charts.SauceChart {
                             <span class="value">${H.number(data.y, {suffix: 'w', html: true})}</span>
                         </div>
                         <div class="line extra">${H.date(data.peak.ts, {style: 'weekdayYear'})}</div>
-                        <div class="line extra"><a href="/activities/${activity.id}">${activity.name}</a></div>
-                        <div class="line extra">Rank: ${data.peak.rank}</div>
+                        ${activity ? `
+                            <div class="line extra activity">
+                                <a href="/activities/${activity.id}">${activity.name}</a>
+                            </div>` : ''}
                     </div>
+                    ${data.peak.rankBadge?.badge ? `
+                        <img class="rank-badge" title="${data.peak.rankBadge.tooltip}"
+                             src="${data.peak.rankBadge.badge}"/>
+                    ` : ``}
                 </div>
             `);
         }
@@ -580,37 +646,34 @@ class PeaksCurveChart extends charts.SauceChart {
             <div class="tt-labels axis">${labels.join('')}</div>
             <div class="tt-horiz axis">
                 <div class="tt-title">${title}</div>
-                <div class="tt-desc">---desc---</div>
+                <div class="tt-desc"></div>
             </div>
         `);
     }
 }
 
-export class PeaksCurveView extends charts.ChartView {
+export class PeaksCurveView extends Charts.ChartView {
+
     static uuid = '17e61fd8-3c3e-42c5-885e-5bb7c88e5aaa';
     static tpl = 'performance/peaks/curve.html';
     static typeLocaleKey = 'performance_peaks_curve_type';
     static nameLocaleKey = 'performance_peaks_curve_name';
     static descLocaleKey = 'performance_peaks_curve_desc';
-    //static localeKeys = [...super.localeKeys];
+    static localeKeys = ['current_range', 'previous_range', 'all_before', 'all_after', 'all'];
 
     get defaultPrefs() {
         return {
             skipEstimates: true,
             skipVirtual: false,
+            compare: [],
             powerEstimationModel: 'morton3p',
         };
     }
 
     async init(options) {
-        this.peakPeriods = (await views.getPeakRanges('periods')).map(x => x.value);
-        this.controlsView = new PeaksControlsView({
-            panelView: this,
-            XXXdisableLimit: true,
-            XXXdisableIncludeAllDates: true,
-            XXXdisableIncludeAllAthletes: true,
-            XXXdisablePeriod: true,
-        });
+        this._activityCache = new Map();
+        this.peakPeriods = (await Views.getPeakRanges('periods')).map(x => x.value);
+        this.controlsView = new PeaksCurveControlsView({panelView: this});
         const ttAnimation = sauce.ui.throttledAnimationFrame();
         this.setChartConfig({
             type: 'line',
@@ -619,6 +682,9 @@ export class PeaksCurveView extends charts.ChartView {
                     point: {
                         pointStyle: 'circle',
                     },
+                    line: {
+                        cubicInterpolationMode: 'monotone',
+                    }
                 },
                 scales: {
                     yAxes: [{
@@ -632,9 +698,6 @@ export class PeaksCurveView extends charts.ChartView {
                     xAxes: [{
                         id: 'periods',
                         type: 'logarithmic',
-                        gridLines: {
-                            drawTicks: true,
-                        },
                         ticks: {
                             min: this.peakPeriods[0],
                             max: this.peakPeriods[this.peakPeriods.length - 1],
@@ -657,43 +720,135 @@ export class PeaksCurveView extends charts.ChartView {
             ...options,
             ChartClass: PeaksCurveChart,
         });
+        this.compareOptions = [
+            {value: 'current-range', locale: this.LM('previous_range'), required: true},
+            {value: 'previous-range', locale: this.LM('previous_range')},
+            {value: 'all-before', locale: this.LM('all_before')},
+            {value: 'all-after', locale: this.LM('all_after')},
+            {value: 'all', locale: this.LM('all')},
+        ];
     }
 
     renderAttrs() {
         return {name: this.name};
     }
 
+    async fetchActivity(id) {
+        let activity = this.getActivity(id);
+        if (!activity) {
+            activity = await sauce.hist.getActivity(id);
+            this._activityCache.set(id, activity || null);
+        }
+        return activity;
+    }
+
+    getActivity(id) {
+        let activity = this._activityCache.get(id);
+        if (!activity) {
+            activity = this.activities.find(x => x.id === id);
+            if (activity) {
+                this._activityCache.set(id, activity);
+            }
+        }
+        return activity;
+    }
+
     async updateChart() {
         const prefs = this.getPrefs();
-        const {start, end} = this.range;
-        const peaks = await Promise.all(this.peakPeriods.map(async period => (await getPeaks({
-            type: 'power',
-            period,
-            start,
-            end,
-            athlete: this.athlete,
-            limit: 1,
-            skipVirtual: prefs.skipVirtual,
-            skipEstimates: prefs.skipEstimates,
-        }))[0]));
-        console.log(peaks);
+        const getTopRankPeaksData = async (start, end) => {
+            const topRanked = await Promise.all(this.peakPeriods.map(async period => {
+                const p = (await getPeaks({
+                    type: 'power',
+                    period,
+                    start,
+                    end,
+                    activityType: prefs.activityType,
+                    athlete: this.athlete,
+                    limit: 1,
+                    skipVirtual: prefs.skipVirtual,
+                    skipEstimates: prefs.skipEstimates,
+                }))[0];
+                if (p) {
+                    await this.fetchActivity(p.activity);
+                }
+                return p;
+            }));
+            return topRanked
+                .filter(x => x)
+                .map(peak => ({peak, x: peak.period, y: peak.value}));
+        };
+        const colors = [
+            '#29a607',
+            '#078ea6',
+            '#6a54c5',
+            '#c554b7',
+            '#ec0404',
+            '#2f80ea',
+            '#074ca6',
+            '#b42929',
+            '#2a0aa9',
+        ];
         const datasets = [{
             id: 'current-range',
-            label: 'Current Range', // maybe use actual data values ie. Apr 5th -> June 22nd
-            fill: 'start', // XXX yes
-            borderColor: '#f008',
-            backgroundColor: '#7777',
-            spanGaps: true, // XXX
-            tooltipFormat: x => this.valueFormatter(x),
-            yAxis: 'values',
-            xAxis: 'periods',
-            data: peaks.map(peak => ({
-                peak,
-                x: peak.period,
-                y: peak.value,
-            })),
+            label: this.LM('current_range'),
+            borderColor: '#f228',
+            backgroundColor: '#f238',
+            fill: 'start',
+            data: await getTopRankPeaksData(this.range.start, this.range.end),
         }];
-        console.log({datasets});
+        for (const x of prefs.compare) {
+            if (x === 'all') {
+                datasets.push({
+                    id: x,
+                    label: this.LM('all'),
+                    data: await getTopRankPeaksData()
+                });
+            } else if (x === 'all-before') {
+                datasets.push({
+                    id: x,
+                    label: this.LM('all_before'),
+                    data: await getTopRankPeaksData(-Infinity, this.range.start)
+                });
+            } else if (x === 'all-after') {
+                datasets.push({
+                    id: x,
+                    label: this.LM('all_after'),
+                    data: await getTopRankPeaksData(this.range.end, Infinity),
+                });
+            } else if (x === 'previous-range') {
+                const pRange = this.range.clone();
+                pRange.shift(-1);
+                datasets.push({
+                    id: x,
+                    label: this.LM('previous_range'),
+                    data: await getTopRankPeaksData(pRange.start, pRange.end),
+                });
+            } else if (x.startsWith('year-')) {
+                const year = +x.substr(5);
+                const start = new Date(`${year}-01-01`).getTime();
+                const end = new Date(`${year + 1}-01-01`).getTime();
+                datasets.push({
+                    id: x,
+                    label: year,
+                    data: await getTopRankPeaksData(start, end),
+                });
+            } else {
+                console.warn('Unimplemented range type:', x);
+            }
+        }
+        for (const x of datasets) {
+            if (!x.borderColor) {
+                const color = colors.shift() || '#999999';
+                x.borderColor = `hsl(from ${color} h s l / 0.8)`;
+                x.backgroundColor = `hsl(from ${color} h calc(s - 50) calc(l + 20) / 0.6)`;
+            }
+            Object.assign(x, {
+                spanGaps: true,
+                tooltipFormat: x => this.valueFormatter(x),
+                yAxis: 'values',
+                xAxis: 'periods',
+            });
+        }
         this.chart.data.datasets = datasets;
         this.chart.update();
     }
@@ -702,7 +857,8 @@ export class PeaksCurveView extends charts.ChartView {
         this.$('.loading-mask').addClass('loading');
         this.valueFormatter = x => x != null ?
             [
-                getPeaksValueFormatter('power')(x), `<abbr class="unit">${getPeaksUnit('power')}</abbr>`
+                getPeaksValueFormatter('power')(x),
+                `FOO123 <abbr class="unit">${getPeaksUnit('power')}</abbr>`
             ].join(' ') :
             '-';
         try {
@@ -724,11 +880,11 @@ export const PanelViews = [
 ];
 
 
-class PeaksMainView extends views.MainView {
+class PeaksMainView extends Views.MainView {
     static tpl = 'performance/peaks/main.html';
 
     get availablePanelViews() {
-        return [...PanelViews, ...fitness.PanelViews, ...views.PanelViews];
+        return [...PanelViews, ...Fitness.PanelViews, ...Views.PanelViews];
     }
 
     get defaultPrefs() {
@@ -750,6 +906,6 @@ class PeaksMainView extends views.MainView {
 
 
 export default async function load(options) {
-    self.pv = new views.PageView({...options, MainView: PeaksMainView});
+    self.pv = new Views.PageView({...options, MainView: PeaksMainView});
     await self.pv.render();
 }

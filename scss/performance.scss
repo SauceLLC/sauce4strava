@@ -1665,6 +1665,18 @@ table.activity-table {
                             min-width: 8ch;
                             font-weight: bold;
                         }
+
+                        .rank-badge {
+                            height: 2.2em;
+                            align-self: center;
+                        }
+
+                        .line.activity {
+                            max-width: 16ch;
+                            overflow: hidden;
+                            text-overflow: ellipsis;
+                            white-space: nowrap;
+                        }
                     }
                 }
 

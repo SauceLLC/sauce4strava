@@ -1,0 +1,42 @@
+<select name="compare-picker">
+    <option disabled selected value="">
+        <% if (!panelPrefs.compare?.length) { %>
+            {{{compare_to}}}
+        <% } else { %>
+            <% const selected = panelPrefs.compare.map(x => x.startsWith('year-') ? x.substr(5) : compareOptions.find(xx => xx.value === x)?.locale); %>
+            <% const selectedStr = selected.join(', '); %>
+            <% if (selectedStr.length > 30) { %>
+                {{selectedStr.substr(0, 29)}}...
+            <% } else { %>
+                {{selectedStr}}
+            <% } %>
+        <% } %>
+    </option>
+    <% for (const x of compareOptions.filter(x => !x.required)) { %>
+        <option value="{{x.value}}">{{panelPrefs.compare.includes(x.value) ? '✅' : ''}} {{x.locale}}</option>
+    <% } %>
+    <optgroup label="Years">
+        <% for (const y of obj.years) { %>
+            <option value="year-{{y}}">{{panelPrefs.compare.includes(`year-${y}`) ? '✅' : ''}} {{y}}</option>
+        <% } %>
+    </optgroup>
+</select>
+
+<% if (!obj.disableActivityType) { %>
+    <select name="activityType" class="pref">
+        <option value="" {{!panelPrefs.activityType ? 'selected' : ''}}>{{{any}}}</option>
+        <option value="ride" {{panelPrefs.activityType === 'ride' ? 'selected' : ''}}>{{{rides}}}</option>
+        <option value="run" {{panelPrefs.activityType === 'run' ? 'selected' : ''}}>{{{runs}}}</option>
+    </select>
+<% } %>
+
+<div class="options">
+    <label title="{{{skip_estimates_tooltip}}}">
+        <input type="checkbox" class="pref" name="skipEstimates" {{panelPrefs.skipEstimates ? 'checked' : ''}}/>
+        {{{skip_estimates}}}
+    </label>
+    <label title="{{{skip_virtual_tooltip}}}">
+        <input type="checkbox" class="pref" name="skipVirtual" {{panelPrefs.skipVirtual ? 'checked' : ''}}/>
+        {{{skip_virtual}}}
+    </label>
+</div>

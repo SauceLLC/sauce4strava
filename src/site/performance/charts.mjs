@@ -1,6 +1,6 @@
 /* global sauce, Chart, jQuery, Color */
 
-import * as views from './views.mjs';
+import * as Views from './views.mjs';
 
 const DAY = 86400 * 1000;
 const chartTopPad = 15;
@@ -577,7 +577,7 @@ export class ActivityTimeRangeChart extends SauceChart {
 }
 
 
-export class ChartView extends views.PerfView {
+export class ChartView extends Views.PerfView {
 
     async init({pageView, ChartClass=SauceChart, ...options}) {
         this._ChartClass = ChartClass;
@@ -623,7 +623,7 @@ export class ChartView extends views.PerfView {
 }
 
 
-export class ChartViewSettingsView extends views.PanelSettingsView {
+export class ChartViewSettingsView extends Views.PanelSettingsView {
     static tpl = 'performance/chart-settings.html';
 
     get events() {
@@ -662,6 +662,7 @@ export class ChartViewSettingsView extends views.PanelSettingsView {
 
 
 export class ActivityTimeRangeChartView extends ChartView {
+
     static SettingsView = ChartViewSettingsView;
     static localeKeys = ['today', 'activities'];
 
