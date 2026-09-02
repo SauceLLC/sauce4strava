@@ -978,7 +978,6 @@ sauce.ns('power', function() {
                     weightedRatio ? 'Weighted ' : '',
                     `Power: ${wKg.toFixed(1)}w/kg | ${Math.round(weightedPower).toLocaleString()}w\n`,
                 ].join('');
-                if (isNaN(catLevel)) debugger;
                 return {
                     level,
                     catLevel,
