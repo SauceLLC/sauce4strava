@@ -614,7 +614,8 @@ class PeaksCurveChart extends Charts.SauceChart {
             }
             const data = ds.data[i >= 0 ? i : ds.data.length + i];
             title ??= H.peakPeriod(data.x);
-            caretX ??= Object.values(ds._meta)[0].data[i].getCenterPoint().x; // XXX got to be a better way, also does this even make sense?
+            // XXX got to be a better way, also does this even make sense?..
+            caretX ??= Object.values(ds._meta)[0].data[i].getCenterPoint().x;
             const activity = this.view.getActivity(data.peak.activity);
             labels.push(`
                 <div class="data-label" data-ds="${ds.id}"
