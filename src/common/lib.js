@@ -2703,7 +2703,8 @@ sauce.ns('model', function() {
     function _getAthleteHistoryEntryAt(data, ts) {
         if (data && data.length) {
             data = Array.from(data).sort((a, b) => ((b.ts || 0) - (a.ts || 0)));
-            return data.find(x => (x.ts || 0) <= ts);
+            // Activities can predate the first recorded history entry.
+            return data.find(x => (x.ts || 0) <= ts) || data[data.length - 1];
         }
     }
 
@@ -2875,4 +2876,3 @@ sauce.ns('peaks', function() {
         createStoreEntry,
     };
 });
-
