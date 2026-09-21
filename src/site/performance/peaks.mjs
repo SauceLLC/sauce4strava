@@ -3,6 +3,7 @@
 import * as Views from './views.mjs';
 import * as Fitness from './fitness.mjs';
 import * as Charts from './charts.mjs';
+import * as Eftp from '../../common/eftp.mjs';
 
 const L = sauce.locale;
 const H = L.human;
@@ -624,19 +625,19 @@ class PeaksCurveChart extends Charts.SauceChart {
                     <div class="color-bubble"></div>
                     <div class="lines">
                         <div class="line">
-                            <span class="label">${ds.label}</span>
+                            <span class="label">${ds.label} ${data.x}</span>
                             <span class="value">${H.number(data.y, {suffix: 'w', html: true})}</span>
                         </div>
                         <div class="line extra">${H.date(data.peak.ts, {style: 'weekdayYear'})}</div>
                         ${activity ? `
                             <div class="line extra activity">
                                 <a href="/activities/${activity.id}">${activity.name}</a>
-                            </div>` : ''}
+                            </div>` : '<div class="line extra activity">&nbsp;</div>'}
                     </div>
                     ${data.peak.rankBadge?.badge ? `
                         <img class="rank-badge" title="${data.peak.rankBadge.tooltip}"
                              src="${data.peak.rankBadge.badge}"/>
-                    ` : ``}
+                    ` : ''}
                 </div>
             `);
         }
@@ -708,6 +709,9 @@ export class PeaksCurveView extends Charts.ChartView {
                 },
                 tooltips: {
                     intersect: false,
+                    position: 'nearest',
+                    mode: 'nearest',
+                    axis: 'x',
                     custom: tt => {
                         if (tt.dataPoints && tt.dataPoints.length) {
                             const tuples = tt.dataPoints.map(x => [x.datasetIndex, x.index]);
@@ -789,13 +793,14 @@ export class PeaksCurveView extends Charts.ChartView {
             '#b42929',
             '#2a0aa9',
         ];
+        const curRangeData = await getTopRankPeaksData(this.range.start, this.range.end);
         const datasets = [{
             id: 'current-range',
             label: this.LM('current_range'),
             borderColor: '#f228',
             backgroundColor: '#f238',
             fill: 'start',
-            data: await getTopRankPeaksData(this.range.start, this.range.end),
+            data: curRangeData,
         }];
         for (const x of prefs.compare) {
             if (x === 'all') {
@@ -837,6 +842,83 @@ export class PeaksCurveView extends Charts.ChartView {
                 console.warn('Unimplemented range type:', x);
             }
         }
+
+        if (0) {
+            const mmp = curRangeData
+                .filter(o => o.x >= 0 && o.x <= 3600)
+                .map(o => ({duration: o.x, power: o.y, peak: o.peak}));
+            const modelMorton2 = Eftp.fitMorton2(mmp);
+            const modelMorton3 = Eftp.fitMorton3(mmp);
+            const modelMorton4 = Eftp.fitMorton4(mmp);
+            const modelMorton5 = Eftp.fitMorton5(mmp);
+            console.log("CP Morton2", Eftp.powerAtMorton2(3600, modelMorton2), modelMorton2);
+            console.log("CP Morton3", Eftp.powerAtMorton3(3600, modelMorton3), modelMorton3);
+            console.log("CP Morton4", Eftp.powerAtMorton4(3600, modelMorton4), modelMorton4);
+            console.log("CP Morton5", Eftp.morton3(3600, modelMorton5), modelMorton5);
+
+            const periods = curRangeData.map(o => o.x);
+            const peakPower = curRangeData[0].y;
+            for (const min of periods.filter(t => t <= 600 && t > 1)) {
+                for (const max of periods.filter(t => t >= 1200 && t <= 3600)) {
+                    const mmpb = curRangeData
+                        .filter(o => o.x >= min && o.x <= max)
+                        .map(o => ({duration: o.x, power: o.y, peak: o.peak}));
+                    if (mmpb.length < 3) {
+                        continue;
+                    }
+                    mmpb.unshift({duration: 1, power: peakPower});
+                    const modelMorton2b = Eftp.fitMorton2(mmpb);
+                    const modelMorton3b = Eftp.fitMorton3(mmpb);
+                    const modelMorton4b = Eftp.fitMorton4(mmpb);
+                    const modelMorton5b = Eftp.fitMorton5(mmpb);
+                    console.log(min, max);
+                    console.log("CP Morton2b", Eftp.powerAtMorton2(3600, modelMorton2b), modelMorton2b);
+                    console.log("CP Morton3b", Eftp.powerAtMorton3(3600, modelMorton3b), modelMorton3b);
+                    console.log("CP Morton4b", Eftp.powerAtMorton4(3600, modelMorton4b), modelMorton4b);
+                    console.log("CP Morton5b", Eftp.morton3(3600, modelMorton5b), modelMorton5b);
+                }
+            }
+     
+            let mmpDurations = [];
+            for (let i = 1;; i++) {
+                const d = (mmpDurations[0] || 0) + Math.ceil(Math.exp(i / 10)) - 1;
+                if (d >= 10800) {
+                    mmpDurations.push(10800);
+                    break;
+                }
+                mmpDurations.push(d);
+            }
+            mmpDurations = Array.from(new Set(mmpDurations.concat(curRangeData.map(o => o.x))))
+                .toSorted((a, b) => a - b)
+                .filter(x => x >= 5);
+            datasets.push(/*{
+                id: 'cp-morton(src)',
+                label: 'eFTP (cp-morton-src)',
+                data: mmp.map(x => ({peak: x.peak, x: x.duration, y: x.power})),
+            }, {
+                id: 'cp-morton(fitted)',
+                label: 'eFTP (cp-morton-fitted)',
+                data: mmpDurations.map(t => ({peak: {ts: new Date()}, x: t, y: Eftp.powerAtMorton(t, modelMorton)})),
+            },*/ {
+                id: 'cp-morton2(fitted)',
+                label: 'm2',
+                data: mmpDurations.map(t => ({peak: {ts: new Date()}, x: t, y: Eftp.powerAtMorton2(t, modelMorton2)})),
+            }, {
+                id: 'cp-morton3(fitted)',
+                label: 'm3',
+                data: mmpDurations.map(t => ({peak: {ts: new Date()}, x: t, y: Eftp.powerAtMorton3(t, modelMorton3)})),
+            }, {
+                id: 'cp-morton4(fitted)',
+                label: 'm4',
+                data: mmpDurations.map(t => ({peak: {ts: new Date()}, x: t, y: Eftp.powerAtMorton4(t, modelMorton4)})),
+            }, {
+                id: 'cp-morton5(fitted)',
+                label: 'm5',
+                data: mmpDurations.map(t => ({peak: {ts: new Date()}, x: t, y: Eftp.morton3(t, modelMorton5)})),
+            });
+            console.log(datasets);
+        }
+
         for (const x of datasets) {
             if (!x.borderColor) {
                 const color = colors.shift() || '#999999';

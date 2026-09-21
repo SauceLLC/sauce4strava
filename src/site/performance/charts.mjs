@@ -261,7 +261,6 @@ export class SauceChart extends Chart {
         setDefault(config, 'options.scales.xAxes[0].ticks.minor.fontSize', 10);
         setDefault(config, 'options.scales.xAxes[0].ticks.autoSkipPadding', 20);
         setDefault(config, 'options.scales.xAxes[0].ticks.sampleSize', 50);
-        setDefault(config, 'options.tooltips.mode', 'index');
         super(ctx, config);
         this.view = view;
     }
@@ -308,6 +307,7 @@ export class ActivityTimeRangeChart extends SauceChart {
         setDefault(config, 'options.scales.yAxes[0].scaleLabel.display', true);
         setDefault(config, 'options.scales.yAxes[0].ticks.beginAtZero', true);
         setDefault(config, 'options.tooltips.enabled', false);  // Use custom html.
+        setDefault(config, 'options.tooltips.mode', 'index');
         setDefault(config, 'options.tooltips.activitiesFormatter', (...args) =>
             _this.activitiesTooltipFormatter(...args));
         const ttAnimation = sauce.ui.throttledAnimationFrame();
