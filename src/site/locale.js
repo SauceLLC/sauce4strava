@@ -398,13 +398,15 @@ sauce.ns('locale', ns => {
         const style = options.style || 'default';
         let formatter = _intlDateFormats[style];
         if (options.concise) {
-            const options = formatter.resolvedOptions();
-            if (options.year) {
-                if (date.getYear() === (new Date()).getYear()) {
-                    delete options.year;
-                    formatter = new Intl.DateTimeFormat([], options);
-                }
+            const fullOptions = formatter.resolvedOptions();
+            if (fullOptions.year && date.getYear() === (new Date()).getYear()) {
+                delete fullOptions.year;
+                formatter = new Intl.DateTimeFormat([], fullOptions);
             }
+        }
+        if (options.timeZone) {
+            const fullOptions = formatter.resolvedOptions();
+            formatter = new Intl.DateTimeFormat([], {...fullOptions, timeZone: options.timeZone});
         }
         return formatter.format(date);
     }
@@ -418,7 +420,12 @@ sauce.ns('locale', ns => {
             date = new Date(date);
         }
         const style = options.style || 'default';
-        return _intlTimeFormats[style].format(date);
+        let formatter = _intlTimeFormats[style];
+        if (options.timeZone) {
+            const fullOptions = formatter.resolvedOptions();
+            formatter = new Intl.DateTimeFormat([], {...fullOptions, timeZone: options.timeZone});
+        }
+        return formatter.format(date);
     }
 
 
@@ -459,7 +466,12 @@ sauce.ns('locale', ns => {
             return [Today, time].join(', ');
         }
         const style = options.style || 'default';
-        return _intlDateTimeFormats[style].format(date);
+        let formatter = _intlDateTimeFormats[style];
+        if (options.timeZone) {
+            const fullOptions = formatter.resolvedOptions();
+            formatter = new Intl.DateTimeFormat([], {...fullOptions, timeZone: options.timeZone});
+        }
+        return formatter.format(date);
     }
 
 
