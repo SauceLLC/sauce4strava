@@ -2299,19 +2299,32 @@ sauce.ns('perf', function() {
 
 
     function calcTRIMP(duration, hrr, gender) {
-        const y = hrr * (gender === 'female' ? 1.67 : 1.92);
-        return (duration / 60) * hrr * 0.64 * Math.exp(y);
+        return gender === 'female' ?
+            _calcTRIMPFemale(duration, hrr) :
+            _calcTRIMPMale(duration, hrr);
     }
 
 
-    /* TRIMP based TSS, more accurate than hrTSS.
-     * See: https://fellrnr.com/wiki/TRIMP
+    function _calcTRIMPFemale(duration, hrr, gender) {
+        return (duration / 60) * hrr * 0.86 * Math.exp(1.67 * hrr);
+    }
+
+
+    function _calcTRIMPMale(duration, hrr, gender) {
+        return (duration / 60) * hrr * 0.64 * Math.exp(1.92 * hrr);
+    }
+
+
+    /*
+     * TRIMP based TSS, more accurate than hrTSS.
+     * See: https://journals.physiology.org/doi/full/10.1152/advan.00078.2011
      */
     function tTSS(hrStream, timeStream, activeStream, ltHR, minHR, maxHR, gender) {
         let t = 0;
         let lastTime = timeStream[0];
         const hrErrorLow = minHR * 0.7;
         const hrErrorHigh = maxHR * 1.5;
+        const trimp = gender === 'female' ? _calcTRIMPFemale : _calcTRIMPMale;
         for (let i = 1; i < timeStream.length; i++) {
             const time = timeStream[i];
             const hr = hrStream[i];
@@ -2321,10 +2334,9 @@ sauce.ns('perf', function() {
             }
             const dur = time - lastTime;
             lastTime = time;
-            const hrr = (hr - minHR) / (maxHR - minHR);
-            t += calcTRIMP(dur, hrr, gender);
+            t += trimp(dur, (hr - minHR) / (maxHR - minHR));
         }
-        const tHourAtLT = calcTRIMP(3600, (ltHR - minHR) / (maxHR - minHR), gender);
+        const tHourAtLT = trimp(3600, (ltHR - minHR) / (maxHR - minHR));
         const tTSS = (t / tHourAtLT) * 100;
         return tTSS;
     }
