@@ -39,11 +39,15 @@
     function _loadOptions() {
         let menuEl = document.querySelector('#global-header .user-nav .user-menu .options');
         if (!menuEl) {
-            // React page with obfuscated HTML.
-            menuEl = document.querySelector('header nav ul li ul[labeledby="athlete-menu"]');
+            // React page
+            menuEl = document.querySelector('#global-header ul[aria-labelledby="athlete-menu"]');
             if (!menuEl) {
+                console.warn("Unable to add Sauce Options to global header menu");
                 return;
             }
+        }
+        if (menuEl.querySelector('.sauce-options-menu-item')) {
+            return;
         }
         const a = document.createElement('a');
         const span = document.createElement('span');
@@ -70,10 +74,13 @@
         if (sauce.hideBonusFeatures) {
             return;
         }
+        if (document.querySelector('#global-header .sauce-options-menu-group')) {
+            return;
+        }
         const group = document.createElement('li');
         group.classList.add('sauce-options-menu-group');
         const callout = document.createElement('div');
-        callout.classList.add('sauce-callout', 'text-caption4');
+        callout.classList.add('sauce-callout');
         const calloutSpan = document.createElement('span');
         calloutSpan.textContent = `Sauce Performance`;
         callout.appendChild(calloutSpan);
@@ -116,9 +123,12 @@
             }
         } else {
             // React page with obfuscated HTML.
-            const prev = document.querySelector('header nav ul li ul li a[href="/athlete/training"]');
+            const prev = document.querySelector(
+                '#global-header ul[aria-labelledby="training-menu"] li > a[href="/athlete/training"]');
             if (prev) {
                 prev.parentElement.insertAdjacentElement('afterend', group);
+            } else {
+                console.warn("Unable to add Sauce Performance to global header menu");
             }
         }
     }
@@ -136,4 +146,6 @@
     } else {
         addEventListener('DOMContentLoaded', load);
     }
+    addEventListener('load', load); // handle react pages like dashboard that wipe us out
+    setTimeout(load, 1000);  // extra paranoia and lazy XXX replace with mutation observer and limit count
 })();

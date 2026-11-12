@@ -193,6 +193,11 @@
             text-transform: uppercase;
             position: relative;
             padding-right: 24px; // for sauce icon
+            // copied from .text-caption4 (not available in react pages)
+            font-size: 9px;
+            font-weight: 700;
+            line-height: 11px;
+            letter-spacing: 0.0125em;
 
             img {
                 position: absolute;
