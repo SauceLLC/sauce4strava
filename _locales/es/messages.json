@@ -1280,6 +1280,9 @@
     "performance_peaks_chart_type": {
         "message": "Gráfico de rendimiento máximo"
     },
+    "performance_peaks_curve_type": {
+        "message": "Curva de potencia máxima"
+    },
     "performance_peaks_table_name": {
         "message": "Actuaciones pico",
         "description": "IMMUTABLE"
@@ -1288,8 +1291,14 @@
         "message": "Actuaciones pico",
         "description": "IMMUTABLE"
     },
+    "performance_peaks_curve_name": {
+        "message": "Curva de potencia máxima"
+    },
     "performance_peaks_desc": {
         "message": "Las mejores o máximas actuaciones para una variedad de tiempos y distancias."
+    },
+    "performance_peaks_curve_desc": {
+        "message": "Potencia máxima mantenida durante cada período de tiempo"
     },
     "performance_training_load_type": {
         "message": "Tabla de carga de entrenamiento"
@@ -1499,17 +1508,23 @@
     "performance_comparison_view": {
         "message": "Vista comparativa"
     },
-    "performance_previous_period": {
-        "message": "Periodo anterior"
+    "performance_previous_range": {
+        "message": "Rango anterior"
     },
-    "performance_next_period": {
-        "message": "Próximo período"
+    "performance_next_range": {
+        "message": "Siguiente gama"
     },
     "performance_all_before": {
         "message": "Todo antes"
     },
     "performance_all_after": {
         "message": "Todo despues"
+    },
+    "performance_current_range": {
+        "message": "Rango actual"
+    },
+    "performance_compare_to": {
+        "message": "Comparar con..."
     },
     "season_start": {
         "message": "Inicio de temporada"

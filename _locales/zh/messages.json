@@ -1576,6 +1576,9 @@
         "message": "巅峰表现图表",
         "description": "IMMUTABLE"
     },
+    "performance_peaks_curve_type": {
+        "message": "峰值功率曲线"
+    },
     "performance_peaks_table_name": {
         "message": "巅峰表现",
         "description": "IMMUTABLE"
@@ -1584,9 +1587,15 @@
         "message": "巅峰表现",
         "description": "IMMUTABLE"
     },
+    "performance_peaks_curve_name": {
+        "message": "峰值功率曲线"
+    },
     "performance_peaks_desc": {
         "message": "在一定时间和距离范围内的最佳或最大表现",
         "description": "IMMUTABLE"
+    },
+    "performance_peaks_curve_desc": {
+        "message": "每个时间段内保持的峰值功率"
     },
     "performance_training_load_type": {
         "message": "训练负荷图",
@@ -1860,17 +1869,23 @@
     "performance_comparison_view": {
         "message": "比较视图"
     },
-    "performance_previous_period": {
-        "message": "前一期间"
+    "performance_previous_range": {
+        "message": "先前范围"
     },
-    "performance_next_period": {
-        "message": "下一期"
+    "performance_next_range": {
+        "message": "下一系列"
     },
     "performance_all_before": {
         "message": "全部之前"
     },
     "performance_all_after": {
         "message": "之后"
+    },
+    "performance_current_range": {
+        "message": "当前范围"
+    },
+    "performance_compare_to": {
+        "message": "与……相比"
     },
     "season_start": {
         "message": "赛季开始",

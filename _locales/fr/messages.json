@@ -1258,14 +1258,23 @@
     "performance_peaks_chart_type": {
         "message": "Graphique des performances maximales"
     },
+    "performance_peaks_curve_type": {
+        "message": "Courbe de puissance maximale"
+    },
     "performance_peaks_table_name": {
         "message": "Performances de pointe"
     },
     "performance_peaks_chart_name": {
         "message": "Performances de pointe"
     },
+    "performance_peaks_curve_name": {
+        "message": "Courbe de puissance maximale"
+    },
     "performance_peaks_desc": {
         "message": "Performances optimales ou maximales pour une gamme de temps et de distances"
+    },
+    "performance_peaks_curve_desc": {
+        "message": "Puissance de pointe maintenue pour chaque période"
     },
     "performance_training_load_type": {
         "message": "Tableau de charge d'entraînement"
@@ -1475,17 +1484,23 @@
     "performance_comparison_view": {
         "message": "Vue comparative"
     },
-    "performance_previous_period": {
-        "message": "Période précédente"
+    "performance_previous_range": {
+        "message": "Gamme précédente"
     },
-    "performance_next_period": {
-        "message": "Prochaine période"
+    "performance_next_range": {
+        "message": "Gamme suivante"
     },
     "performance_all_before": {
         "message": "Tout avant"
     },
     "performance_all_after": {
         "message": "Tout après"
+    },
+    "performance_current_range": {
+        "message": "Gamme actuelle"
+    },
+    "performance_compare_to": {
+        "message": "Comparer à..."
     },
     "season_start": {
         "message": "Début de saison"
