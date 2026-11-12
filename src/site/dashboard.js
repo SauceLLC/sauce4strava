@@ -93,11 +93,9 @@ sauce.ns('dashboard', function(ns) {
                     _cardPropCache.set(cardEl, props);
                 } else {
                     console.warn("Could not find props for:", cardEl);
-                    _cardPropCache.set(cardEl, null);
                 }
             } catch(e) {
                 console.error('Get card props error:', e);
-                _cardPropCache.set(cardEl, null);
             }
         }
         return _cardPropCache.get(cardEl);
@@ -368,9 +366,10 @@ sauce.ns('dashboard', function(ns) {
 
     function filterFeed(cards) {
         try {
-            _filterFeed(cards);
+            return _filterFeed(cards);
         } catch(e) {
             console.error('Filter feed error:', e);
+            return [];
         }
     }
 
@@ -378,7 +377,7 @@ sauce.ns('dashboard', function(ns) {
     function _filterFeed(cards) {
         const filters = sauce.options['activity-filters'];
         if (!filters || !filters.length) {
-            return;
+            return [];
         }
         const handlers = {
             '*': () => true,
@@ -398,19 +397,25 @@ sauce.ns('dashboard', function(ns) {
             'social-description': hasDescription,
         };
         const actions = [];
+        const skipped = [];
         for (const card of cards) {
             if (card.classList.contains('sauce-checked')) {
                 continue;
             }
-            card.classList.add('sauce-checked');
             let props;
             try {
                 props = getCardProps(card);
-                if (!props || isSelfEntity(props)) {
+                if (!props) {
+                    skipped.push(card);
                     continue;
                 }
             } catch(e) {
                 console.error("Failed to get card props:", e);
+                skipped.push(card);
+                continue;
+            }
+            card.classList.add('sauce-checked');
+            if (isSelfEntity(props)) {
                 continue;
             }
             for (const {type, criteria, action} of filters) {
@@ -462,50 +467,73 @@ sauce.ns('dashboard', function(ns) {
                 }
             }
         }
+        return skipped;
     }
 
 
-    function monitorFeed(feedEl) {
-        const seenCards = new Set(Array.from(feedEl.querySelectorAll(cardSelector)));
-        const mo = new MutationObserver(events => {
-            const cards = feedEl.querySelectorAll(cardSelector);
-            const beforeSize = seenCards.size;
-            for (const x of cards) {
-                seenCards.add(x);
+    function monitorFeed(feedEl, abortSignal) {
+        if (abortSignal.aborted) {
+            return;
+        }
+        const cards = Array.from(feedEl.querySelectorAll(cardSelector));
+        const handled = new WeakSet(cards);
+        if (cards.length) {
+            for (const x of filterFeed(cards)) {
+                handled.delete(x);
             }
-            if (seenCards.size > beforeSize) {
-                filterFeed(cards);
+        }
+        const mo = new MutationObserver(() => {
+            const cards = Array.from(feedEl.querySelectorAll(cardSelector));
+            const todo = [];
+            for (const x of cards) {
+                if (!handled.has(x)) {
+                    todo.push(x);
+                }
+                handled.add(x);
+            }
+            if (todo.length) {
+                for (const x of filterFeed(cards)) {
+                    handled.delete(x);
+                }
             }
         });
         // Take note this page updates in unexpected ways.
         // 1. No feed element is present.
-        // 2. Feed element is inserted and contains about some number of empty divs
+        // 2. Feed element is inserted and contains empty div(s)
         // 3. The empty divs are filled with feed entries.
         // 4. Sometimes the feed is immediately updated with additional div > feed entries.
         mo.observe(feedEl, {childList: true, subtree: true});
-        if (seenCards.size) {
-            filterFeed(Array.from(seenCards));
-        }
+        abortSignal.addEventListener('abort', () => mo.disconnect());
     }
 
 
     function load() {
-        const feedSelector = 'main .feature-feed';
-        const feedEl = document.querySelector(feedSelector);
-        if (!feedEl) {
-            const mo = new MutationObserver(() => {
-                const feedEl = document.querySelector(feedSelector);
+        const feedSelector = [
+            'main #feature-feed',
+            '[class*="DashboardPage_feedCol__"] .feature-feed' // <= 2026-11
+        ].join(', ');
+        let feedEl = document.querySelector(feedSelector);
+        let aborter;
+        const mo = new MutationObserver(events => {
+            if (feedEl && !feedEl.isConnected) {
+                feedEl = null;
+                aborter.abort();
+            }
+            if (!feedEl) {
+                feedEl = document.querySelector(feedSelector);
                 if (feedEl) {
-                    mo.disconnect();
                     // Chrome devtools bug workaround...
-                    setTimeout(() => monitorFeed(feedEl), 0);
+                    aborter = new AbortController();
+                    setTimeout(() => monitorFeed(feedEl, aborter.signal), 0);
                 }
-            });
-            mo.observe(document.documentElement, {childList: true, subtree: true});
-        } else {
+            }
+        });
+        if (feedEl) {
             // Unlikely...
-            monitorFeed(feedEl);
+            aborter = new AbortController();
+            monitorFeed(feedEl, aborter.signal);
         }
+        mo.observe(document.body, {childList: true, subtree: true});
         if (sauce.options['activity-hide-media']) {
             document.documentElement.classList.add('sauce-hide-dashboard-media');
         }
@@ -516,7 +544,6 @@ sauce.ns('dashboard', function(ns) {
             document.documentElement.classList.add('sauce-dense-dashboard');
         }
     }
-
 
     return {
         load,
