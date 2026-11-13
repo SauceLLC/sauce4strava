@@ -1490,6 +1490,9 @@
     "performance_previous_range": {
         "message": "Vorheriger Bereich"
     },
+    "performance_previous_range_short": {
+        "message": "Vorherige"
+    },
     "performance_next_range": {
         "message": "Nächster Bereich"
     },
@@ -1501,6 +1504,9 @@
     },
     "performance_current_range": {
         "message": "Aktueller Bereich"
+    },
+    "performance_current_range_short": {
+        "message": "Aktuell"
     },
     "performance_compare_to": {
         "message": "Vergleichen Sie mit..."

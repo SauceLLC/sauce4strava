@@ -1872,6 +1872,9 @@
     "performance_previous_range": {
         "message": "先前范围"
     },
+    "performance_previous_range_short": {
+        "message": "以前的"
+    },
     "performance_next_range": {
         "message": "下一系列"
     },
@@ -1883,6 +1886,9 @@
     },
     "performance_current_range": {
         "message": "当前范围"
+    },
+    "performance_current_range_short": {
+        "message": "当前的"
     },
     "performance_compare_to": {
         "message": "与……相比"

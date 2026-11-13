@@ -1487,6 +1487,9 @@
     "performance_previous_range": {
         "message": "Gamme précédente"
     },
+    "performance_previous_range_short": {
+        "message": "Précédent"
+    },
     "performance_next_range": {
         "message": "Gamme suivante"
     },
@@ -1498,6 +1501,9 @@
     },
     "performance_current_range": {
         "message": "Gamme actuelle"
+    },
+    "performance_current_range_short": {
+        "message": "Actuel"
     },
     "performance_compare_to": {
         "message": "Comparer à..."
