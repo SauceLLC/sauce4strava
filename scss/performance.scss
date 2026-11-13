@@ -1596,7 +1596,6 @@ table.activity-table {
                     }
 
                     .data-label {
-                        cursor: pointer;
                         opacity: 0.88;
                         transition: opacity 200ms;
                         position: relative;
@@ -1605,6 +1604,21 @@ table.activity-table {
                         align-items: baseline;
                         margin-left: 0.7em;
                         margin-top: 0.5em;
+
+                        &:not(.no-toggle) {
+                            cursor: pointer;
+
+                            &:hover {
+                                opacity: 1;
+
+                                &:not(.ds-hidden) {
+                                    &,
+                                    .line > * {
+                                        text-decoration: underline;
+                                    }
+                                }
+                            }
+                        }
 
                         &.ds-hidden {
                             .label {
@@ -1620,17 +1634,6 @@ table.activity-table {
                         &:not(.ds-hidden) {
                             .label::after {
                                 content: ':';
-                            }
-                        }
-
-                        &:hover {
-                            opacity: 1;
-
-                            &:not(.ds-hidden) {
-                                &,
-                                .line > * {
-                                    text-decoration: underline;
-                                }
                             }
                         }
 
@@ -1667,12 +1670,13 @@ table.activity-table {
                         }
 
                         .rank-badge {
-                            height: 2.2em;
-                            align-self: center;
+                            height: 1.75em;
+                            opacity: 0.82;
+                            margin-top: -20%;
                         }
 
                         .line.activity {
-                            max-width: 16ch;
+                            max-width: 13ch;
                             overflow: hidden;
                             text-overflow: ellipsis;
                             white-space: nowrap;

@@ -490,10 +490,12 @@
     "performance_filter": {"message": "Filter"},
     "performance_comparison_view": {"message": "Comparison View"},
     "performance_previous_range": {"message": "Previous Range"},
+    "performance_previous_range_short": {"message": "Previous"},
     "performance_next_range": {"message": "Next Range"},
     "performance_all_before": {"message": "All Before"},
     "performance_all_after": {"message": "All After"},
     "performance_current_range": {"message": "Current Range"},
+    "performance_current_range_short": {"message": "Current"},
     "performance_compare_to": {"message": "Compare to..."},
 
     "season_start": {"message": "Season Start"},
