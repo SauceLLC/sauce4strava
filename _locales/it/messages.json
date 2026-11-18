@@ -221,6 +221,9 @@
     "analysis_high_hr_tooltip": {
         "message": "Frequenza cardiaca massima"
     },
+    "analysis_avg_hr_tooltip": {
+        "message": "Frequenza cardiaca media durante l'attività"
+    },
     "analysis_low_speed_tooltip": {
         "message": "Velocità più bassa"
     },

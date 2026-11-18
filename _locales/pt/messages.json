@@ -240,6 +240,9 @@
     "analysis_high_hr_tooltip": {
         "message": "Frequência cardíaca mais alta"
     },
+    "analysis_avg_hr_tooltip": {
+        "message": "Frequência cardíaca ativa média"
+    },
     "analysis_low_speed_tooltip": {
         "message": "Velocidade mais baixa"
     },

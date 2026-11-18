@@ -273,6 +273,9 @@
         "message": "最高心率",
         "description": "IMMUTABLE"
     },
+    "analysis_avg_hr_tooltip": {
+        "message": "平均活动心率"
+    },
     "analysis_low_speed_tooltip": {
         "message": "最低速度",
         "description": "IMMUTABLE"

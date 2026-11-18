@@ -219,6 +219,9 @@
     "analysis_high_hr_tooltip": {
         "message": "Höchste Herzfrequenz"
     },
+    "analysis_avg_hr_tooltip": {
+        "message": "Durchschnittliche aktive Herzfrequenz"
+    },
     "analysis_low_speed_tooltip": {
         "message": "Niedrigste Geschwindigkeit"
     },
