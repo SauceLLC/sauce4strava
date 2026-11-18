@@ -619,7 +619,7 @@ export async function exportSyncChangeset(athleteId, sourceChangeset) {
     const activities = await actsStore.getAllForAthlete(athleteId);
     const settings = [
         'disableRunWatts', 'estRunWatts', 'estCyclingWatts',
-        'estRunningPeaks', 'estCyclingPeaks'
+        'estRunPeaks', 'estCyclingPeaks'
     ];
     const data = {
         version: 1,
