@@ -936,14 +936,17 @@ export async function getAvailableSyncChangesets(athleteId) {
     if (!athlete || !athlete.syncSettings) {
         return [];
     }
+    debugger;
     const receipts = new Map(athlete.syncSettingsReceipts || []);
     const dir = `hist-md-${athleteId}/`;
     if (Date.now() - _lastMetaLoad > 30_000) {
         await meta.load({forceFetch: true});
         _lastMetaLoad = Date.now();
     }
-    // .updated is deprecated as of 8.9.3 but present in 8.9.2
-    const mostRecentReceiptTS = Math.max(...athlete.syncSettingsReceipts.map(x => x[1].ts ?? x[1].updated));
+    const mostRecentReceiptTS = athlete.syncSettingsReceipts ?
+        // `ts` replaced `updated` in v8.9.3..
+        Math.max(...athlete.syncSettingsReceipts.map(x => x[1].ts ?? x[1].updated)) :
+        0;
     const changesets = [];
     for (const changeset of await meta.getAll(dir)) {
         if (changeset?.data?.version !== 1) {
