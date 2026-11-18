@@ -475,12 +475,12 @@ sauce.ns('locale', ns => {
     }
 
 
-    const _utcSundayRef = new Date(1638700000000);
+    const _utcSundayRef = new Date(1638662400000);
     function humanDayOfWeek(sunOfft, options={}) {
         const weekday = options.long ? 'long' : 'short';
         const d = new Date(_utcSundayRef);
         d.setDate(d.getDate() + sunOfft);
-        return d.toLocaleString(undefined, {timezone: 'UTC', weekday});
+        return d.toLocaleString(undefined, {timeZone: 'UTC', weekday});
     }
 
 
