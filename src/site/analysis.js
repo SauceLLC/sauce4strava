@@ -384,19 +384,7 @@ sauce.ns('analysis', ns => {
     }
 
 
-    function stravaShowsHR() {
-        // Strava includes avg/max HR for some sports only (rides, workouts, etc).
-        const unit = L.hrFormatter.unitShort();
-        return Array.from(document.querySelectorAll('.activity-stats .more-stats abbr.unit'))
-            .some(x => x.textContent.trim() === unit);
-    }
-
-
     async function renderHRMoreStats(attrs) {
-        // Only the div-based .more-stats layout is supported.
-        if (document.querySelector('.activity-stats .more-stats table')) {
-            return;
-        }
         const template = await getTemplate('hr-more-stats.html');
         const $row = jQuery(await template(attrs));
         let $table = jQuery('.activity-stats .more-stats').first();
@@ -868,17 +856,6 @@ sauce.ns('analysis', ns => {
             tss = localTrimpTss;
             tssType = 'trimp';
         }
-        if (hrStream && !stravaShowsHR()) {
-            const hrRoll = await correctedRollTimeRange('heartrate', timeStream[0], timeStream.at(-1),
-                                                        {active: true, ignoreZeros: true});
-            if (hrRoll) {
-                renderHRMoreStats({
-                    avg: hrRoll.avg(),
-                    max: sauce.data.max(hrRoll.values()),
-                    unit: L.hrFormatter.shortUnitKey(),
-                }).catch(console.error);
-            }
-        }
         const localeWeight = ns.weight ? L.weightFormatter.convert(ns.weight) : undefined;
         renderTertiaryStats({
             weight: localeWeight && Number(localeWeight.toFixed(2)),
@@ -1046,6 +1023,20 @@ sauce.ns('analysis', ns => {
             await panel.render();
             ns.afterSyncActivity.then(() => panel.render());  // Only runs if we needed a sync.
             ns.peaksPanel = panel;
+        }
+        // Strava only includes avg/max HR for some sports (rides, workouts, etc).
+        if (hrStream && !document.querySelector('.activity-stats .more-stats table') &&
+            !Array.from(document.querySelectorAll('.activity-stats .more-stats abbr.unit'))
+                .some(x => x.textContent.trim() === L.hrFormatter.unitShort())) {
+            const hrRoll = sauce.data.correctedAverage(timeStream, hrStream,
+                                                       {activeStream, active: true, ignoreZeros: true});
+            if (hrRoll) {
+                renderHRMoreStats({
+                    avg: hrRoll.avg(),
+                    max: sauce.data.max(hrRoll.values()),
+                    unit: L.hrFormatter.shortUnitKey(),
+                }).catch(console.error);
+            }
         }
     }
 
