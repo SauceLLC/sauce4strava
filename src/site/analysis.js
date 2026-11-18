@@ -384,6 +384,30 @@ sauce.ns('analysis', ns => {
     }
 
 
+    function stravaShowsHR() {
+        // Strava includes avg/max HR for some sports only (rides, workouts, etc).
+        const unit = L.hrFormatter.unitShort();
+        return Array.from(document.querySelectorAll('.activity-stats .more-stats abbr.unit'))
+            .some(x => x.textContent.trim() === unit);
+    }
+
+
+    async function renderHRMoreStats(attrs) {
+        // Only the div-based .more-stats layout is supported.
+        if (document.querySelector('.activity-stats .more-stats table')) {
+            return;
+        }
+        const template = await getTemplate('hr-more-stats.html');
+        const $row = jQuery(await template(attrs));
+        let $table = jQuery('.activity-stats .more-stats').first();
+        if (!$table.length) {
+            $table = jQuery('<div class="section more-stats"></div>');
+            jQuery('.activity-stats .inline-stats').last().after($table);
+        }
+        $table.append($row);
+    }
+
+
     async function renderTertiaryStats(attrs) {
         const template = await getTemplate('tertiary-stats.html');
         if (attrs.kj && !sauce.options['analysis-disable-food-reward']) {
@@ -843,6 +867,17 @@ sauce.ns('analysis', ns => {
         } else if (localTrimpTss != null) {
             tss = localTrimpTss;
             tssType = 'trimp';
+        }
+        if (hrStream && !stravaShowsHR()) {
+            const hrRoll = await correctedRollTimeRange('heartrate', timeStream[0], timeStream.at(-1),
+                                                        {active: true, ignoreZeros: true});
+            if (hrRoll) {
+                renderHRMoreStats({
+                    avg: hrRoll.avg(),
+                    max: sauce.data.max(hrRoll.values()),
+                    unit: L.hrFormatter.shortUnitKey(),
+                }).catch(console.error);
+            }
         }
         const localeWeight = ns.weight ? L.weightFormatter.convert(ns.weight) : undefined;
         renderTertiaryStats({
