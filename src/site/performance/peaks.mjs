@@ -871,7 +871,6 @@ export class PeaksCurveView extends Charts.ChartView {
             }
             Object.assign(x, {
                 spanGaps: true,
-                tooltipFormat: x => this.valueFormatter(x),
                 yAxis: 'values',
                 xAxis: 'periods',
             });
@@ -882,12 +881,6 @@ export class PeaksCurveView extends Charts.ChartView {
 
     async render({update}={}) {
         this.$('.loading-mask').addClass('loading');
-        this.valueFormatter = x => x != null ?
-            [
-                getPeaksValueFormatter('power')(x),
-                `FOO123 <abbr class="unit">${getPeaksUnit('power')}</abbr>`
-            ].join(' ') :
-            '-';
         try {
             await super.render();
             await this.controlsView.setElement(this.$('.peaks-controls-view')).render();
