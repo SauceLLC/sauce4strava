@@ -629,7 +629,7 @@ class PeaksCurveChart extends Charts.SauceChart {
                 `<a href="/activities/${activity.id}">${activity.name}</a>` :
                 '&nbsp;';
             labels.push(`
-                <div class="data-label" data-ds="${ds.id}" data-activity-id="${activity.id}"
+                <div class="data-label" data-ds="${ds.id}" data-activity-id="${data.peak.activity}"
                      style="--border-color: ${ds.borderColor};
                             --bg-color: ${ds.backgroundColor};">
                     <div class="color-bubble"></div>
@@ -776,7 +776,11 @@ export class PeaksCurveView extends Charts.ChartView {
         }
         const id = Number(ev.currentTarget.dataset.activityId);
         const activity = await sauce.hist.getActivity(id);
-        this.pageView.trigger('select-activities', [activity]);
+        if (activity) {
+            this.pageView.trigger('select-activities', [activity]);
+        } else {
+            console.warn('Missing activity:', id);
+        }
     }
 
     async updateChart() {
