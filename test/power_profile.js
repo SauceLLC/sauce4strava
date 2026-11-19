@@ -9,8 +9,14 @@ addTests([
 
     function test_fixed_low() {
         assertEqual(Math.round(sauce.power.rank(5, 10.11, null, 1, 'male').level * 100), 0);
-        assertEqual(Math.round(sauce.power.rank(5, 8.93, null, 1, 'female').level * 100), 0);
-        assertLess(sauce.power.rank(5, 8.93, null, 1, 'male').level, 0);
+        assertEqual(Math.round(sauce.power.rank(5, 8.94, null, 1, 'female').level * 100), 0);
+    },
+
+    function test_fixed_unrankable() {
+        assertEqual(sauce.power.rank(5, 1, null, 1, 'male'), undefined);
+        assertEqual(sauce.power.rank(5, 1, null, 1, 'female'), undefined);
+        assertEqual(sauce.power.rank(5, 0, null, 1, 'male'), undefined);
+        assertEqual(sauce.power.rank(5, 0, null, 1, 'female'), undefined);
     },
 
     function test_fixed_require_gender() {
