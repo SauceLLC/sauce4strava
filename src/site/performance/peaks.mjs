@@ -638,7 +638,7 @@ class PeaksCurveChart extends Charts.SauceChart {
                             <span class="label">${ds.label}</span>
                             <span class="value">${H.number(data.y, {suffix: 'w', html: true})}</span>
                         </div>
-                        <div class="line extra">${H.date(data.peak.ts, {stye: ''})}</div>
+                        <div class="line extra">${H.date(data.peak.ts)}</div>
                         <div class="line extra activity">${activityLink}</div>
                     </div>
                 </div>
@@ -738,7 +738,7 @@ export class PeaksCurveView extends Charts.ChartView {
             ChartClass: PeaksCurveChart,
         });
         this.compareOptions = [
-            {value: 'current-range', locale: this.LM('previous_range'), required: true},
+            {value: 'current-range', locale: this.LM('current_range'), required: true},
             {value: 'previous-range', locale: this.LM('previous_range')},
             {value: 'all-before', locale: this.LM('all_before')},
             {value: 'all-after', locale: this.LM('all_after')},
